@@ -78,7 +78,7 @@
 
     # If limits were provided
     if( !is.null(limits) ){
-        msg <- paste0(msg, " It must be ")
+        msg <- paste0(msg, " (Numeric constrains: ")
         # Add thresholds to message
         if( !is.null(limits$upper) ){
             msg <- paste0(msg, limits$upper, ">x")
@@ -90,6 +90,7 @@
         } else if(!is.null(limits$lower_include)){
             msg <- paste0(msg, "x>=", limits$lower_include)
         }
+        msg <- paste0(msg, ")")
     }
 
     # List all the input types. Run the check if the variable must be that type.
@@ -135,7 +136,7 @@
         input_correct <- TRUE
     }
     # If supported values were provided
-    if( !is.null(supported_values) ){
+    if( !is.null(supported_values) && !is.null(variable) ){
         # Test that if variable is in supported values
         values_correct <- lapply(supported_values, function(value){
             res <- FALSE
@@ -240,7 +241,7 @@
     if( use.cache || clear.cache ){
         # It is built from query info
         temp <- unlist(query_params)
-        cache_path <- c(cache.dir, names(temp), temp)
+        cache_path <- c(cache.dir, path, names(temp), temp)
         cache_path <- paste(cache_path, collapse = "_")
         cache_path <- gsub(":", "_", cache_path)
         cache_path <- paste0(cache_path, ".RDS")
@@ -248,7 +249,7 @@
     # Remove the file from path if specified
     if( clear.cache ){
         if( file.exists(cache_path) ){
-            message("clear.cache is TRUE: deleting ", cache_path)
+            message("clear.cache is TRUE: deleting file '", cache_path, "'")
             unlink(cache_path)
         }
     }
@@ -283,4 +284,28 @@
         }
     }
     return(res)
+}
+
+.flatten_df <- function(res){
+    is_list <- lapply(res, is.list)
+    is_list <- unlist(is_list)
+    is_list <- names(is_list)[ is_list ]
+    for(col_name in is_list ){
+        col <- res[[col_name]]
+        res[[col_name]] <- NULL
+        col <- .spread_column(col)
+        colnames(col) <- paste0( col_name, seq_len(ncol(col)) )
+        res <- cbind(res, col)
+    }
+    return(res)
+}
+
+.spread_column <- function(col){
+    # Spread column by unlisting values
+    col <- lapply(col, function(x) as.data.frame(t(data.frame(unlist((x))))) )
+    # Create a data.frame from it
+    col <- bind_rows(col)
+    col <- as.data.frame(col)
+    rownames(col) <- NULL
+    return(col)
 }
