@@ -241,10 +241,11 @@
     if( use.cache || clear.cache ){
         # It is built from query info
         temp <- unlist(query_params)
-        cache_path <- c(cache.dir, path, names(temp), temp)
+        cache_path <- c(path, names(temp), temp)
         cache_path <- paste(cache_path, collapse = "_")
-        cache_path <- gsub(":", "_", cache_path)
+        cache_path <- gsub(":|/", "_", cache_path)
         cache_path <- paste0(cache_path, ".RDS")
+        cache_path <- paste0(cache.dir, cache_path)
     }
     # Remove the file from path if specified
     if( clear.cache ){
@@ -261,6 +262,8 @@
         # Get data from database
         req <- httr2::request(url)
         req <- httr2::req_url_query(req, !!!query_params)
+        # Suppress error
+        req <- httr2::req_error(req, is_error = \(resp) FALSE)
         res <- httr2::req_perform(req)
         # If data was fetched successfully
         if( res$status_code == "200" ){
@@ -271,7 +274,7 @@
             # Add the result to cache if specified
             if( use.cache ){
                 if( !dir.exists(cache.dir) ){
-                    dir.create(cache.di)
+                    dir.create(cache.dir)
                 }
                 saveRDS(res, cache_path)
             }
@@ -294,7 +297,7 @@
         col <- res[[col_name]]
         res[[col_name]] <- NULL
         col <- .spread_column(col)
-        colnames(col) <- paste0( col_name, seq_len(ncol(col)) )
+        colnames(col) <- paste0(col_name, ".", colnames(col))
         res <- cbind(res, col)
     }
     return(res)
@@ -302,7 +305,40 @@
 
 .spread_column <- function(col){
     # Spread column by unlisting values
-    col <- lapply(col, function(x) as.data.frame(t(data.frame(unlist((x))))) )
+    col <- lapply(col, function(x){
+        # Get priginal titles
+        orig_names <- names(x)
+        # Flatten the column
+        x <- as.data.frame(t(data.frame(unlist((x)))))
+        # If there were multiple values for each row, the titles are now in
+        # format column* where * is an integer denoting the number of values.
+        if( !is.null(orig_names) && any(!orig_names %in% colnames(x)) ){
+            # Seach first values --> they have column1
+            names(orig_names) <- paste0(orig_names, 1)
+            # Loop through new columns and switch the names
+            new_names <- colnames(x)
+            new_names <- lapply(new_names, function(name){
+                # Check what original name new name represents
+                ind <- lapply(
+                    names(orig_names), function(og_name) og_name == name )
+                ind <- unlist(ind)
+                # Replace
+                if( any(ind) ){
+                    name <- orig_names[ind]
+                }
+                return(name)
+            })
+            new_names <- unlist(new_names)
+            colnames(x) <- new_names
+        } else if( is.null(orig_names) ){
+            # If there were no names in the beginning, columns are just named
+            # like "V*" --> replace so that they have only number.
+            new_names <- as.character(seq_len(ncol(x)))
+            colnames(x) <- new_names
+        }
+        rownames(x) <- NULL
+        return(x)
+    })
     # Create a data.frame from it
     col <- bind_rows(col)
     col <- as.data.frame(col)

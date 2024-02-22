@@ -60,7 +60,7 @@ getData <- function(
     }
     # Loop through paths i.e. accession IDs (or if accession is not specified
     # retrieve data only once) and get data
-    res <- llply(path, function(x){ .retrieve_from_db(x, max.hits, ...) })
+    res <- lapply(path, function(x){ .retrieve_from_db(x, max.hits, ...) })
 
     # If there were multiple results, accession was used --> combine data
     if( !is.null(accession) ){
@@ -73,7 +73,10 @@ getData <- function(
     # flatten if user has specified. DO this first and rhen sampletypes, because
     # sample types is good data to test.
     if( flatten ){
-        res <- .join_datatypes(res)
+        if( !is.data.frame(res) ){
+            res <- .join_datatypes(res)
+        }
+
         if( is.data.frame(res) ){
             res <- .flatten_df(res)
         }
@@ -82,10 +85,12 @@ getData <- function(
     return(res)
 }
 
+############################ HELP FUNCTIONS ##################
+
 .join_datatypes <- function(res, ...){
     not_empty <- lapply(res, function(x) nrow(x) > 0)
     not_empty <- unlist(not_empty)
-
+    tab <- res
     if( any(not_empty) ){
         res <- res[ not_empty ]
 
