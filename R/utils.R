@@ -220,7 +220,9 @@
     return(res)
 }
 
-.perform_single_query <- function(path, use.cache = TRUE, cache.dir = tempdir(), clear.cache = FALSE, base.url = "https://www.holofooddata.org/api", ...){
+.perform_single_query <- function(
+        path, use.cache = TRUE, cache.dir = tempdir(), clear.cache = FALSE,
+        base.url = "https://www.holofooddata.org/api", ...){
     # Check base.url
     temp <- .check_input(base.url, list("character scalar"))
     # Check use.cache

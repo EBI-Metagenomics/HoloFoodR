@@ -85,7 +85,7 @@ getData <- function(
     return(res)
 }
 
-############################ HELP FUNCTIONS ##################
+################################ HELP FUNCTIONS ################################
 
 .join_datatypes <- function(res, ...){
     not_empty <- lapply(res, function(x) nrow(x) > 0)
@@ -108,18 +108,20 @@ getData <- function(
                 if( sum(colnames(temp) %in% colnames(tab)) > 1 ){
                     temp <- .add_datatype_to_colnames(temp, tab_name)
                 }
-                tab <- dplyr::full_join(tab, temp, by = "query_accession")
+                tab <- dplyr::full_join(tab, temp, by = "query_accession") ############################################################ Remove query accession from the data
             }
         }
     } else{
-        warning("Cannot join data.frames since they are all empty.", call. = FALSE)
+        warning(
+            "Cannot join data.frames since they are all empty.", call. = FALSE)
     }
     return(tab)
 }
 
 .add_datatype_to_colnames <- function(df, tab_name, ex = "query_accession"){
     nams <- colnames(df)
-    nams[ !nams %in% "query_accession" ] <- paste0(tab_name, ".", nams[ !nams %in% "query_accession" ])
+    nams[ !nams %in% "query_accession" ] <- paste0(
+        tab_name, ".", nams[ !nams %in% "query_accession" ])
     colnames(df) <- nams
     return(df)
 }
