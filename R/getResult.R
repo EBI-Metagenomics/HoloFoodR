@@ -7,9 +7,12 @@ getResult <- function(accession, ...){
     # Get all the arguments
     args[["accession.type"]] <- "samples"
     args[["accession"]] <- accession
-    args[["flatten"]] <- TRUE
+    args[["flatten"]] <- FALSE
     # Get results
     res <- do.call(getData, args)
+    whole_data <- res
+    res <- res[["structured_metadata"]]
+    colnames(res)[ colnames(res) == "query_accession" ] <- "accession"
 
     # Split results so that each metadata marker type gets own table
     f <- res[["marker.type"]]
@@ -17,8 +20,9 @@ getResult <- function(accession, ...){
 
     # Parse results. Get those columns that go to metadata
     metadata_types <- c(
-        "ENA Checklist", "TRIAL", "SAMPLE", "TREATMENT", "TANK",
-        "TOTAL FAT CONTENT", "IODINE")
+        "ENA Checklist", "TRIAL", "SAMPLE", "TREATMENT", "TANK"
+        #"TOTAL FAT CONTENT", "IODINE"
+        )
     metadata_types <-  names(res)[ names(res) %in% metadata_types ]
     # All other datatypes go to unique omics
     omic_types <- names(res)[ !names(res) %in% metadata_types ]
@@ -26,13 +30,33 @@ getResult <- function(accession, ...){
     metadata_types <- res[ metadata_types ]
     omic_types <- res[ omic_types ]
 
+    # Instead of samples, match with animal ID. Sample IDs do not match between omics
+    # there might be multiple animal IDs. Matcj between animal ID and timepoint.
     metadata <- .construct_metadata(metadata_types)
-    omics <- .construct_omics_data(omics_types)
+    omics <- .construct_omics_data(omic_types, metadata)
+
+    # Get animal metadata
+    animal_metadata <- getData(accession.type = "animals", accession = unique(whole_data$animal$animal))
+    animal_metadata <- animal_metadata$structured_metadata
+    colnames(animal_metadata)[ colnames(animal_metadata) == "query_accession" ] <- "accession"
+    f <- animal_metadata[["marker.type"]]
+    animal_metadata <- split(animal_metadata, f)
+
+    animal_metadata <- .construct_metadata(animal_metadata)
+    animal_metadata <- animal_metadata[ match(whole_data$animal$animal, animal_metadata$accession), ]
+    rownames(animal_metadata) <- whole_data$animal$query_accession
+
+    animal_metadata <- .convert_cols_numeric(animal_metadata)
+
+    # There are samples that are not presented in dataset
+    not_found <- accession[ !accession %in% unlist(colnames(omics)) ]
+    not_found <- metadata[ metadata$accession %in% not_found, ]
+
 
     if( !is.null(omics) ){
         res <- omics
         if(!is.null(metadata)){
-            metadata <- DataFrame(metadata)
+            metadata <- DataFrame(animal_metadata, check.names = FALSE)
             colData(res) <- metadata
         }
     } else{
@@ -58,9 +82,7 @@ getResult <- function(accession, ...){
         # single sample
         res <- lapply(res, .convert_to_table)
         # Combine data
-        res <- Reduce(
-            function(df1, df2) merge(df1, df2, by = common_cols, all = TRUE),
-            res)
+        res <- Reduce(function(df1, df2) merge(df1, df2, all = TRUE), res)
         # Check if duplicated accession IDs
         dupl_acc <- duplicated(res[["accession"]])
         if( any(dupl_acc) ){
@@ -76,9 +98,9 @@ getResult <- function(accession, ...){
     return(res)
 }
 
-.construct_omics_data <- function(res){
+.construct_omics_data <- function(res, metadata){
     if( length(res) > 0 ){
-        res <- lapply(res, .convert_to_table)
+        res <- lapply(res, .convert_to_SummarizedExperiment, metadata)
         res <- ExperimentList(res)
         res <- MultiAssayExperiment(res)
     } else{
@@ -87,7 +109,8 @@ getResult <- function(accession, ...){
     return(res)
 }
 
-.convert_to_SummarizedExperiment <- function(type, assay.type = "counts", ...){
+.convert_to_SummarizedExperiment <- function(
+        type, metadata, assay.type = "counts", ...){
     # Check assay.type
     temp <- .check_input(assay.type, list("character scalar"))
     #
@@ -95,8 +118,7 @@ getResult <- function(accession, ...){
     # specific so they go to colData
     assay_info <- c("accession", "marker.name", "measurement")
     row_info <- c(
-        "marker.name", "marker.type", "marker.canonical_url", "measurement",
-        "units")
+        "marker.name", "marker.type", "marker.canonical_url", "units")
     col_info <- c(
         "accession",
         colnames(type)[!colnames(type) %in% c(assay_info, row_info)])
@@ -106,40 +128,96 @@ getResult <- function(accession, ...){
     rownames_col <- "marker.name"
     accession_col <- "accession"
     assay <- type[, assay_info, drop = FALSE]
-    # Convert values to numeric
-    num_values <- gsub(",", ".", assay[[num_col]])
-    num_values <- suppressWarnings( as.numeric(num_values) )
-    assay[[num_col]] <- num_values
     # From long format to wide
     assay <- reshape(
-        assay, direction = "wide", idvar = rownames_col,
-        timevar = accession_col)
+        assay, direction = "wide", idvar = accession_col,
+        timevar = rownames_col)
     # Add rownames and remove prefix from column names
-    rownames(assay) <- assay[[rownames_col]]
-    assay[[rownames_col]] <- NULL
+    rownames(assay) <- assay[[accession_col]]
+    assay[[accession_col]] <- NULL
     colnames(assay) <- gsub(paste0(num_col, "."), "", colnames(assay))
-    # Convert to matrix
-    assay <- as.matrix(assay)
 
+    # Try to convert columns to numeric.
+    assay <- .convert_cols_numeric(assay)
+    # Samples are in columns and features in rows
+    assay <- t(assay)
+    assay <- as.matrix(assay)
     # Get rowData, remove duplicates, order it based on assay and convert to DF
     row_data <- type[ , row_info, drop = FALSE]
     row_data <- row_data[ !duplicated(row_data), ]
     rownames(row_data) <- row_data[[rownames_col]]
     row_data <- row_data[ rownames(assay), ]
     row_data <- DataFrame(row_data)
-    # Same for colData
-    col_data <- type[ , col_info, drop = FALSE]
-    col_data <- col_data[ !duplicated(col_data), ]
-    rownames(col_data) <- col_data[[accession_col]]
-    col_data <- col_data[colnames(assay), ]
+    # # Same for colData
+    # col_data <- type[ , col_info, drop = FALSE]
+    # col_data <- col_data[ !duplicated(col_data), ]
+    # rownames(col_data) <- col_data[[accession_col]]
+    # col_data <- col_data[colnames(assay), ]
+    # # Add common metadata. Add those columns that are not yet present
+    # common_cols <- colnames(metadata)[ !colnames(
+    #     metadata) %in% colnames(col_data) ]
+    # common_cols <- c("accession", common_cols)
+    # metadata <- metadata[ , common_cols, drop = FALSE]
+    # col_data <- merge(
+    #     col_data, metadata, by = "accession", all.x = TRUE,
+    #     suffixes = c("", ".y"))
+    # # Remove those columns that do not have data
+    # empty <- unlist( lapply(col_data, function(x) all(is.na(x))) )
+    # empty <- names(empty)[ empty ]
+    # # Remove also unit columns if there are
+    # empty <- c(empty, paste0(empty, ", unit"))
+    # col_data <- col_data[ , !colnames(col_data) %in% empty, drop = FALSE]
+    # col_data <- DataFrame(col_data)
+
+    col_data <- metadata[colnames(assay), ]
+    empty <- unlist( lapply(col_data, function(x) all(is.na(x))) )
+    empty <- names(empty)[ empty ]
+    # Remove also unit columns if there are
+    empty <- c(empty, paste0(empty, ", unit"))
+    col_data <- col_data[ , !colnames(col_data) %in% empty, drop = FALSE]
     col_data <- DataFrame(col_data)
+
+    # Rename samples so that they get animal accession and time point info. ################################################
+    # Sample IDs are unique for omics; with animal IDs, we can match samples
+    # between omics.
 
     # Create SummarizedExperiment
     assays <- SimpleList(assay)
     names(assays) <- assay.type
     se <- SummarizedExperiment(
-        assays = assays, rowData = row_data, colData = col_data)
+        assays = assays, rowData = row_data,
+        colData = col_data
+        )
     return(se)
+}
+
+.convert_cols_numeric <- function(df){
+    df <- as.data.frame(df, check.names = FALSE)
+    # Skip those columns that are list
+    is_list <- unlist(lapply(df, is.list))
+    list_cols <- df[ , is_list, drop = FALSE]
+    vec_cols <- df[ , !is_list, drop = FALSE]
+    # Loop through columns. Try to convert values to numeric.
+    col_names <- rownames(df)
+    vec_cols <- lapply(vec_cols, function(x){
+        # Some numeric values have comma instead of point
+        temp <- gsub(",", ".", x)
+        # Try to convert to numeric
+        temp_num <-- suppressWarnings( as.numeric(temp) )
+        # Check if we lost info. If we did, then the column is not numeric. If
+        # there are as many NAs in same places as before, conversion was
+        # succesful and the values are numeric.
+        if( all(is.na(temp_num) == is.na(x)) ){
+            x <- temp_num
+        }
+        return(x)
+    })
+    # Convert list to data.frame --> check names so that feature names are
+    # not modified
+    vec_cols <- as.data.frame(vec_cols, check.names = FALSE)
+    rownames(vec_cols) <- col_names
+    df <- cbind(vec_cols, list_cols)
+    return(df)
 }
 
 .convert_to_table <- function(type){
@@ -166,6 +244,10 @@ getResult <- function(accession, ...){
     long_data <- t(long_data)
     long_data <- as.data.frame(long_data)
     long_data[["accession"]] <- rownames(long_data)
+    # Add only those columns that are not shared
+    cols <- colnames(long_data)[ !colnames(long_data) %in% colnames(table) ]
+    cols <- c(cols, "accession")
+    long_data <- long_data[ , cols, drop = FALSE]
     # Add to wide data
     table <- merge(table, long_data, by = "accession", suffixes = c("",".y"))
 
@@ -183,7 +265,7 @@ getResult <- function(accession, ...){
         # If there are units info for variables
         if( nrow(units) > 0 ){
             # Modify marker name and add it to rownames
-            rownames(units) <- paste0(units[[marker_col]], ", units")
+            rownames(units) <- paste0(units[[marker_col]], ", unit")
             # Create data.frame where each column represent measure name and its
             # unit
             units[[marker_col]] <- NULL

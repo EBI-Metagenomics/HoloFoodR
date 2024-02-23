@@ -52,7 +52,7 @@ doQuery <- function(
         })
 
         col <- do.call(rbind, col)
-        col <- as.data.frame(res)
+        col <- as.data.frame(col)
         colnames(col) <- uniq_types
 
         res <- cbind(res, col)
