@@ -4,11 +4,40 @@ getResult <- function(accession, ...){
     # If user tries to feed accession.type or type, grab it
     args <- list(...)
     args <- args[ !names(args) %in% c("type", "accession.type", "flatten")]
+    # Get all the arguments
     args[["accession.type"]] <- "samples"
     args[["accession"]] <- accession
     args[["flatten"]] <- TRUE
+    # Get results
     res <- do.call(getData, args)
 
+    # Split results so that each metadata marker type gets own table
+    f <- res[["marker.type"]]
+    res <- split(res, f)
+
+    # Parse results. Get those columns that go to metadata
+    metadata_types <- c(
+        "ENA Checklist", "TRIAL", "SAMPLE", "TREATMENT", "TANK",
+        "TOTAL FAT CONTENT", "IODINE")
+    metadata_types <-  names(res)[ names(res) %in% metadata_types ]
+    # All other datatypes go to unique omics
+    omic_types <- names(res)[ !names(res) %in% metadata_types ]
+    # Divide the data to metadata and omics
+    metadata_types <- res[ metadata_types ]
+    omic_types <- res[ omic_types ]
+
+    metadata <- .construct_metadata(metadata_types)
+    omics <- .construct_omics_data(omics_types)
+
+    if( !is.null(omics) ){
+        res <- omics
+        if(!is.null(metadata)){
+            metadata <- DataFrame(metadata)
+            colData(res) <- metadata
+        }
+    } else{
+        res <- metadata
+    }
     # Check if there are metagenomic samples. Give message about MGnifyR
 
 
@@ -22,6 +51,41 @@ getResult <- function(accession, ...){
     return(res)
 }
 
+.construct_metadata <- function(res){
+    # If there are results
+    if( length(res) > 0 ){
+        # Convert each sample metadata type to table where each row represents
+        # single sample
+        res <- lapply(res, .convert_to_table)
+        # Combine data
+        res <- Reduce(
+            function(df1, df2) merge(df1, df2, by = common_cols, all = TRUE),
+            res)
+        # Check if duplicated accession IDs
+        dupl_acc <- duplicated(res[["accession"]])
+        if( any(dupl_acc) ){
+            # Create a list from columns that have multiple values for
+            # certain rows.
+            res <- .collapse_df(res)
+        }
+        # Add accession IDs as rownames
+        rownames(res) <- res[["accession"]]
+    } else{
+        res <- NULL
+    }
+    return(res)
+}
+
+.construct_omics_data <- function(res){
+    if( length(res) > 0 ){
+        res <- lapply(res, .convert_to_table)
+        res <- ExperimentList(res)
+        res <- MultiAssayExperiment(res)
+    } else{
+        res <- NULL
+    }
+    return(res)
+}
 
 .convert_to_SummarizedExperiment <- function(type, assay.type = "counts", ...){
     # Check assay.type
@@ -101,71 +165,82 @@ getResult <- function(accession, ...){
     # Transpose to correct orientation
     long_data <- t(long_data)
     long_data <- as.data.frame(long_data)
-    # Add to wide data
     long_data[["accession"]] <- rownames(long_data)
-    table <- merge(table, long_data, by = "accession")
+    # Add to wide data
+    table <- merge(table, long_data, by = "accession", suffixes = c("",".y"))
 
+    # If there is units info, add it to column since now variables are as
+    # columns so units are not defined correctly
+    marker_col <- "marker.name"
+    unit_col <- "units"
+    if( all(c(marker_col, unit_col) %in% colnames(type)) ){
+        # Remove units from table
+        table[[unit_col]] <- NULL
+        # Get unique units, drop NA values
+        units <- type[ , c(marker_col, unit_col), drop = FALSE]
+        units <- units[ !duplicated(units[[marker_col]]), ]
+        units <- units[ !is.na(units[[unit_col]]), ]
+        # If there are units info for variables
+        if( nrow(units) > 0 ){
+            # Modify marker name and add it to rownames
+            rownames(units) <- paste0(units[[marker_col]], ", units")
+            # Create data.frame where each column represent measure name and its
+            # unit
+            units[[marker_col]] <- NULL
+            units <- t(units)
+            rownames(units) <- NULL
+            units <- as.data.frame(units)
+            # Replicate row so that there are as many rows as in original table
+            units <- units[rep(1, nrow(table)), ]
+            # Add to original table
+            table <- cbind(table, units)
+        }
+    }
     # Remove duplicates
     table <- table[ !duplicated(table), ]
-    # Check if duplicated accession IDs
-    dupl_acc <- duplicated(table[["accession"]])
-    if( any(dupl_acc) ){
-        # Create a list from columns that have multiple values for certain rows.
-        table <- .collapse_df(table)
-    }
-
-
-    # Check if there are analysis summaries tables, t
-    # ind <- grepl("analysis_summaries", colnames(table))
-    # if( any(ind) ){
-    #     col_names <- colnames(table)[ind]
-    #     # # Split columns based on accession
-    #     # col <- split(table[, col_names, drop = FALSE], table[["accession"]])
-    #     # # Remove column and the duplicates
-    #     # table <- table[ , !colnames(table) %in% col_names, drop = FALSE]
-    #     # table <- table[ !duplicated(table), ]
-    #     # # Spread column, from long to wide
-    #     # col <- .spread_column(col)
-    #     # # Add back
-    #     # table <- cbind(table, col)
-    #
-    #     ########################################################### Give warning if flattened --> cretae unflatten_col function
-    #     # Loop through column names. Take every value related to certain
-    #     # accession --> create a list and assign the list to column
-    #     col_list <- lapply(col_names, function(x){
-    #         split(table[[x]], table[["accession"]])
-    #     })
-    #     names(col_list) <- col_names
-    #     # Remove column and the duplicates
-    #     table <- table[ , !colnames(table) %in% col_names, drop = FALSE]
-    #     table <- table[ !duplicated(table), ]
-    #     #
-    #     for( name in col_names ){
-    #         table[[name]] <- col_list[[name]]
-    #     }
-    # }
     return(table)
 }
 
 .collapse_df <- function(table){
     # Check which columns are the problem
     dupl_col <- lapply(colnames(table), function(col){
-        # Get column and accessons. Check if there are only unique values -->
-        # then this column is the problematic column
-        any(duplicated( table[, c("accession", col)] ))
+        # Get column and accessions. Remove duplicates and check if the number
+        # of unique values do not match with number of unique accessions -->
+        # duplicated column
+        N_accession <- length(unique( table[["accession"]] ))
+        N_values <- nrow(unique( table[, c("accession", col), drop = FALSE] ))
+        temp <- N_values != N_accession
+        return(temp)
     })
     dupl_col <- unlist(dupl_col)
     # Get duplicated columns
-    dupl_col_names <- colnames(table)[ !dupl_col ]
+    dupl_col_names <- colnames(table)[ dupl_col ]
     dupl_col <- table[, c("accession", dupl_col_names), drop = FALSE]
     # Remove duplicated columns from table and remove duplicates
     table <- table[, !colnames(table) %in% dupl_col_names, drop = FALSE]
     table <- table[ !duplicated(table), ]
     # Loop through problematic columns
     for( name in dupl_col_names ){
+        # Get column
+        col <- dupl_col[, c("accession", name), drop = FALSE]
         # Split column to list
-        col <- split(dupl_col[[name]], dupl_col[["accession"]])
-        # Add it to back to origibal table
+        col <- split(col[[name]], col[["accession"]])
+        # Loop through accessions/rows, there might be that values are NA or
+        # replicated. Take only non-replicated values (or if any values are not
+        # found, NA)
+        col <- lapply(col, function(values){
+            values <- unique(values)
+            values <- values[ !is.na(values) ]
+            if(length(values) == 0){
+                values <- NA
+            }
+            return(values)
+        })
+        # Convert to vector if there is only one value for each accession
+        if( all(lengths(col) == 1) ){
+            col <- unlist(col)
+        }
+        # Add it to back to original table
         table[[name]] <- col
     }
     return(table)
