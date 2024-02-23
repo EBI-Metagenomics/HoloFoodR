@@ -105,34 +105,69 @@ getResult <- function(accession, ...){
     long_data[["accession"]] <- rownames(long_data)
     table <- merge(table, long_data, by = "accession")
 
-    # Check if there are analysis summaries tables, t
-    ind <- grepl("analysis_summaries", colnames(table))
-    if( any(ind) ){
-        col_names <- colnames(table)[ind]
-        # # Split columns based on accession
-        # col <- split(table[, col_names, drop = FALSE], table[["accession"]])
-        # # Remove column and the duplicates
-        # table <- table[ , !colnames(table) %in% col_names, drop = FALSE]
-        # table <- table[ !duplicated(table), ]
-        # # Spread column, from long to wide
-        # col <- .spread_column(col)
-        # # Add back
-        # table <- cbind(table, col)
+    # Remove duplicates
+    table <- table[ !duplicated(table), ]
+    # Check if duplicated accession IDs
+    dupl_acc <- duplicated(table[["accession"]])
+    if( any(dupl_acc) ){
+        # Create a list from columns that have multiple values for certain rows.
+        table <- .collapse_df(table)
+    }
 
-        ########################################################### Give warning if flattened --> cretae unflatten_col function
-        # Loop through column names. Take every value related to certain
-        # accession --> create a list and assign the list to column
-        col_list <- lapply(col_names, function(x){
-            split(table[[x]], table[["accession"]])
-        })
-        names(col_list) <- col_names
-        # Remove column and the duplicates
-        table <- table[ , !colnames(table) %in% col_names, drop = FALSE]
-        table <- table[ !duplicated(table), ]
-        #
-        for( name in col_names ){
-            table[[name]] <- col_list[[name]]
-        }
+
+    # Check if there are analysis summaries tables, t
+    # ind <- grepl("analysis_summaries", colnames(table))
+    # if( any(ind) ){
+    #     col_names <- colnames(table)[ind]
+    #     # # Split columns based on accession
+    #     # col <- split(table[, col_names, drop = FALSE], table[["accession"]])
+    #     # # Remove column and the duplicates
+    #     # table <- table[ , !colnames(table) %in% col_names, drop = FALSE]
+    #     # table <- table[ !duplicated(table), ]
+    #     # # Spread column, from long to wide
+    #     # col <- .spread_column(col)
+    #     # # Add back
+    #     # table <- cbind(table, col)
+    #
+    #     ########################################################### Give warning if flattened --> cretae unflatten_col function
+    #     # Loop through column names. Take every value related to certain
+    #     # accession --> create a list and assign the list to column
+    #     col_list <- lapply(col_names, function(x){
+    #         split(table[[x]], table[["accession"]])
+    #     })
+    #     names(col_list) <- col_names
+    #     # Remove column and the duplicates
+    #     table <- table[ , !colnames(table) %in% col_names, drop = FALSE]
+    #     table <- table[ !duplicated(table), ]
+    #     #
+    #     for( name in col_names ){
+    #         table[[name]] <- col_list[[name]]
+    #     }
+    # }
+    return(table)
+}
+
+.collapse_df <- function(table){
+    # Check which columns are the problem
+    dupl_col <- lapply(colnames(table), function(col){
+        # Get column and accessons. Check if there are only unique values -->
+        # then this column is the problematic column
+        any(duplicated( table[, c("accession", col)] ))
+    })
+    dupl_col <- unlist(dupl_col)
+    # Get duplicated columns
+    dupl_col_names <- colnames(table)[ !dupl_col ]
+    dupl_col <- table[, c("accession", dupl_col_names), drop = FALSE]
+    # Remove duplicated columns from table and remove duplicates
+    table <- table[, !colnames(table) %in% dupl_col_names, drop = FALSE]
+    table <- table[ !duplicated(table), ]
+    # Loop through problematic columns
+    for( name in dupl_col_names ){
+        # Split column to list
+        col <- split(dupl_col[[name]], dupl_col[["accession"]])
+        # Add it to back to origibal table
+        table[[name]] <- col
     }
     return(table)
 }
+
