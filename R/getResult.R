@@ -1,86 +1,138 @@
 # Get data with getData. Format it so that we get SE. accession must be specified and it must be samples
 
 getResult <- function(accession, ...){
-    # If user tries to feed accession.type or type, grab it
+    # If user tries to feed accession.type or type, disable them
     args <- list(...)
     args <- args[ !names(args) %in% c("type", "accession.type", "flatten")]
     # Get all the arguments
     args[["accession.type"]] <- "samples"
     args[["accession"]] <- accession
     args[["flatten"]] <- FALSE
-    # Get results
-    res <- do.call(getData, args)
-    whole_data <- res
-    res <- res[["structured_metadata"]]
-    colnames(res)[ colnames(res) == "query_accession" ] <- "accession"
+    # Get results about samples
+    sample_data <- do.call(getData, args)
 
-    # Split results so that each metadata marker type gets own table
-    f <- res[["marker.type"]]
-    res <- split(res, f)
-
-    # Parse results. Get those columns that go to metadata
-    metadata_types <- c(
-        "ENA Checklist", "TRIAL", "SAMPLE", "TREATMENT", "TANK"
-        #"TOTAL FAT CONTENT", "IODINE"
-        )
-    metadata_types <-  names(res)[ names(res) %in% metadata_types ]
-    # All other datatypes go to unique omics
-    omic_types <- names(res)[ !names(res) %in% metadata_types ]
-    # Divide the data to metadata and omics
-    metadata_types <- res[ metadata_types ]
-    omic_types <- res[ omic_types ]
-
-    # Instead of samples, match with animal ID. Sample IDs do not match between omics
-    # there might be multiple animal IDs. Matcj between animal ID and timepoint.
-    metadata <- .construct_metadata(metadata_types)
-    omics <- .construct_omics_data(omic_types, metadata)
+    omics_list <- .construct_MAE(sample_data)
+    mae <- omics_list[["mae"]]
+    sample_metadata <- omics_list[["metadata"]]
 
     # Get animal metadata
-    animal_metadata <- getData(accession.type = "animals", accession = unique(whole_data$animal$animal))
-    animal_metadata <- animal_metadata$structured_metadata
-    colnames(animal_metadata)[ colnames(animal_metadata) == "query_accession" ] <- "accession"
-    f <- animal_metadata[["marker.type"]]
-    animal_metadata <- split(animal_metadata, f)
+    uniq_animals <- unique(sample_metadata[["animal"]])
+    animal_data <- getData(accession.type = "animals", accession = uniq_animals)
 
-    animal_metadata <- .construct_metadata(animal_metadata)
-    animal_metadata <- animal_metadata[ match(whole_data$animal$animal, animal_metadata$accession), ]
-    rownames(animal_metadata) <- whole_data$animal$query_accession
+    mae <- .add_metadata_to_MAE(mae, sample_metadata, animal_data)
 
-    animal_metadata <- .convert_cols_numeric(animal_metadata)
-
-    # There are samples that are not presented in dataset
-    not_found <- accession[ !accession %in% unlist(colnames(omics)) ]
-    not_found <- metadata[ metadata$accession %in% not_found, ]
-
-
-    if( !is.null(omics) ){
-        res <- omics
-        if(!is.null(metadata)){
-            metadata <- DataFrame(animal_metadata, check.names = FALSE)
-            colData(res) <- metadata
+    # # There are samples that are not presented in dataset
+    not_found <- accession[ !accession %in% unlist(colnames(mae)) ]
+    if( length(not_found) ){
+        types <- sample_data[["sample_type"]]
+        types <- types[types[["query_accession"]] %in% accession, "sample_type"]
+        msg <- "Data for following samples cannot be found."
+        if( "metagenomic_assembly" %in% types ){
+            msg <- paste0(
+                msg, " (Note that metagenomic assemblies can be ",
+                "found from MGnify database. See MGnifyR package.)")
         }
-    } else{
-        res <- metadata
+        msg <- paste0(msg, ":\n'", paste(not_found, collapse = "', '"), "'")
+        warning(msg, call. = FALSE)
     }
-    # Check if there are metagenomic samples. Give message about MGnifyR
+    return(mae)
+}
 
+.construct_MAE <- function(sample_data){
+    # Get only structured metadata table. It includes info about measurements.
+    # Other tables include info for instance about animals.
+    sample_tab <- sample_data[["structured_metadata"]]
+    colnames(sample_tab)[ colnames(
+        sample_tab) == "query_accession" ] <- "accession"
 
+    # Split results so that each metadata marker type gets own table
+    f <- sample_tab[["marker.type"]]
+    sample_tab <- split(sample_tab, f)
 
-    # Convert result to SE
+    # Some metadata markers are sample information that goes to sample metadata
+    metadata_types <- c(
+        "ENA Checklist", "TRIAL", "SAMPLE", "TREATMENT", "TANK"
+    )
+    metadata_types <-  names(sample_tab)[ names(sample_tab) %in% metadata_types ]
+    # All other datatypes are stored as unique omics
+    omic_types <- names(sample_tab)[ !names(sample_tab) %in% metadata_types ]
+    # Divide the data to metadata and omics
+    metadata_types <- sample_tab[ metadata_types ]
+    omic_types <- sample_tab[ omic_types ]
 
-    metadata_markers <- getData(type = "sample_metadata_markers")
+    # Create metadata table from metadata types
+    metadata <- .construct_metadata_from_markers(metadata_types)
+    # Add rest of the sample data to metadata
+    sample_data <- sample_data[ !names(sample_data) %in% "structured_metadata" ]
+    metadata <- .add_sample_data_to_metadata(sample_data, metadata)
+    # Create SE objecst from individual omics. Add metadata to SEs,
+    # Add omics to MAE.
+    omics <- .construct_omics_data_from_markers(omic_types, metadata)
 
-    # Metagenomic cannot be included
-    # The samples include metageomic that cannot eb included see MGnifyR package.
+    # Create a result list
+    res <- list(mae = omics, metadata = metadata)
     return(res)
 }
 
-.construct_metadata <- function(res){
+.add_metadata_to_MAE <- function(mae, metadata, animal_data){
+
+    animal_tab <- animal_data[["structured_metadata"]]
+    colnames(animal_tab)[ colnames(animal_tab) == "query_accession" ] <- "accession"
+    f <- animal_tab[["marker.type"]]
+    animal_tab <- split(animal_tab, f)
+
+    animal_tab <- .construct_metadata_from_markers(animal_tab)
+    animal_tab <- animal_tab[ match(metadata[["animal"]], animal_tab[["accession"]]), ]
+    rownames(animal_tab) <- metadata[["accession"]]
+
+    # Convert accesison to animal which format is used in sample data also
+    colnames(animal_tab)[ colnames(animal_tab) == "accession" ] <- "animal"
+
+    animal_tab <- .convert_cols_numeric(animal_tab)
+
+    metadata <- DataFrame(animal_tab, check.names = FALSE)
+    metadata <- metadata[ rownames(metadata) %in% unlist(colnames(mae)), ]
+
+    colData(mae) <- metadata
+    # Check if there are metagenomic samples. Give message about MGnifyR
+
+    # Metagenomic cannot be included
+    return(mae)
+}
+
+.add_sample_data_to_metadata <- function(sample_data, metadata){
+    # Get non empty tables
+    sample_data <- sample_data[ lengths(sample_data) > 0 ]
+    # If there is analysis summaries table, add prefixes to its names so that
+    # they do not match with the main table
+    if( "analysis_summaries" %in% names(sample_data) ){
+        # Get colnames
+        cols <- colnames(sample_data[["analysis_summaries"]])
+        # Add prefix
+        cols[ !cols %in% c("query_accession")] <- paste0(
+            "analysis_summaries.", cols[ !cols %in% c("query_accession")])
+        # Add colnames back
+        colnames(sample_data[["analysis_summaries"]]) <- cols
+    }
+    # Merge sample data
+    sample_data <- Reduce(
+        function(df1, df2) merge(df1, df2, all = TRUE), sample_data)
+    # Sample data has same title column that metadata --> remove
+    sample_data <- sample_data[ , !colnames(sample_data) %in% c("title"), drop = FALSE]
+    # Add to metadata
+    metadata <- merge(metadata, sample_data, by = "accession", all = TRUE)
+    # Remove duplicated accessions.
+    metadata <- metadata[ !duplicated(metadata[["accession"]]), ]
+    rownames(metadata) <- metadata[["accession"]]
+    return(metadata)
+}
+
+.construct_metadata_from_markers <- function(res){
     # If there are results
     if( length(res) > 0 ){
         # Convert each sample metadata type to table where each row represents
         # single sample
-        res <- lapply(res, .convert_to_table)
+        res <- lapply(res, .convert_type_to_table)
         # Combine data
         res <- Reduce(function(df1, df2) merge(df1, df2, all = TRUE), res)
         # Check if duplicated accession IDs
@@ -98,9 +150,9 @@ getResult <- function(accession, ...){
     return(res)
 }
 
-.construct_omics_data <- function(res, metadata){
+.construct_omics_data_from_markers <- function(res, metadata){
     if( length(res) > 0 ){
-        res <- lapply(res, .convert_to_SummarizedExperiment, metadata)
+        res <- lapply(res, .convert_type_to_SummarizedExperiment, metadata)
         res <- ExperimentList(res)
         res <- MultiAssayExperiment(res)
     } else{
@@ -109,7 +161,7 @@ getResult <- function(accession, ...){
     return(res)
 }
 
-.convert_to_SummarizedExperiment <- function(
+.convert_type_to_SummarizedExperiment <- function(
         type, metadata, assay.type = "counts", ...){
     # Check assay.type
     temp <- .check_input(assay.type, list("character scalar"))
@@ -220,7 +272,7 @@ getResult <- function(accession, ...){
     return(df)
 }
 
-.convert_to_table <- function(type){
+.convert_type_to_table <- function(type){
     # Get those columns that are in long format and wide
     long_info <- c("accession", "measurement", "marker.name")
     wide_info <- c("accession", colnames(type)[!colnames(type) %in% long_info])
