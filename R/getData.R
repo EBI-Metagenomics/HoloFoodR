@@ -49,7 +49,8 @@ getData <- function(
             "specified.", call. = FALSE)
     }
     ############################### INPUT CHECK ################################
-    # Create paths
+    # Create paths. If there are multiple accessions specified, this step
+    # results to multiple paths
     if( !is.null(accession) ){
         path <- paste0(accession.type, "/", accession)
         if( !is.null(type) ){
@@ -62,24 +63,29 @@ getData <- function(
     # retrieve data only once) and get data
     res <- lapply(path, function(x){ .retrieve_from_db(x, max.hits, ...) })
 
-    # If there were multiple results, accession was used --> combine data
-    if( !is.null(accession) ){
+    # If there were multiple accessions, there are multiple results -->
+    # combine data from multiple results/accessions. The tables are combined so
+    # that each table type is preserved separately meaning that the result is
+    # not necessarily a single data.frame but a list of data.frames, each
+    # including multiple results.
+    if( !is.null(accession) && length(accession) > 1 ){
         names(res) <- accession
         res <- .merge_data(res, ...)
     } else{
+        # Otherwise get the single result.
         res <- res[[1]]
     }
 
-    # flatten if user has specified. DO this first and rhen sampletypes, because
-    # sample types is good data to test.
+    # flatten if user has specified.
     if( flatten ){
+        # The result can be a list of data.frames. In order to flatten the data
+        # it must be first combined into single data.frame.
         if( !is.data.frame(res) ){
             res <- .join_datatypes(res)
         }
-
-        if( is.data.frame(res) ){
-            res <- .flatten_df(res)
-        }
+        # Now we can flatten the data --> collapse columns that are lists into
+        # multiple columns
+        res <- .flatten_df(res)
     }
 
     return(res)
@@ -87,38 +93,58 @@ getData <- function(
 
 ################################ HELP FUNCTIONS ################################
 
+# There might be multiple data.frames in results, each representing unique
+# datatype. This function combines these datatypes into single data.frame
 .join_datatypes <- function(res, ...){
-    not_empty <- lapply(res, function(x) nrow(x) > 0)
-    not_empty <- unlist(not_empty)
-    tab <- res
+    # Check whether data types are empty
+    not_empty <- lengths(res) > 0
+    # If there are dfs that have info
     if( any(not_empty) ){
+        # Get non-empty data.frames / data types
         res <- res[ not_empty ]
+        datatypes <- names(res)
 
-        tab_names <- names(res)
+        # If the data type has column including analysis summaries, add
+        # info to column names. That is because analysis summaries have
+        # column names that are also in main data (such as title).
+        analysis_tab <- "analysis_summaries"
+        if( analysis_tab %in% datatypes ){
+            temp <- res[[analysis_tab]]
+            temp <- .add_datatype_to_colnames(temp, analysis_tab)
+            res[[analysis_tab]] <- temp
+        }
 
+        # Get first data type
         tab <- res[[1]]
         tab_name <- names(res)[[1]]
-        if( tab_name %in% c("analysis_summaries") ){
-            tab <- .add_datatype_to_colnames(tab, tab_name)
-        }
-        if(length(tab_names) > 1){
-            for(tab_name in tab_names[2:length(tab_names)]){
-                temp <- res[[ tab_name ]]
-                #
+        # If there were more than 1 data type
+        if(length(datatypes) > 1){
+            # Loop through types
+            for( type in datatypes[2:length(datatypes)] ){
+                temp <- res[[ type ]]
+                # If the column names are already present in the data, add
+                # data type to column names that are being added.
                 if( sum(colnames(temp) %in% colnames(tab)) > 1 ){
-                    temp <- .add_datatype_to_colnames(temp, tab_name)
+                    temp <- .add_datatype_to_colnames(temp, type)
                 }
-                tab <- dplyr::full_join(tab, temp, by = "query_accession") ############################################################ Remove query accession from the data
+                # Add data based on accession ID
+                tab <- dplyr::full_join(tab, temp, by = "query_accession")
             }
         }
     } else{
         warning(
             "Cannot join data.frames since they are all empty.", call. = FALSE)
+        tab <- res
     }
     return(tab)
 }
 
+# Add data type to column names. Exclude column that has accession IDs (do not
+# add data type to it).
 .add_datatype_to_colnames <- function(df, tab_name, ex = "query_accession"){
+    #
+    temp <- .check_input(ex, list("character scalar"))
+    #
     nams <- colnames(df)
     nams[ !nams %in% "query_accession" ] <- paste0(
         tab_name, ".", nams[ !nams %in% "query_accession" ])
@@ -126,21 +152,23 @@ getData <- function(
     return(df)
 }
 
+# This function loops through results and combine the tables so that each
+# data type still has unique table but the table has now all accessions.
 .merge_data <- function(res, ...){
     # Remove empty elements
     res <- res[ lengths(res) > 0 ]
     # If there are still results left
     if( length(res) > 0 ){
-        # Get datatypes from the first element
-        datatypes <- names(res[[1]])
+        # Get datatypes
+        datatypes <- unique(unlist(lapply(res, names)))
         # Loop through datatypes
         res <- lapply(datatypes, function(type){
-            # Get the data from each element
+            # Loop through each accession
             temp <- lapply(names(res), function(accession){
                 # Get the data
                 r <- res[[ accession ]][[ type ]]
                 if( !is.null(r) ){
-                    # If it is not data.frame, create
+                    # If it is not data.frame, create data.frame from it
                     if( !is.data.frame(r) ){
                         r <- as.data.frame(r)
                         colnames(r) <- type
@@ -150,7 +178,7 @@ getData <- function(
                 }
                 return(r)
             })
-            # Combine
+            # Combine accessions into single data.frame
             temp <- bind_rows(temp)
             temp <- as.data.frame(temp)
             return(temp)
