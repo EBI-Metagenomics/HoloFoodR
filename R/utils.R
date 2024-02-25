@@ -46,7 +46,7 @@
         return(class)
     })
     classes_char <- unlist(classes_char)
-    # Based on length of the classes, the msg is different
+    # Based on number of acceptable classes, the msg is different
     if( length(classes_char) > 2 ){
         class_txt <- paste0(
             paste(classes_char[1:(length(classes_char)-1)], collapse = ", "),
@@ -220,6 +220,8 @@
     return(res)
 }
 
+# This function performs a single query to database (or gets the data from
+# cache) and returns a data.frame
 .perform_single_query <- function(
         path, use.cache = TRUE, cache.dir = tempdir(), clear.cache = FALSE,
         base.url = "https://www.holofooddata.org/api", ...){
@@ -291,20 +293,30 @@
     return(res)
 }
 
+# Some columns/datatypes from database have multiple values so they are lists.
+# This function goes through those columns and spread them so that each cell has
+# only one value.
 .flatten_df <- function(res){
+    # Get which column is a list
     is_list <- lapply(res, is.list)
     is_list <- unlist(is_list)
     is_list <- names(is_list)[ is_list ]
+    # Loop through those columns
     for(col_name in is_list ){
+        # Get te column and remove it from the original table
         col <- res[[col_name]]
         res[[col_name]] <- NULL
+        # Create a data.frame with multiple columns from the column
         col <- .spread_column(col)
+        # Add info on what column was spread
         colnames(col) <- paste0(col_name, ".", colnames(col))
         res <- cbind(res, col)
     }
     return(res)
 }
 
+# This function creates a data.frame with multiple columns from column that
+# is a list.
 .spread_column <- function(col){
     # Spread column by unlisting values
     col <- lapply(col, function(x){
