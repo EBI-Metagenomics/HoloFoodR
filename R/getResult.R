@@ -8,36 +8,48 @@ getResult <- function(accession, ...){
     args[["accession.type"]] <- "samples"
     args[["accession"]] <- accession
     args[["flatten"]] <- FALSE
-    # Get results about samples
+    # Get data on samples
     sample_data <- do.call(getData, args)
-
+    # Create a MultiAssayExperiment from the data
     omics_list <- .construct_MAE(sample_data)
     mae <- omics_list[["mae"]]
     sample_metadata <- omics_list[["metadata"]]
 
-    # Get animal metadata
+    # Get animal metadata for colData of MAE
+    # Get all the animals present in sample metadata
     uniq_animals <- unique(sample_metadata[["animal"]])
+    # Retrieve the data
     animal_data <- getData(accession.type = "animals", accession = uniq_animals)
-
+    # Add the data to MAE
     mae <- .add_metadata_to_MAE(mae, sample_metadata, animal_data)
 
-    # # There are samples that are not presented in dataset
+    # If there are samples that user wanted to include but are not present in
+    # the data (they do not have data in HoloFood database), give warning
     not_found <- accession[ !accession %in% unlist(colnames(mae)) ]
     if( length(not_found) ){
+        # Create a message
+        msg <- "Data for following samples cannot be found."
+        # Get the type of samples
         types <- sample_data[["sample_type"]]
         types <- types[types[["query_accession"]] %in% accession, "sample_type"]
-        msg <- "Data for following samples cannot be found."
+        # If metagenomic assembly was one of the samples that user wanted, give
+        # information that it can be found from MGnify database.
         if( "metagenomic_assembly" %in% types ){
             msg <- paste0(
                 msg, " (Note that metagenomic assemblies can be ",
                 "found from MGnify database. See MGnifyR package.)")
         }
+        # Add those sample IDs that cannot be found to message
         msg <- paste0(msg, ":\n'", paste(not_found, collapse = "', '"), "'")
         warning(msg, call. = FALSE)
     }
+    ####################################################### SOME OF THE COLDATA(MAE CALUES ARE IN LIST FORMAT --> CONVERT TO CHARACTER
     return(mae)
 }
 
+################################ HELP FUNCTIONS ################################
+
+# This function constructs MAE object from the sample data.
 .construct_MAE <- function(sample_data){
     # Get only structured metadata table. It includes info about measurements.
     # Other tables include info for instance about animals.
@@ -74,32 +86,9 @@ getResult <- function(accession, ...){
     return(res)
 }
 
-.add_metadata_to_MAE <- function(mae, metadata, animal_data){
-
-    animal_tab <- animal_data[["structured_metadata"]]
-    colnames(animal_tab)[ colnames(animal_tab) == "query_accession" ] <- "accession"
-    f <- animal_tab[["marker.type"]]
-    animal_tab <- split(animal_tab, f)
-
-    animal_tab <- .construct_metadata_from_markers(animal_tab)
-    animal_tab <- animal_tab[ match(metadata[["animal"]], animal_tab[["accession"]]), ]
-    rownames(animal_tab) <- metadata[["accession"]]
-
-    # Convert accesison to animal which format is used in sample data also
-    colnames(animal_tab)[ colnames(animal_tab) == "accession" ] <- "animal"
-
-    animal_tab <- .convert_cols_numeric(animal_tab)
-
-    metadata <- DataFrame(animal_tab, check.names = FALSE)
-    metadata <- metadata[ rownames(metadata) %in% unlist(colnames(mae)), ]
-
-    colData(mae) <- metadata
-    # Check if there are metagenomic samples. Give message about MGnifyR
-
-    # Metagenomic cannot be included
-    return(mae)
-}
-
+# We have already sample metadata from structured metadata. However, sample
+# data also includes some additional tables. This function adds those additional
+# tables to metadata.
 .add_sample_data_to_metadata <- function(sample_data, metadata){
     # Get non empty tables
     sample_data <- sample_data[ lengths(sample_data) > 0 ]
@@ -118,7 +107,8 @@ getResult <- function(accession, ...){
     sample_data <- Reduce(
         function(df1, df2) merge(df1, df2, all = TRUE), sample_data)
     # Sample data has same title column that metadata --> remove
-    sample_data <- sample_data[ , !colnames(sample_data) %in% c("title"), drop = FALSE]
+    sample_data <- sample_data[ , !colnames(
+        sample_data) %in% c("title"), drop = FALSE]
     # Add to metadata
     metadata <- merge(metadata, sample_data, by = "accession", all = TRUE)
     # Remove duplicated accessions.
@@ -127,6 +117,8 @@ getResult <- function(accession, ...){
     return(metadata)
 }
 
+# This function creates a sample metadata from specific markers of structured
+# metadata.
 .construct_metadata_from_markers <- function(res){
     # If there are results
     if( length(res) > 0 ){
@@ -139,7 +131,8 @@ getResult <- function(accession, ...){
         dupl_acc <- duplicated(res[["accession"]])
         if( any(dupl_acc) ){
             # Create a list from columns that have multiple values for
-            # certain rows.
+            # certain rows. (Otherwise it could not be added to colData since
+            # only one row must point to single sample)
             res <- .collapse_df(res)
         }
         # Add accession IDs as rownames
@@ -150,128 +143,8 @@ getResult <- function(accession, ...){
     return(res)
 }
 
-.construct_omics_data_from_markers <- function(res, metadata){
-    if( length(res) > 0 ){
-        res <- lapply(res, .convert_type_to_SummarizedExperiment, metadata)
-        res <- ExperimentList(res)
-        res <- MultiAssayExperiment(res)
-    } else{
-        res <- NULL
-    }
-    return(res)
-}
-
-.convert_type_to_SummarizedExperiment <- function(
-        type, metadata, assay.type = "counts", ...){
-    # Check assay.type
-    temp <- .check_input(assay.type, list("character scalar"))
-    #
-    # Specify columns that goes to assay and rowData. Other columns are sample
-    # specific so they go to colData
-    assay_info <- c("accession", "marker.name", "measurement")
-    row_info <- c(
-        "marker.name", "marker.type", "marker.canonical_url", "units")
-    col_info <- c(
-        "accession",
-        colnames(type)[!colnames(type) %in% c(assay_info, row_info)])
-
-    # Get assay
-    num_col <- "measurement"
-    rownames_col <- "marker.name"
-    accession_col <- "accession"
-    assay <- type[, assay_info, drop = FALSE]
-    # From long format to wide
-    assay <- reshape(
-        assay, direction = "wide", idvar = accession_col,
-        timevar = rownames_col)
-    # Add rownames and remove prefix from column names
-    rownames(assay) <- assay[[accession_col]]
-    assay[[accession_col]] <- NULL
-    colnames(assay) <- gsub(paste0(num_col, "."), "", colnames(assay))
-
-    # Try to convert columns to numeric.
-    assay <- .convert_cols_numeric(assay)
-    # Samples are in columns and features in rows
-    assay <- t(assay)
-    assay <- as.matrix(assay)
-    # Get rowData, remove duplicates, order it based on assay and convert to DF
-    row_data <- type[ , row_info, drop = FALSE]
-    row_data <- row_data[ !duplicated(row_data), ]
-    rownames(row_data) <- row_data[[rownames_col]]
-    row_data <- row_data[ rownames(assay), ]
-    row_data <- DataFrame(row_data)
-    # # Same for colData
-    # col_data <- type[ , col_info, drop = FALSE]
-    # col_data <- col_data[ !duplicated(col_data), ]
-    # rownames(col_data) <- col_data[[accession_col]]
-    # col_data <- col_data[colnames(assay), ]
-    # # Add common metadata. Add those columns that are not yet present
-    # common_cols <- colnames(metadata)[ !colnames(
-    #     metadata) %in% colnames(col_data) ]
-    # common_cols <- c("accession", common_cols)
-    # metadata <- metadata[ , common_cols, drop = FALSE]
-    # col_data <- merge(
-    #     col_data, metadata, by = "accession", all.x = TRUE,
-    #     suffixes = c("", ".y"))
-    # # Remove those columns that do not have data
-    # empty <- unlist( lapply(col_data, function(x) all(is.na(x))) )
-    # empty <- names(empty)[ empty ]
-    # # Remove also unit columns if there are
-    # empty <- c(empty, paste0(empty, ", unit"))
-    # col_data <- col_data[ , !colnames(col_data) %in% empty, drop = FALSE]
-    # col_data <- DataFrame(col_data)
-
-    col_data <- metadata[colnames(assay), ]
-    empty <- unlist( lapply(col_data, function(x) all(is.na(x))) )
-    empty <- names(empty)[ empty ]
-    # Remove also unit columns if there are
-    empty <- c(empty, paste0(empty, ", unit"))
-    col_data <- col_data[ , !colnames(col_data) %in% empty, drop = FALSE]
-    col_data <- DataFrame(col_data)
-
-    # Rename samples so that they get animal accession and time point info. ################################################
-    # Sample IDs are unique for omics; with animal IDs, we can match samples
-    # between omics.
-
-    # Create SummarizedExperiment
-    assays <- SimpleList(assay)
-    names(assays) <- assay.type
-    se <- SummarizedExperiment(
-        assays = assays, rowData = row_data,
-        colData = col_data
-        )
-    return(se)
-}
-
-.convert_cols_numeric <- function(df){
-    df <- as.data.frame(df, check.names = FALSE)
-    # Skip those columns that are list
-    is_list <- unlist(lapply(df, is.list))
-    list_cols <- df[ , is_list, drop = FALSE]
-    vec_cols <- df[ , !is_list, drop = FALSE]
-    # Loop through columns. Try to convert values to numeric.
-    col_names <- rownames(df)
-    vec_cols <- lapply(vec_cols, function(x){
-        # Some numeric values have comma instead of point
-        temp <- gsub(",", ".", x)
-        # Try to convert to numeric
-        temp_num <-- suppressWarnings( as.numeric(temp) )
-        # Check if we lost info. If we did, then the column is not numeric. If
-        # there are as many NAs in same places as before, conversion was
-        # succesful and the values are numeric.
-        if( all(is.na(temp_num) == is.na(x)) ){
-            x <- temp_num
-        }
-        return(x)
-    })
-    # Convert list to data.frame --> check names so that feature names are
-    # not modified
-    vec_cols <- as.data.frame(vec_cols, check.names = FALSE)
-    rownames(vec_cols) <- col_names
-    df <- cbind(vec_cols, list_cols)
-    return(df)
-}
-
+# This function gets single datatype as an input. The data is in long format.
+# It converts it to suitable format for sample metadata.
 .convert_type_to_table <- function(type){
     # Get those columns that are in long format and wide
     long_info <- c("accession", "measurement", "marker.name")
@@ -335,6 +208,9 @@ getResult <- function(accession, ...){
     return(table)
 }
 
+# If sample metadata has multiple rows for certain accession, that means that
+# it has multiple values for some variables. Combine these values so that the
+# variable column is converted into list.
 .collapse_df <- function(table){
     # Check which columns are the problem
     dupl_col <- lapply(colnames(table), function(col){
@@ -380,3 +256,141 @@ getResult <- function(accession, ...){
     return(table)
 }
 
+# This function cretaes a MAE object from list of tables.
+.construct_omics_data_from_markers <- function(res, metadata){
+    # Convert each table to SummarizedExperiment
+    res <- lapply(res, .convert_type_to_SummarizedExperiment, metadata)
+    # Create MultiAssayExperiment
+    res <- ExperimentList(res)
+    res <- MultiAssayExperiment(res)
+    return(res)
+}
+
+# This function gets a single table as an input and it converts the table
+# to SE.
+.convert_type_to_SummarizedExperiment <- function(
+        type, metadata, assay.type = "counts", ...){
+    # Check assay.type
+    temp <- .check_input(assay.type, list("character scalar"))
+    #
+    # Specify columns that goes to assay and rowData. Other columns are sample
+    # specific so they go to colData
+    assay_info <- c("accession", "marker.name", "measurement")
+    row_info <- c(
+        "marker.name", "marker.type", "marker.canonical_url", "units")
+    col_info <- c(
+        "accession",
+        colnames(type)[!colnames(type) %in% c(assay_info, row_info)])
+
+    # Get assay
+    num_col <- "measurement"
+    rownames_col <- "marker.name"
+    accession_col <- "accession"
+    assay <- type[, assay_info, drop = FALSE]
+    # From long format to wide
+    assay <- reshape(
+        assay, direction = "wide", idvar = accession_col,
+        timevar = rownames_col)
+    # Add rownames and remove prefix from column names
+    rownames(assay) <- assay[[accession_col]]
+    assay[[accession_col]] <- NULL
+    colnames(assay) <- gsub(paste0(num_col, "."), "", colnames(assay))
+
+    # Try to convert columns to numeric.
+    assay <- .convert_cols_numeric(assay)
+    # Samples are in columns and features in rows
+    assay <- t(assay)
+    assay <- as.matrix(assay)
+
+    # Get rowData, remove duplicates, order it based on assay and convert to DF
+    row_data <- type[ , row_info, drop = FALSE]
+    row_data <- row_data[ !duplicated(row_data), ]
+    rownames(row_data) <- row_data[[rownames_col]]
+    row_data <- row_data[ rownames(assay), ]
+    row_data <- DataFrame(row_data)
+
+    # Get metadata fpr certain accessions
+    col_data <- metadata[colnames(assay), ]
+    # Remove those columns that do not have indfo
+    empty <- unlist( lapply(col_data, function(x) all(is.na(x))) )
+    empty <- names(empty)[ empty ]
+    # Remove also unit columns if there are
+    empty <- c(empty, paste0(empty, ", unit"))
+    col_data <- col_data[ , !colnames(col_data) %in% empty, drop = FALSE]
+    # Convert to DF
+    col_data <- DataFrame(col_data)
+
+    # Create SummarizedExperiment
+    assays <- SimpleList(assay)
+    names(assays) <- assay.type
+    se <- SummarizedExperiment(
+        assays = assays, rowData = row_data,
+        colData = col_data
+        )
+    return(se)
+}
+
+# This function gets data.frame as an input and it converts columns to numeric
+# if they can be converted.
+.convert_cols_numeric <- function(df){
+    df <- as.data.frame(df, check.names = FALSE)
+    # Skip those columns that are list
+    is_list <- unlist(lapply(df, is.list))
+    list_cols <- df[ , is_list, drop = FALSE]
+    vec_cols <- df[ , !is_list, drop = FALSE]
+    # Loop through columns. Try to convert values to numeric.
+    col_names <- rownames(df)
+    vec_cols <- lapply(vec_cols, function(x){
+        # Some numeric values have comma instead of point
+        temp <- gsub(",", ".", x)
+        # Try to convert to numeric
+        temp_num <-- suppressWarnings( as.numeric(temp) )
+        # Check if we lost info. If we did, then the column is not numeric. If
+        # there are as many NAs in same places as before, conversion was
+        # succesful and the values are numeric.
+        if( all(is.na(temp_num) == is.na(x)) ){
+            x <- temp_num
+        }
+        return(x)
+    })
+    # Convert list to data.frame --> check names so that feature names are
+    # not modified
+    vec_cols <- as.data.frame(vec_cols, check.names = FALSE)
+    rownames(vec_cols) <- col_names
+    df <- cbind(vec_cols, list_cols)
+    return(df)
+}
+
+# This function modifies animal metadata and adds it to MAE's colData slot.
+.add_metadata_to_MAE <- function(mae, metadata, animal_data){
+    # Get only structured metadata
+    animal_tab <- animal_data[["structured_metadata"]]
+    # Replace "query_accession" column name with "accession"
+    colnames(animal_tab)[ colnames(
+        animal_tab) == "query_accession" ] <- "accession"
+    # Split animal metadata based on marker types.
+    f <- animal_tab[["marker.type"]]
+    animal_tab <- split(animal_tab, f)
+    # Now animal metadata is a list that has multiple data.frames. Each df is
+    # unique marker type. Create a single metadata table from the data.
+    animal_tab <- .construct_metadata_from_markers(animal_tab)
+    # Order the data based on sample metadata. Now each row points to specific
+    # sample.
+    animal_tab <- animal_tab[ match(
+        metadata[["animal"]], animal_tab[["accession"]]), ]
+    # Add sample accessions to animal metadata
+    rownames(animal_tab) <- metadata[["accession"]]
+    # Convert "accession" column of animal metadata to "animal". The format is
+    # now same as in sample metadata
+    colnames(animal_tab)[ colnames(animal_tab) == "accession" ] <- "animal"
+
+    # Convert to numeric those columns that can be converted
+    animal_tab <- .convert_cols_numeric(animal_tab)
+
+    # Create a DataFrame and drop those rows that are not present in MAE
+    metadata <- DataFrame(animal_tab, check.names = FALSE)
+    metadata <- metadata[ rownames(metadata) %in% unlist(colnames(mae)), ]
+    # Add it to colData
+    colData(mae) <- metadata
+    return(mae)
+}
