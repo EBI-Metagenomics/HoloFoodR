@@ -68,25 +68,26 @@ getData <- function(
     # that each table type is preserved separately meaning that the result is
     # not necessarily a single data.frame but a list of data.frames, each
     # including multiple results.
-    if( !is.null(accession) && length(accession) > 1 ){
+    if( !is.null(accession) && accession.type %in% c("animals", "samples") ){
         names(res) <- accession
         res <- .merge_data(res, ...)
+        # flatten if user has specified.
+        if( flatten ){
+            # The result can be a list of data.frames. In order to flatten the
+            # data it must be first combined into single data.frame.
+            if( !is.data.frame(res) ){
+                res <- .join_datatypes(res)
+            }
+            # Now we can flatten the data --> collapse columns that are lists
+            # into multiple columns
+            res <- .flatten_df(res)
+        }
     } else{
         # Otherwise get the single result.
         res <- res[[1]]
     }
 
-    # flatten if user has specified.
-    if( flatten ){
-        # The result can be a list of data.frames. In order to flatten the data
-        # it must be first combined into single data.frame.
-        if( !is.data.frame(res) ){
-            res <- .join_datatypes(res)
-        }
-        # Now we can flatten the data --> collapse columns that are lists into
-        # multiple columns
-        res <- .flatten_df(res)
-    }
+
 
     return(res)
 }

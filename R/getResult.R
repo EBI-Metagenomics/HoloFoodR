@@ -1,6 +1,9 @@
 # Get data with getData. Format it so that we get SE. accession must be specified and it must be samples
 
 getResult <- function(accession, ...){
+    # Check accession
+    temp <- .check_input(accession, list("character vector"))
+    #
     # If user tries to feed accession.type or type, disable them
     args <- list(...)
     args <- args[ !names(args) %in% c("type", "accession.type", "flatten")]
@@ -10,6 +13,11 @@ getResult <- function(accession, ...){
     args[["flatten"]] <- FALSE
     # Get data on samples
     sample_data <- do.call(getData, args)
+    # Check if no data found
+    if( length(sample_data) == 0 ){
+        warning("No data found.", call. = FALSE)
+        return(NULL)
+    }
     # Replace accession with query accession to harmonize
     sample_data <- .query_accession_to_accession(sample_data)
     # Create a MultiAssayExperiment from the data
@@ -41,15 +49,15 @@ getResult <- function(accession, ...){
     not_found <- accession[ !accession %in% unlist(colnames(mae)) ]
     if( length(not_found) ){
         # Create a message
-        msg <- "Data for the following samples cannot be found."
+        msg <- "Data for the following samples cannot be found"
         # Get the type of samples
         types <- sample_data[["sample_type"]]
-        types <- types[types[["query_accession"]] %in% accession, "sample_type"]
+        types <- types[types[["accession"]] %in% accession, "sample_type"]
         # If metagenomic assembly was one of the samples that user wanted, give
         # information that it can be found from MGnify database.
         if( "metagenomic_assembly" %in% types ){
             msg <- paste0(
-                msg, " (Note that metagenomic assemblies can be ",
+                msg, ". (Note that metagenomic assemblies can be ",
                 "found from the MGnify database. See MGnifyR package.)")
         }
         # Add those sample IDs that cannot be found to message

@@ -140,7 +140,7 @@
         # Test that if variable is in supported values
         values_correct <- lapply(supported_values, function(value){
             res <- FALSE
-            if( is.null(value) && is.null(variable) || value == variable){
+            if( is.null(value) && is.null(variable) || value %in% variable){
                 res <- TRUE
             }
             return(res)
