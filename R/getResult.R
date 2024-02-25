@@ -10,6 +10,8 @@ getResult <- function(accession, ...){
     args[["flatten"]] <- FALSE
     # Get data on samples
     sample_data <- do.call(getData, args)
+    # Replace accession with query accession to harmonize
+    sample_data <- .query_accession_to_accession(sample_data)
     # Create a MultiAssayExperiment from the data
     omics_list <- .construct_MAE(sample_data)
     mae <- omics_list[["mae"]]
@@ -20,15 +22,26 @@ getResult <- function(accession, ...){
     uniq_animals <- unique(sample_metadata[["animal"]])
     # Retrieve the data
     animal_data <- getData(accession.type = "animals", accession = uniq_animals)
-    # Add the data to MAE
-    mae <- .add_metadata_to_MAE(mae, sample_metadata, animal_data)
+    # Align animal data with sample data
+    animal_data <- .align_animal_and_sample_data(animal_data, sample_metadata)
+    # Replace accession with query accession to harmonize
+    animal_data <- .query_accession_to_accession(animal_data)
+    # Remove samples and sample_types table since we already have that info
+    animal_data <- animal_data[ !names(
+        animal_data) %in% c("sample_types", "samples")]
+    # Construct MAE from animal data
+    mae_animal_list <- .construct_MAE(animal_data)
+    mae_animal <- mae_animal_list[["mae"]]
+    animal_metadata <- mae_animal_list[["metadata"]]
+    # Combine sample and animal data
+    mae <- .add_animal_data_to_MAE(mae, mae_animal, animal_metadata)
 
     # If there are samples that user wanted to include but are not present in
     # the data (they do not have data in HoloFood database), give warning
     not_found <- accession[ !accession %in% unlist(colnames(mae)) ]
     if( length(not_found) ){
         # Create a message
-        msg <- "Data for following samples cannot be found."
+        msg <- "Data for the following samples cannot be found."
         # Get the type of samples
         types <- sample_data[["sample_type"]]
         types <- types[types[["query_accession"]] %in% accession, "sample_type"]
@@ -37,25 +50,36 @@ getResult <- function(accession, ...){
         if( "metagenomic_assembly" %in% types ){
             msg <- paste0(
                 msg, " (Note that metagenomic assemblies can be ",
-                "found from MGnify database. See MGnifyR package.)")
+                "found from the MGnify database. See MGnifyR package.)")
         }
         # Add those sample IDs that cannot be found to message
         msg <- paste0(msg, ":\n'", paste(not_found, collapse = "', '"), "'")
         warning(msg, call. = FALSE)
     }
-    ####################################################### SOME OF THE COLDATA(MAE CALUES ARE IN LIST FORMAT --> CONVERT TO CHARACTER
     return(mae)
 }
 
 ################################ HELP FUNCTIONS ################################
+
+# This function replaces query_accession with accession --> this is to ensure
+# that we merge the data based on query_accession which always point to samples.
+# Accession might point to animals also.
+.query_accession_to_accession <- function(sample_data){
+    sample_data <- lapply(sample_data, function(x){
+        x[["accession"]] <- NULL
+        colnames(x)[ colnames(x) == "query_accession" ] <- "accession"
+        return(x)
+    })
+    return(sample_data)
+}
 
 # This function constructs MAE object from the sample data.
 .construct_MAE <- function(sample_data){
     # Get only structured metadata table. It includes info about measurements.
     # Other tables include info for instance about animals.
     sample_tab <- sample_data[["structured_metadata"]]
-    colnames(sample_tab)[ colnames(
-        sample_tab) == "query_accession" ] <- "accession"
+    # colnames(sample_tab)[ colnames(
+    #     sample_tab) == "query_accession" ] <- "accession"
 
     # Split results so that each metadata marker type gets own table
     f <- sample_tab[["marker.type"]]
@@ -63,7 +87,8 @@ getResult <- function(accession, ...){
 
     # Some metadata markers are sample information that goes to sample metadata
     metadata_types <- c(
-        "ENA Checklist", "TRIAL", "SAMPLE", "TREATMENT", "TANK"
+        "ENA Checklist", "TRIAL", "SAMPLE", "TREATMENT", "TANK",
+        "TOTAL FAT CONTENT", "PEN", "FAECES DIGESTIBILITY"
     )
     metadata_types <-  names(sample_tab)[ names(sample_tab) %in% metadata_types ]
     # All other datatypes are stored as unique omics
@@ -74,6 +99,8 @@ getResult <- function(accession, ...){
 
     # Create metadata table from metadata types
     metadata <- .construct_metadata_from_markers(metadata_types)
+    # Convert to numeric those columns that can be converted
+    metadata <- .convert_cols_numeric(metadata)
     # Add rest of the sample data to metadata
     sample_data <- sample_data[ !names(sample_data) %in% "structured_metadata" ]
     metadata <- .add_sample_data_to_metadata(sample_data, metadata)
@@ -92,6 +119,16 @@ getResult <- function(accession, ...){
 .add_sample_data_to_metadata <- function(sample_data, metadata){
     # Get non empty tables
     sample_data <- sample_data[ lengths(sample_data) > 0 ]
+    # Similarly to main table, query_accession is used as an ID. The column name
+    # is changed because accession column can also point to animal.
+    # query_accession point always to sample. However, if we would point just
+    # to query_accession without modifying accession, it might be that we leave
+    # sample_data <- lapply(sample_data, function(x){
+    #     x[["accession"]] <- NULL
+    #     colnames(x)[ colnames(x) == "query_accession" ] <- "accession"
+    #     return(x)
+    # })
+
     # If there is analysis summaries table, add prefixes to its names so that
     # they do not match with the main table
     if( "analysis_summaries" %in% names(sample_data) ){
@@ -205,6 +242,8 @@ getResult <- function(accession, ...){
     }
     # Remove duplicates
     table <- table[ !duplicated(table), ]
+    # Convert to numeric those columns that can be converted
+    table <- .convert_cols_numeric(table)
     return(table)
 }
 
@@ -318,7 +357,7 @@ getResult <- function(accession, ...){
     empty <- c(empty, paste0(empty, ", unit"))
     col_data <- col_data[ , !colnames(col_data) %in% empty, drop = FALSE]
     # Convert to DF
-    col_data <- DataFrame(col_data)
+    col_data <- DataFrame(col_data, check.names = FALSE)
 
     # Create SummarizedExperiment
     assays <- SimpleList(assay)
@@ -361,34 +400,37 @@ getResult <- function(accession, ...){
     return(df)
 }
 
+# This function orders the animal data based on samples. In input, rows
+# represent animals. In putput, rows represent samples.
+.align_animal_and_sample_data <- function(animal_data, sample_metadata){
+    # Get all the datatypes
+    datatypes <- names(animal_data)
+    # Loop through datatypes
+    animal_data <- lapply(datatypes, function(type){
+        # Get the table (specific data type)
+        tab <- animal_data[[type]]
+        # If the table is not samples table, convert accessions pointing to
+        # animal. (In samples table accessions points to samples)
+        if( type != "samples" ){
+            tab[["animal"]] <- tab[["accession"]]
+        }
+        # Order the data based on sample metadata table
+        tab <- tab[ match(
+            sample_metadata[["animal"]], tab[["query_accession"]]),  ]
+        # Add "query_accession" column that the sample that the row represents
+        tab[["query_accession"]] <- sample_metadata[["accession"]]
+        return(tab)
+    })
+    names(animal_data) <- datatypes
+    return(animal_data)
+}
+
 # This function modifies animal metadata and adds it to MAE's colData slot.
-.add_metadata_to_MAE <- function(mae, metadata, animal_data){
-    # Get only structured metadata
-    animal_tab <- animal_data[["structured_metadata"]]
-    # Replace "query_accession" column name with "accession"
-    colnames(animal_tab)[ colnames(
-        animal_tab) == "query_accession" ] <- "accession"
-    # Split animal metadata based on marker types.
-    f <- animal_tab[["marker.type"]]
-    animal_tab <- split(animal_tab, f)
-    # Now animal metadata is a list that has multiple data.frames. Each df is
-    # unique marker type. Create a single metadata table from the data.
-    animal_tab <- .construct_metadata_from_markers(animal_tab)
-    # Order the data based on sample metadata. Now each row points to specific
-    # sample.
-    animal_tab <- animal_tab[ match(
-        metadata[["animal"]], animal_tab[["accession"]]), ]
-    # Add sample accessions to animal metadata
-    rownames(animal_tab) <- metadata[["accession"]]
-    # Convert "accession" column of animal metadata to "animal". The format is
-    # now same as in sample metadata
-    colnames(animal_tab)[ colnames(animal_tab) == "accession" ] <- "animal"
-
-    # Convert to numeric those columns that can be converted
-    animal_tab <- .convert_cols_numeric(animal_tab)
-
+.add_animal_data_to_MAE <- function(mae, mae_animal, metadata){
+    # IF animal MultiAssayExperiment has data, add it to main MAE
+    experiments(mae) <- c( experiments(mae), experiments(mae_animal))
     # Create a DataFrame and drop those rows that are not present in MAE
-    metadata <- DataFrame(animal_tab, check.names = FALSE)
+    metadata <- DataFrame(metadata, check.names = FALSE)
     metadata <- metadata[ rownames(metadata) %in% unlist(colnames(mae)), ]
     # Add it to colData
     colData(mae) <- metadata
