@@ -78,9 +78,6 @@ getResult <- function(accession, ...){
     # Get only structured metadata table. It includes info about measurements.
     # Other tables include info for instance about animals.
     sample_tab <- sample_data[["structured_metadata"]]
-    # colnames(sample_tab)[ colnames(
-    #     sample_tab) == "query_accession" ] <- "accession"
-
     # Split results so that each metadata marker type gets own table
     f <- sample_tab[["marker.type"]]
     sample_tab <- split(sample_tab, f)
@@ -90,7 +87,7 @@ getResult <- function(accession, ...){
         "ENA Checklist", "TRIAL", "SAMPLE", "TREATMENT", "TANK",
         "TOTAL FAT CONTENT", "PEN", "FAECES DIGESTIBILITY"
     )
-    metadata_types <-  names(sample_tab)[ names(sample_tab) %in% metadata_types ]
+    metadata_types <-  names(sample_tab)[names(sample_tab) %in% metadata_types]
     # All other datatypes are stored as unique omics
     omic_types <- names(sample_tab)[ !names(sample_tab) %in% metadata_types ]
     # Divide the data to metadata and omics
@@ -119,16 +116,6 @@ getResult <- function(accession, ...){
 .add_sample_data_to_metadata <- function(sample_data, metadata){
     # Get non empty tables
     sample_data <- sample_data[ lengths(sample_data) > 0 ]
-    # Similarly to main table, query_accession is used as an ID. The column name
-    # is changed because accession column can also point to animal.
-    # query_accession point always to sample. However, if we would point just
-    # to query_accession without modifying accession, it might be that we leave
-    # sample_data <- lapply(sample_data, function(x){
-    #     x[["accession"]] <- NULL
-    #     colnames(x)[ colnames(x) == "query_accession" ] <- "accession"
-    #     return(x)
-    # })
-
     # If there is analysis summaries table, add prefixes to its names so that
     # they do not match with the main table
     if( "analysis_summaries" %in% names(sample_data) ){
