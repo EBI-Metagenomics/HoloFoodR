@@ -178,6 +178,7 @@
 ############################ OTHER COMMON FUNCTIONS ############################
 
 # This function retrieves data from the database
+#' @importFrom dplyr bind_rows
 .retrieve_from_db <- function(path, max.hits = NULL, ...){
     # Get data
     res <- .perform_single_query(path, ...)
@@ -222,6 +223,9 @@
 
 # This function performs a single query to database (or gets the data from
 # cache) and returns a data.frame
+#' @importFrom httr2 request req_url_query req_error req_perform
+#' @importFrom httr2 resp_body_string
+#' @importFrom jsonlite fromJSON
 .perform_single_query <- function(
         path, use.cache = TRUE, cache.dir = tempdir(), clear.cache = FALSE,
         base.url = "https://www.holofooddata.org/api", ...){
@@ -264,17 +268,17 @@
         res <- readRDS(cache_path)
     } else{
         # Get data from database
-        req <- httr2::request(url)
-        req <- httr2::req_url_query(req, !!!query_params)
+        req <- request(url)
+        req <- req_url_query(req, !!!query_params)
         # Suppress error
-        req <- httr2::req_error(req, is_error = \(resp) FALSE)
-        res <- httr2::req_perform(req)
+        req <- req_error(req, is_error = \(resp) FALSE)
+        res <- req_perform(req)
         # If data was fetched successfully
         if( res$status_code == "200" ){
             # Get the data as JSON text
-            res <- httr2::resp_body_string(res)
+            res <- resp_body_string(res)
             # Convert into list of data.frames
-            res <- jsonlite::fromJSON(res, flatten = TRUE)
+            res <- fromJSON(res, flatten = TRUE)
             # Add the result to cache if specified
             if( use.cache ){
                 if( !dir.exists(cache.dir) ){
@@ -317,6 +321,7 @@
 
 # This function creates a data.frame with multiple columns from column that
 # is a list.
+#' @importFrom dplyr bind_rows
 .spread_column <- function(col){
     # Spread column by unlisting values
     col <- lapply(col, function(x){

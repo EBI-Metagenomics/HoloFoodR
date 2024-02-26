@@ -378,7 +378,7 @@ getResult <- function(accession, ...){
         # Some numeric values have comma instead of point
         temp <- gsub(",", ".", x)
         # Try to convert to numeric
-        temp_num <-- suppressWarnings( as.numeric(temp) )
+        temp_num <- suppressWarnings( as.numeric(temp) )
         # Check if we lost info. If we did, then the column is not numeric. If
         # there are as many NAs in same places as before, conversion was
         # succesful and the values are numeric.

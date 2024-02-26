@@ -1,11 +1,31 @@
 Package: HoloFoodR
 Type: Package
-Title: What the Package Does (Title Case)
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Authors@R:
+    c(person(given = "Tuomas", family = "Borman", role = c("aut", "cre"),
+             email = "tuomas.v.borman@utu.fi",
+             comment = c(ORCID = "0000-0002-8563-8884")),
+      person(given = "Leo", family = "Lahti", role = c("aut"),
+             email = "leo.lahti@iki.fi",
+             comment = c(ORCID = "0000-0001-5537-637X")))
+Title: R interface to EBI HoloFood resource
+Description:
+    Utility package to facilitate integration and analysis of EBI HoloFood data
+    in R. This package streamlines access to the resource, allowing for direct
+    loading of data into formats optimized for downstream analytics.
+biocViews: PackageTypeData, ExperimentData
+License: Artistic-2.0 | file LICENSE
 Encoding: UTF-8
-LazyData: true
+Depends:
+    R(>= 4.4.0),
+    SummarizedExperiment,
+    MultiAssayExperiment
+Imports:
+    dplyr,
+    httr2,
+    jsonlite
+Suggests:
+URL: https://github.com/TuomasBorman/HoloFoodR
+BugReports: https://github.com/TuomasBorman/HoloFoodR/issues
+VignetteBuilder: knitr
+RoxygenNote: 7.3.0

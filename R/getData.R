@@ -155,6 +155,7 @@ getData <- function(
 
 # This function loops through results and combine the tables so that each
 # data type still has unique table but the table has now all accessions.
+#' @importFrom dplyr bind_rows
 .merge_data <- function(res, ...){
     # Remove empty elements
     res <- res[ lengths(res) > 0 ]
