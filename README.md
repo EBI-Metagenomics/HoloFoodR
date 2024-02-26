@@ -39,11 +39,11 @@ BiocManager::install("HoloFoodR")
 ### GitHub
 
 ```
-remotes::install_github("TuomasBorman/HoloFoodR")
+remotes::install_github("microbiome/HoloFoodR")
 ```
 
 ## Basic usage
-For more detailed instructions read the associated function help and vignette (`vignette("MGNifyR")`)
+For more detailed instructions read the associated function help and vignette (`vignette("HoloFoodR")`)
 
 ```
 library(HoloFoodR)

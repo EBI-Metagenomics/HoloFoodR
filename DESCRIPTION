@@ -31,7 +31,7 @@ Suggests:
     rmarkdown,
     BiocStyle,
     TreeSummarizedExperiment
-URL: https://github.com/TuomasBorman/HoloFoodR
-BugReports: https://github.com/TuomasBorman/HoloFoodR/issues
+URL: https://github.com/microbiome/HoloFoodR
+BugReports: https://github.com/microbiome/HoloFoodR/issues
 VignetteBuilder: knitr
 RoxygenNote: 7.3.0
