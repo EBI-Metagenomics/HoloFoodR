@@ -1,0 +1,214 @@
+---
+title: "HoloFoodR: interface to HoloFoodR database"
+date: "`r Sys.Date()`"
+package: HoloFoodR
+output:
+    BiocStyle::html_document:
+        fig_height: 7
+        fig_width: 10
+        toc: yes
+        toc_depth: 2
+        number_sections: true
+vignette: >
+    %\VignetteIndexEntry{mia}
+    %\VignetteEngine{knitr::rmarkdown}
+    %\VignetteEncoding{UTF-8}
+bibliography: references.bib
+---
+
+```{r, include = FALSE}
+library(knitr)
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>",
+    cache = TRUE
+)
+```
+
+## Introduction
+
+`HoloFoodR` is a package designed to ease access to the EBI's
+[HoloFoodR](https://www.holofooddata.org/) resource, allowing searching and
+retrieval of multiple datasets for downstream analysis.
+
+The HoloFood database does not encompass metagenomics data; however,
+such data is stored within the [MGnify](https://www.ebi.ac.uk/metagenomics)
+database. Both packages offer analogous functionalities, streamlining the
+integration of data and enhancing accessibility.
+
+`r BiocStyle::Biocpkg("TreeSummarizedExperiment")`
+
+## Installation
+
+`HoloFoodR` is hosted on Bioconductor, and can be installed using via
+`BiocManager`.
+
+```{r install, eval=FALSE}
+BiocManager::install(HoloFoodR)
+```
+
+## Load the package
+
+Once installed, `HoloFoodR` is made available in the usual way.
+
+```{r load_package}
+library(HoloFoodR)
+```
+
+## Functionalities
+
+`HoloFoodR` offers three functions `doQuery()`, `getResult()` and `getData()`
+which can be utilized to search and fetch data from HoloFood database.
+
+In this tutorial, we demonstrate how to search animals, subset animals based
+on whether they have specific sample type, and finally fetch the data on
+samples. Note that this same can be done with `doQuery()` and `getResult()`
+(or `getData()` and `getResult()`) only by utilizing query filters. This
+tutorial is for demonstrating the functionality of the package.
+
+### Search data
+
+To search animals, genome catalogues, samples or viral catalogues, you can use
+`doQuery()` function. You can also use `getData()` but `doQuery()` is optimized
+for searching these datatypes. For example, instead of nested list of sample
+types `doQuery()` returns sample types as presence/absence table which is more
+convenient.
+
+Here we search animals, and subset them based on whether they include
+histological samples. Note that this same can be done also by using query
+filters.
+
+```{r search_animals}
+animals <- doQuery("animals", max.hits = 100)
+animals <- animals[ animals[["histological"]], ]
+head(animals)
+```
+
+`doQuery()` returns a `data.frame` including information on type of data being
+searched.
+
+### Get data
+
+Now we have information on which animal has histological samples. Let's get
+data on those animals to know the sample IDs to fetch.
+
+```{r get_animal_data}
+animal_data <- getData(
+    accession.type = "animals", accession = animals[["accession"]])
+```
+
+The returned value of `getData()` function is a `list`. We can have the data
+also as a `data.frame` when we specify `flatten = TRUE`. The data has
+information on animals including samples that have been drawn from them. 
+
+```{r get_samples1}
+samples <- animal_data[["samples"]]
+
+head(samples)
+```
+
+Now we can collect sample IDs.
+
+```{r get_samples1}
+sample_ids <- unique(samples[["accession"]])
+
+head(sample_ids)
+```
+
+### Get data on samples
+
+To get data on samples, we can utilize `getResult()` function. It returns the
+data in `r BiocStyle::Biocpkg("MultiAssayExperiment")` (`MAE`) format.
+
+```{r get_mae}
+mae <- getResult(sample_ids)
+mae
+```
+
+`MAE` object stores individual omics as
+`r BiocStyle::Biocpkg("SummarizedExperiment")` (`SE`) objects.
+
+```{r show_mae}
+mae[[1]]
+```
+
+In `SE`, each column represents a sample and rows represent features.
+
+### Incorporate with MGnify data
+
+`MGnifyR` is a package that can be utilized to fetch metagenomics data from
+MGnify database. From the `MGnifyR` package, we can use
+`MGnifyR::searchAnalysis()` function to search analyses based on sample IDs
+that we have.
+
+```{r search_analyses1, eval = FALSE}
+library(MGnifyR)
+
+mg <- MgnifyClient(useCache = TRUE)
+
+# Get those samples that are metagenomic samples
+metagenomic_samples <- samples[
+    samples[["sample_type"]] == "metagenomic_assembly", ]
+
+# Get analysis IDs based on sample IDs
+analysis_ids <- searchAnalysis(
+    mg, type = "samples", metagenomic_samples[["accession"]])
+```
+
+```{r search_analyses2, include = FALSE}
+analysis_ids <- readRDS("inst/extdata/analysis_ids.rds")
+```
+
+```{r search_analyses3}
+head(analysis_ids)
+```
+
+
+Then we can fetch data based on accession IDs.
+
+```{r get_metagenomic_data1, eval = FALSE}
+mae_metagenomic <- MGnifyR::getResult(mg, analysis_ids)
+```
+
+```{r get_metagenomic_data2, include = FALSE}
+mae_metagenomic <- readRDS("inst/extdata/mae_metagenomic.rds")
+```
+
+```{r get_metagenomic_data3}
+mae_metagenomic
+```
+
+`MGnifyR::getResult()` returns `MAE` object just like `HoloFoodR`. However,
+metagenomic data points to individual analyses instead of samples. We can
+harmonize the data by replacing analysis IDs with sample IDs, and then we can
+combine the data to single `MAE`.
+
+```{r combine_data, eval = FALSE}
+# Get experiments from metagenomic data
+exps <- experiments(mae_metagenomic)
+# Convert analysis names to sample names
+exps <- lapply(exps, function(x){
+    # Get corresponding sample ID
+    sample_id <- names(analysis_ids)[ match(colnames(x), analysis_ids) ]
+    # Replace analysis ID with sample ID
+    colnames(x) <- sample_id
+    return(x)
+})
+
+# Add to original MultiAssayExperiment
+mae <- c(experiments(mae), exps)
+mae
+```
+
+Now, with the `MAE` object linking samples from various omics together,
+compatibility is ensured as the single omics datasets are in
+`(Tree)SummarizedExperiment` format. This compatibility allows us to harness
+cutting-edge downstream analytics tools like
+[miaverse framework](https://microbiome.github.io/) that support these data
+containers seamlessly.
+
+## Session info
+
+```{r session_info}
+sessionInfo()
+```
