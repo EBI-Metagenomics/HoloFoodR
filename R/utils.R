@@ -180,6 +180,10 @@
 # This function retrieves data from the database
 #' @importFrom dplyr bind_rows
 .retrieve_from_db <- function(path, max.hits = NULL, ...){
+    # Check max.hits
+    temp <- .check_input(
+        max.hits, list(NULL, "integer scalar"), limits = list(lower = 0))
+    #
     # Get data
     res <- .perform_single_query(path, ...)
     # Check if there are counts info --> how many elements there are in database
@@ -227,7 +231,7 @@
 #' @importFrom httr2 resp_body_string
 #' @importFrom jsonlite fromJSON
 .perform_single_query <- function(
-        path, use.cache = TRUE, cache.dir = tempdir(), clear.cache = FALSE,
+        path, use.cache = FALSE, cache.dir = tempdir(), clear.cache = FALSE,
         base.url = "https://www.holofooddata.org/api", ...){
     # Check base.url
     temp <- .check_input(base.url, list("character scalar"))

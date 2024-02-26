@@ -1,7 +1,78 @@
+#' Get data from HoloFood database
+#'
+#' @details
+#' With \code{getData}, you can fetch data from the database. Compared to
+#' \code{getResult}, this function is more flexible since it can fetch any kind
+#' of data from the database. However, this function returns the data
+#' without further wrangling as \code{list} or \code{data.frame} which are not
+#' optimized format for fetching data on samples.
+#'
+#' Search results can be filtered; for example, animals can be filtered based on
+#' available samples. See [Api browser](https://www.holofooddata.org/api/docs)
+#' for information on filters. You can find help on customizing queries from
+#' [here](https://emg-docs.readthedocs.io/en/latest/api.html#customising-queries).
+#'
+#' @param type \code{NULL} or \code{character scalar} specifying the type of
+#' data to query. Must be one of the following options:
+#' \code{analysis-summaries}, \code{animals}, \code{genome-catalogues},
+#' \code{samples}, \code{sample_metadata_markers} or \code{viral-catalogues}.
+#' When genome or viral catalogues is fetched by their accession ID, the type
+#' can also be \code{genomes} or \code{fragments}. (Default: \code{NULL})
+#'
+#' @param accession.type \code{NULL} or \code{character scalar} specifying the
+#' type of accession IDs. Must be one of the following options: \code{animals},
+#' \code{genome-catalogues}, \code{samples} or \code{viral-catalogues}.
+#' (Default: \code{NULL})
+#'
+#' @param accession \code{NULL} or \code{character vector} specifying the
+#' accession IDs of type \code{accession.type}. (Default: \code{NULL})
+#'
+#' @param flatten \code{Logical scalar} specifying whether to flatten the
+#' resulting \code{data.frame}. This means that columns with multiple values
+#' are separated to multiple columns. (Default: \code{TRUE})
+#'
+#' @param ... optional arguments:
+#' \itemize{
+#'   \item{\code{max.hits}}{ \code{NULL} or \code{integer scalar} specifying the
+#'   maximum number of results to fetch. When NULL, all results are fetched.
+#'   (Default: \code{NULL})}
+#'
+#'   \item{\code{use.cache}}{ \code{Logical scalar} specifying whether to
+#'   use.cache (Default: \code{FALSE})}
+#'
+#'   \item{\code{cache.dir}}{ \code{Character scalar} specifying cache directory.
+#'   (Default: \code{tempdir()})}
+#'
+#'   \item{\code{clear.cache}}{ \code{Logical scalar} specifying whether to
+#'   use.cache (Default: \code{FALSE})}
+#'
+#' }
+#'
+#' @return \code{list} or \code{data.frame}
+#'
+#' @examples
+#'
+#' # Find genome catalogues
+#' catalogues <- getData(type = "genome-catalogues")
+#' head(catalogues)
+#'
+#' # Find genomes based on certain genome catalogue iD
+#' res <- getData(
+#'     type = "genomes", accession.type = "genome-catalogues",
+#'     accession = catalogues[1, "id"], max.hits = 100)
+#' head(res)
+#'
+#' @seealso
+#' \code{\link[getResult]{getResult}}
+#'
+#' @name getData
+NULL
 
+#' @rdname getData
+#' @export
 getData <- function(
-        type = NULL, accession.type = NULL, accession = NULL, max.hits = NULL,
-        flatten = FALSE, ...){
+        type = NULL, accession.type = NULL, accession = NULL, flatten = FALSE,
+        ...){
     ############################### INPUT CHECK ################################
     # Check type
     supported_types <- c(
@@ -23,9 +94,6 @@ getData <- function(
     temp <- .check_input(accession, list(NULL, "character vector"))
     # Check flatten
     temp <- .check_input(flatten, list("logical vector"))
-    # Check max.hits
-    temp <- .check_input(
-        max.hits, list("NULL", "integer scalar"), limits = list(lower = 0))
     # Every query parameter cannot be NULL
     if( is.null(type) && is.null(accession) && is.null(accession.type) ){
         stop(
@@ -61,7 +129,7 @@ getData <- function(
     }
     # Loop through paths i.e. accession IDs (or if accession is not specified
     # retrieve data only once) and get data
-    res <- lapply(path, function(x){ .retrieve_from_db(x, max.hits, ...) })
+    res <- lapply(path, function(x){ .retrieve_from_db(x, ...) })
 
     # If there were multiple accessions, there are multiple results -->
     # combine data from multiple results/accessions. The tables are combined so
@@ -86,9 +154,6 @@ getData <- function(
         # Otherwise get the single result.
         res <- res[[1]]
     }
-
-
-
     return(res)
 }
 

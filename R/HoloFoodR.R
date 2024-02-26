@@ -7,7 +7,7 @@
 #' [API documentation](https://www.holofooddata.org/api/docs) for
 #' details about the JSONAPI implementation.
 #' @name HoloFoodR
-#' @docType package
+#' @docType _PACKAGE
 #' @seealso \link[SummarizedExperiment:SummarizedExperiment-class]{SummarizedExperiment} class
 NULL
 

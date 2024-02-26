@@ -1,5 +1,60 @@
-# Get data with getData. Format it so that we get SE. accession must be specified and it must be samples
+#' Get data on samples from HoloFood database
+#'
+#' @details
+#' With \code{getResult}, you can fetch data on samples from the HoloFood
+#' database. Compared to \code{getData}, this function is more convenient for
+#' fetching the samples data because it converts the data to
+#' \code{MultiAssayExperiment} where different omics are stored as
+#' \code{SummarizedExperiment} objects which are optimized for downstream
+#' analytics.
+#'
+#' Moreover, HoloFoodR database does not include metagenomic assembly data, but
+#' you can fetch the data from MGnify database. For easy access to the database
+#' you can utilize MGnifyR package. \code{MGnifyR::getResult()} returns data
+#' also as \code{MultiAssayExperiment} object containing multiple
+#' \code{TreeSummarizedExperiment} objects. This means that the data from
+#' HoloFood and MGnify databases are directly compatible for downstream
+#' analytics.
+#'
+#' @param accession \code{Character vector} specifying the
+#' accession IDs of type samples.
+#'
+#' @param ... optional arguments:
+#' \itemize{
+#'
+#'   \item{\code{use.cache}}{ \code{Logical scalar} specifying whether to
+#'   use.cache (Default: \code{FALSE})}
+#'
+#'   \item{\code{cache.dir}}{ \code{Character scalar} specifying cache directory.
+#'   (Default: \code{tempdir()})}
+#'
+#'   \item{\code{clear.cache}}{ \code{Logical scalar} specifying whether to
+#'   use.cache (Default: \code{FALSE})}
+#'
+#' }
+#'
+#' @return \code{MultiAssayExperiment}
+#'
+#' @examples
+#'
+#' # Find samples on certain animal
+#' samples <- doQuery("samples", animal_accession = "SAMEA112904746")
+#'
+#' # Get the data
+#' res <- getResult(samples[["accession"]])
+#' res
+#'
+#' @seealso
+#' \code{\link[getData]{getData}}
+#' \code{\link[SummarizedExperiment]{SummarizedExperiment}}
+#' \code{\link[MultiAssayExperiment]{MultiAssayExperiment}}
+#' \code{\link[MGnifyR::getResult]{MGnifyR::getResult}}
+#'
+#' @name getResult
+NULL
 
+#' @rdname getResult
+#' @export
 getResult <- function(accession, ...){
     # Check accession
     temp <- .check_input(accession, list("character vector"))
