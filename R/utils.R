@@ -49,7 +49,8 @@
     # Based on number of acceptable classes, the msg is different
     if( length(classes_char) > 2 ){
         class_txt <- paste0(
-            paste(classes_char[1:(length(classes_char)-1)], collapse = ", "),
+            paste(
+                classes_char[seq_len(length(classes_char)-1)], collapse = ", "),
             " or ", classes_char[length(classes_char)])
     } else if( length(classes_char) == 2 ){
         class_txt <- paste0(classes_char[[1]], " or ", classes_char[[2]])

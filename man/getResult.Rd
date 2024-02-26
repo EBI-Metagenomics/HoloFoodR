@@ -13,13 +13,13 @@ accession IDs of type samples.}
 \item{...}{optional arguments:
 \itemize{
 
-  \item{\code{use.cache}}{ \code{Logical scalar} specifying whether to
+  \item{\code{use.cache}: }{\code{Logical scalar} specifying whether to
   use.cache (Default: \code{FALSE})}
 
-  \item{\code{cache.dir}}{ \code{Character scalar} specifying cache directory.
+  \item{\code{cache.dir}: }{\code{Character scalar} specifying cache directory.
   (Default: \code{tempdir()})}
 
-  \item{\code{clear.cache}}{ \code{Logical scalar} specifying whether to
+  \item{\code{clear.cache}: }{\code{Logical scalar} specifying whether to
   use.cache (Default: \code{FALSE})}
 
 }}
@@ -49,7 +49,7 @@ analytics.
 \examples{
 
 # Find samples on certain animal
-samples <- doQuery("samples", animal_accession="SAMEA112904746")
+samples <- doQuery("samples", animal_accession = "SAMEA112904746")
 
 # Get the data
 res <- getResult(samples[["accession"]])
@@ -57,8 +57,8 @@ res
 
 }
 \seealso{
-\code{\link[getData]{getData}}
-\code{\link[SummarizedExperiment]{SummarizedExperiment}}
-\code{\link[MultiAssayExperiment]{MultiAssayExperiment}}
-\code{\link[MGnifyR::getResult]{MGnifyR::getResult}}
+\code{\link[HoloFoodR:getData]{getData}}
+\code{\link[SummarizedExperiment:SummarizedExperiment-class]{SummarizedExperiment}}
+\code{\link[MultiAssayExperiment:MultiAssayExperiment-class]{MultiAssayExperiment}}
+\code{\link[MGnifyR:getResult]{MGnifyR:getResult}}
 }

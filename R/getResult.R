@@ -22,13 +22,13 @@
 #' @param ... optional arguments:
 #' \itemize{
 #'
-#'   \item{\code{use.cache}}{ \code{Logical scalar} specifying whether to
+#'   \item{\code{use.cache}: }{\code{Logical scalar} specifying whether to
 #'   use.cache (Default: \code{FALSE})}
 #'
-#'   \item{\code{cache.dir}}{ \code{Character scalar} specifying cache directory.
+#'   \item{\code{cache.dir}: }{\code{Character scalar} specifying cache directory.
 #'   (Default: \code{tempdir()})}
 #'
-#'   \item{\code{clear.cache}}{ \code{Logical scalar} specifying whether to
+#'   \item{\code{clear.cache}: }{\code{Logical scalar} specifying whether to
 #'   use.cache (Default: \code{FALSE})}
 #'
 #' }
@@ -45,10 +45,10 @@
 #' res
 #'
 #' @seealso
-#' \code{\link[getData]{getData}}
-#' \code{\link[SummarizedExperiment]{SummarizedExperiment}}
-#' \code{\link[MultiAssayExperiment]{MultiAssayExperiment}}
-#' \code{\link[MGnifyR::getResult]{MGnifyR::getResult}}
+#' \code{\link[HoloFoodR:getData]{getData}}
+#' \code{\link[SummarizedExperiment:SummarizedExperiment-class]{SummarizedExperiment}}
+#' \code{\link[MultiAssayExperiment:MultiAssayExperiment-class]{MultiAssayExperiment}}
+#' \code{\link[MGnifyR:getResult]{MGnifyR:getResult}}
 #'
 #' @name getResult
 NULL
@@ -232,6 +232,7 @@ getResult <- function(accession, ...){
 
 # This function gets single datatype as an input. The data is in long format.
 # It converts it to suitable format for sample metadata.
+#' @importFrom stats reshape
 .convert_type_to_table <- function(type){
     # Get those columns that are in long format and wide
     long_info <- c("accession", "measurement", "marker.name")
@@ -357,6 +358,8 @@ getResult <- function(accession, ...){
 
 # This function gets a single table as an input and it converts the table
 # to SE.
+#' @importFrom stats reshape
+#' @importFrom S4Vectors SimpleList
 .convert_type_to_SummarizedExperiment <- function(
         type, metadata, assay.type = "counts", ...){
     # Check assay.type

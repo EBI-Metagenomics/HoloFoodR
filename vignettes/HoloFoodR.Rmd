@@ -13,7 +13,6 @@ vignette: >
     %\VignetteIndexEntry{mia}
     %\VignetteEngine{knitr::rmarkdown}
     %\VignetteEncoding{UTF-8}
-bibliography: references.bib
 ---
 
 ```{r, include = FALSE}
@@ -109,7 +108,7 @@ head(samples)
 
 Now we can collect sample IDs.
 
-```{r get_samples1}
+```{r get_samples2}
 sample_ids <- unique(samples[["accession"]])
 
 head(sample_ids)
@@ -156,7 +155,8 @@ analysis_ids <- searchAnalysis(
 ```
 
 ```{r search_analyses2, include = FALSE}
-analysis_ids <- readRDS("inst/extdata/analysis_ids.rds")
+path <- system.file("extdata", "analysis_ids.rds", package = "HoloFoodR")
+analysis_ids <- readRDS(path)
 ```
 
 ```{r search_analyses3}
@@ -171,7 +171,10 @@ mae_metagenomic <- MGnifyR::getResult(mg, analysis_ids)
 ```
 
 ```{r get_metagenomic_data2, include = FALSE}
-mae_metagenomic <- readRDS("inst/extdata/mae_metagenomic.rds")
+library(TreeSummarizedExperiment)
+
+path <- system.file("extdata", "mae_metagenomic.rds", package = "HoloFoodR")
+mae_metagenomic <- readRDS(path)
 ```
 
 ```{r get_metagenomic_data3}

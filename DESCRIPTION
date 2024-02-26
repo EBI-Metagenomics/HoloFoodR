@@ -23,8 +23,14 @@ Depends:
 Imports:
     dplyr,
     httr2,
-    jsonlite
+    jsonlite,
+    S4Vectors
 Suggests:
+    testthat,
+    knitr,
+    rmarkdown,
+    BiocStyle,
+    TreeSummarizedExperiment
 URL: https://github.com/TuomasBorman/HoloFoodR
 BugReports: https://github.com/TuomasBorman/HoloFoodR/issues
 VignetteBuilder: knitr
