@@ -13,13 +13,13 @@ accession IDs of type samples.}
 \item{...}{optional arguments:
 \itemize{
   
-  \item \code{use.cache}: \code{Logical scalar} specifying whether to
+  \item \strong{use.cache} \code{Logical scalar} specifying whether to
   use.cache (Default: \code{FALSE})
   
-  \item \code{cache.dir}: \code{Character scalar} specifying cache directory.
+  \item \strong{cache.dir} \code{Character scalar} specifying cache directory.
   (Default: \code{tempdir()})
   
-  \item \code{clear.cache}: \code{Logical scalar} specifying whether to
+  \item \strong{clear.cache} \code{Logical scalar} specifying whether to
   use.cache (Default: \code{FALSE})
   
 }}
@@ -44,7 +44,7 @@ you can utilize MGnifyR package. \code{MGnifyR::getResult()} returns data
 also as \code{MultiAssayExperiment} object containing multiple
 \code{TreeSummarizedExperiment} objects. This means that the data from
 HoloFood and MGnify databases are directly compatible for downstream
-analytics.
+analysis.
 }
 \examples{
 

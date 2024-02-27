@@ -7,8 +7,8 @@
 #' [API documentation](https://www.holofooddata.org/api/docs) for
 #' details on the JSONAPI implementation.
 #'
-#' @name HoloFoodR-package
-#' @docType package
+#' @name HoloFoodR
+#' @docType _PACKAGE
 #' @seealso
 #' \link[SummarizedExperiment:SummarizedExperiment-class]{SummarizedExperiment}
 #' \link[MultiAssayExperiment:MultiAssayExperiment-class]{MultiAssaySummarizedExperiment}
