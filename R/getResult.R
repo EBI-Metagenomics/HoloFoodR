@@ -55,9 +55,11 @@ NULL
 
 #' @rdname getResult
 #' @export
-getResult <- function(accession, ...){
+getResult <- function(accession, get.metabolomic = TRUE, ...){
     # Check accession
     temp <- .check_input(accession, list("character vector"))
+    # Check get.metabolomic
+    temp <- .check_input(get.metabolomic, list("logical scalar"))
     #
     # If user tries to feed accession.type or type, disable them
     args <- list(...)
@@ -79,6 +81,17 @@ getResult <- function(accession, ...){
     omics_list <- .construct_MAE(sample_data)
     mae <- omics_list[["mae"]]
     sample_metadata <- omics_list[["metadata"]]
+    
+    # If user wants to get metabolites data and retrieved sample IDs include
+    # metabolite samples. It requires loading files from MetaboLights which
+    # is why there is an option for not loading the data.
+    metabolomics_url <- sample_metadata[["metabolomics_url"]]
+    if( get.metabolomic && any(!is.na(metabolomics_url)) ){
+        # Get metabolomic data
+        se_metabolomic <- .construct_metabolomic_SE(metabolomics_url, ...)
+        # Add it to MAE
+        mae <- .add_metabolomic_data_to_MAE(mae, se_metabolomic, accession)
+    }
 
     # Get animal metadata for colData of MAE
     # Get all the animals present in sample metadata
@@ -123,6 +136,152 @@ getResult <- function(accession, ...){
 }
 
 ################################ HELP FUNCTIONS ################################
+
+.add_metabolomic_data_to_MAE <- function(mae, se, accession){
+    # Since MetaboLights data is fetched from the files including all samples
+    # from study and subsetting was not done, there might be samples that was
+    # not listed in accession. --> subset
+    ind <- colnames(se) %in% accession
+    se <- se[, ind]
+    # Create  MAE fro metabolomic data and add it to existing one
+    metabolomic <- ExperimentList(METABOLOMIC = se)
+    res <- MultiAssayExperiment(metabolomic)
+    if( length(mae) > 0 ){
+        experiments(mae) <- c(experiments(mae), experiments(metabolomic))
+    }
+    return(res)
+}
+
+.construct_metabolomic_SE <- function(urls, assay.type = "counts", ...){
+    # Check assay.type
+    temp <- .check_input(assay.type, list("character scalar"))
+    #
+    # Get unique urls
+    urls <- unique(urls)
+    # Loop through those unique url addresses
+    res <- lapply(urls, function(url) .get_metabolomic_data(url, ...))
+    # Get assay, feature metadata and sample metadata separately
+    assay <- lapply(res, function(x) x[["assay"]])
+    feat_meta <- lapply(res, function(x) x[["feat_meta"]])
+    sample_meta <- lapply(res, function(x) x[["sample_meta"]])
+    # ...and combine results from different urls
+    assay <- Reduce(function(df1, df2) merge(df1, df2, all = TRUE), assay)
+    feat_meta <- do.call(rbind, feat_meta)
+    sample_meta <- do.call(rbind, sample_meta)
+    # Drop duplicates
+    assay <- unique(assay)
+    feat_meta <- feat_meta[ !duplicated(feat_meta[["feat_ID"]]), ]
+    sample_meta <- sample_meta[ !duplicated(sample_meta[["Sample Name"]]), ]
+    
+    # Add rownames to tables
+    rownames(assay) <- assay[["feat_ID"]]
+    assay[["feat_ID"]] <- NULL
+    rownames(feat_meta) <- feat_meta[["Sample Name"]]
+    
+    # Order metadatas based on assay
+    feat_meta <- feat_meta[match(rownames(assay), feat_meta[["feat_ID"]]), ]
+    sample_meta <- sample_meta[
+        match(colnames(assay), sample_meta[["Sample Name"]]), ]
+    
+    # Convert to classes supported by SE
+    assay <- as.matrix(assay)
+    assays <- SimpleList(assay)
+    names(assays) <- assay.type
+    feat_meta <- DataFrame(feat_meta, check.names = FALSE)
+    sample_meta <- DataFrame(sample_meta, check.names = FALSE)
+    # Create SummarizedExperiment
+    se <- SummarizedExperiment(
+        assays = assays, rowData = feat_meta, colData = sample_meta)
+    
+    # The data still has sample names from MetaboLights and not from HoloFood
+    # replace them.
+    colnames(se) <- colData(se)[["Comment[BioSamples accession]"]]
+    return(se)
+}
+
+.get_metabolomic_data <- function(url, ...){
+    # In MetaboLight, the study IDs are different than in HoloFood. Get
+    # Info about the study that corresponds to this particular HoloFood study.
+    study_info <- .get_study_info(url, ...)
+    # Get study metadata
+    study_id <- study_info[["identifier"]]
+    file_name <- study_info[["filename"]]
+    study_metadata <- .get_metabolights_file(study_id, file_name, ...)
+    # Get assays. A Study might have multiple assays
+    assays_info <- study_info[["assays"]]
+    assays <- lapply(assays_info, function(assay_info){
+        # Get file name associated to assay
+        file_name <- assay_info[["filename"]]
+        # Get metadata on assay
+        assay_metadata <- .get_metabolights_file(study_id, file_name, ...)
+        # Get metabolomics data, the abundance table
+        file_names <- unique(assay_metadata[["Metabolite Assignment File"]])
+        assay <- lapply(file_names, function(file_name){
+            temp <- .get_metabolights_file(study_id, file_name, ...)
+            return(temp)
+        })
+        # Bind tables together
+        assay <- bind_rows(assay)
+        # Return a list that have metadata and abundance table
+        temp <- list(assay = assay, metadata = assay_metadata)
+        return(temp)
+    })
+    # Combine assay metadata and abundance tables
+    assay <- lapply(assays, function(x) x[["assay"]])
+    assay_metadata <- lapply(assays, function(x) x[["metadata"]])
+    # There are columns named ununique. Use R base rbind, because it does not
+    # check the names. This might file if number of columns do not match...
+    assay <- do.call(rbind, assay)
+    assay_metadata <- do.call(rbind, assay_metadata)
+    # Split assay to abundance table and feature metadata
+    assay_cols <- colnames(assay) %in% assay_metadata[["Sample Name"]]
+    feature_metadata <- assay[ , !assay_cols, drop = FALSE]
+    assay <- assay[ , assay_cols, drop = FALSE]
+    assay[["feat_ID"]] <- feature_metadata[["feat_ID"]]
+    # Combine assay and study metadata
+    assay_metadata <- assay_metadata[
+        match(study_metadata[["Sample Name"]], assay_metadata[["Sample Name"]]),
+        ]
+    metadata <- cbind(study_metadata, assay_metadata)
+    # Create a list of data
+    res <- list(
+        assay = assay, feat_meta = feature_metadata, sample_meta = metadata)
+    return(res)
+}
+
+.get_study_info <- function(url, ...){
+    # From the metabolights database, find associated study. Which study
+    # represents this HoloFood study?
+    res <- .perform_single_query(path = "metabolight", full.url = url, ...)
+    # Get only relevant info
+    study_info <- res[["isaInvestigation"]][["studies"]]
+    return(study_info)
+}
+
+.get_metabolights_file <- function(
+        study.id, file.name, cache.dir = tempdir(),
+        metabolights.base.url = "http://ftp.ebi.ac.uk/pub/databases/metabolights/studies/public/", ...){
+    # Check metabolights.base.url
+    temp <- .check_input(metabolights.base.url, list("character scalar"))
+    # Check study.id
+    temp <- .check_input(study.id, list("character scalar"))
+    # Check file.name
+    temp <- .check_input(file.name, list("character scalar"))
+    # Check cache.dir
+    temp <- .check_input(cache.dir, list("character scalar"))
+    #
+    # Create url
+    url <- paste0( metabolights.base.url, "/", study.id, "/", file.name)
+    # Create a file path
+    file_path <- file.path(cache.dir, file.name)
+    # Check if file is already loaded. If not, download from internet.
+    if( !file.exists(file_path) ){
+        download.file(url, file_path, quiet = TRUE)
+    }
+    # Read the local file
+    df <- read.delim(file_path, check.name = FALSE)
+    return(df)
+}
 
 # This function replaces query_accession with accession --> this is to ensure
 # that we merge the data based on query_accession which always point to samples.

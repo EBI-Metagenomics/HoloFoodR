@@ -233,7 +233,7 @@
 #' @importFrom jsonlite fromJSON
 .perform_single_query <- function(
         path, use.cache = FALSE, cache.dir = tempdir(), clear.cache = FALSE,
-        base.url = "https://www.holofooddata.org/api", ...){
+        base.url = "https://www.holofooddata.org/api", full.url = NULL, ...){
     # Check base.url
     temp <- .check_input(base.url, list("character scalar"))
     # Check use.cache
@@ -242,9 +242,15 @@
     temp <- .check_input(cache.dir, list("character scalar"))
     # Check clear.cache
     temp <- .check_input(clear.cache, list("logical scalar"))
+    # Check full.url
+    temp <- .check_input(full.url, list("NULL", "character scalar"))
     #
     # Create url address
-    url <- paste0(base.url, "/", path)
+    if( is.null(full.url) ){
+        url <- paste0(base.url, "/", path)
+    } else{
+        url <- full.url
+    }
     # Get query options
     query_params <- list(...)
     query_params <- lapply(query_params, function(x) paste(x, collapse = ","))
