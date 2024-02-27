@@ -18,6 +18,9 @@
 #'
 #' @param accession \code{Character vector} specifying the
 #' accession IDs of type samples.
+#' 
+#' @param get.metabolomic \code{Logical scalar} specifying whether to retrieve
+#' also metabolomic samples from MetaboLights database. (Default: \code{TRUE})
 #'
 #' @param ... optional arguments:
 #' \itemize{
@@ -30,6 +33,10 @@
 #'   
 #'   \item \strong{clear.cache} \code{Logical scalar} specifying whether to
 #'   use.cache (Default: \code{FALSE})
+#'   
+#'   \item \strong{assay.type} \code{Character scalar} specifying the name of
+#'   assay in resulting \code{SummarizedExperiment} object.
+#'   (Default: \code{"counts"}) 
 #'   
 #' }
 #'

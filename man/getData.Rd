@@ -15,15 +15,16 @@ getData(
 \arguments{
 \item{type}{\code{NULL} or \code{character scalar} specifying the type of
 data to query. Must be one of the following options:
-\code{analysis-summaries}, \code{animals}, \code{genome-catalogues},
-\code{samples}, \code{sample_metadata_markers} or \code{viral-catalogues}.
-When genome or viral catalogues is fetched by their accession ID, the type
-can also be \code{genomes} or \code{fragments}. (Default: \code{NULL})}
+\code{"analysis-summaries"}, \code{"animals"}, \code{"genome-catalogues"},
+\code{"samples"}, \code{"sample_metadata_markers"} or
+\code{"viral-catalogues"}. When genome or viral catalogues is fetched by
+their accession ID, the type can also be \code{"genomes"} or
+\code{"fragments"}. (Default: \code{NULL})}
 
 \item{accession.type}{\code{NULL} or \code{character scalar} specifying the
-type of accession IDs. Must be one of the following options: \code{animals},
-\code{genome-catalogues}, \code{samples} or \code{viral-catalogues}.
-(Default: \code{NULL})}
+type of accession IDs. Must be one of the following options:
+\code{"animals"}, \code{"genome-catalogues"}, \code{"samples"} or
+\code{"viral-catalogues"}. (Default: \code{NULL})}
 
 \item{accession}{\code{NULL} or \code{character vector} specifying the
 accession IDs of type \code{accession.type}. (Default: \code{NULL})}

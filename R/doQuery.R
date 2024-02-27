@@ -10,8 +10,8 @@
 #' [here](https://emg-docs.readthedocs.io/en/latest/api.html#customising-queries).
 #'
 #' @param type \code{Character scalar} specifying the type of data to
-#' query. Must be one of the following options: \code{animals},
-#' \code{genome-catalogues}, \code{samples} or \code{viral-catalogues}.
+#' query. Must be one of the following options: \code{"animals"},
+#' \code{"genome-catalogues"}, \code{"samples"} or \code{"viral-catalogues"}.
 #'
 #' @param flatten \code{Logical scalar} specifying whether to flatten the
 #' resulting \code{data.frame}. This means that columns with multiple values

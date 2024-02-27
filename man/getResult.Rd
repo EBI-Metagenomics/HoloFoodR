@@ -4,11 +4,14 @@
 \alias{getResult}
 \title{Get data on samples from HoloFood database}
 \usage{
-getResult(accession, ...)
+getResult(accession, get.metabolomic = TRUE, ...)
 }
 \arguments{
 \item{accession}{\code{Character vector} specifying the
 accession IDs of type samples.}
+
+\item{get.metabolomic}{\code{Logical scalar} specifying whether to retrieve
+also metabolomic samples from MetaboLights database. (Default: \code{TRUE})}
 
 \item{...}{optional arguments:
 \itemize{
@@ -21,6 +24,10 @@ accession IDs of type samples.}
   
   \item \strong{clear.cache} \code{Logical scalar} specifying whether to
   use.cache (Default: \code{FALSE})
+  
+  \item \strong{assay.type} \code{Character scalar} specifying the name of
+  assay in resulting \code{SummarizedExperiment} object.
+  (Default: \code{"counts"}) 
   
 }}
 }
