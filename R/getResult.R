@@ -21,16 +21,16 @@
 #'
 #' @param ... optional arguments:
 #' \itemize{
-#'
-#'   \item{\code{use.cache}: }{\code{Logical scalar} specifying whether to
-#'   use.cache (Default: \code{FALSE})}
-#'
-#'   \item{\code{cache.dir}: }{\code{Character scalar} specifying cache directory.
-#'   (Default: \code{tempdir()})}
-#'
-#'   \item{\code{clear.cache}: }{\code{Logical scalar} specifying whether to
-#'   use.cache (Default: \code{FALSE})}
-#'
+#'   
+#'   \item \code{use.cache}: \code{Logical scalar} specifying whether to
+#'   use.cache (Default: \code{FALSE})
+#'   
+#'   \item \code{cache.dir}: \code{Character scalar} specifying cache directory.
+#'   (Default: \code{tempdir()})
+#'   
+#'   \item \code{clear.cache}: \code{Logical scalar} specifying whether to
+#'   use.cache (Default: \code{FALSE})
+#'   
 #' }
 #'
 #' @return \code{MultiAssayExperiment}
