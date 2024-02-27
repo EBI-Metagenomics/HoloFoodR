@@ -35,19 +35,19 @@ are separated to multiple columns. (Default: \code{FALSE})}
 \item{...}{optional arguments:
 \itemize{
 
-  \item{\code{max.hits}: }{\code{NULL} or \code{integer scalar} specifying the
+  \item \code{max.hits}: \code{NULL} or \code{integer scalar} specifying the
   maximum number of results to fetch. When NULL, all results are fetched.
-  (Default: \code{NULL})}
-
-  \item{\code{use.cache}: }{\code{Logical scalar} specifying whether to
-  use.cache (Default: \code{FALSE})}
-
-  \item{\code{cache.dir}: }{\code{Character scalar} specifying cache directory.
-  (Default: \code{tempdir()})}
-
-  \item{\code{clear.cache}: }{\code{Logical scalar} specifying whether to
-  use.cache (Default: \code{FALSE})}
-
+  (Default: \code{NULL})
+  
+  \item \code{use.cache}: \code{Logical scalar} specifying whether to
+  use.cache (Default: \code{FALSE})
+  
+  \item \code{cache.dir}: \code{Character scalar} specifying cache directory.
+  (Default: \code{tempdir()})
+  
+  \item \code{clear.cache}: \code{Logical scalar} specifying whether to
+  use.cache (Default: \code{FALSE})
+  
 }}
 }
 \value{
