@@ -260,11 +260,14 @@
     if( use.cache || clear.cache ){
         # It is built from query info
         temp <- unlist(query_params)
+        # Construct directory path
+        cache_dir <- file.path(cache.dir, "HoloFoodR_cache")
+        # Construct file path
         cache_path <- c(path, names(temp), temp)
         cache_path <- paste(cache_path, collapse = "_")
         cache_path <- gsub(":|/", "_", cache_path)
         cache_path <- paste0(cache_path, ".RDS")
-        cache_path <- paste0(cache.dir, cache_path)
+        cache_path <- file.path(cache_dir, cache_path)
     }
     # Remove the file from path if specified
     if( clear.cache ){
@@ -292,8 +295,8 @@
             res <- fromJSON(res, flatten = TRUE)
             # Add the result to cache if specified
             if( use.cache ){
-                if( !dir.exists(cache.dir) ){
-                    dir.create(cache.dir)
+                if( !dir.exists(cache_dir) ){
+                    dir.create(cache_dir)
                 }
                 saveRDS(res, cache_path)
             }
@@ -374,4 +377,17 @@
     col <- as.data.frame(col)
     rownames(col) <- NULL
     return(col)
+}
+
+# This function merges lists with full_join into single data.frame
+#' @importFrom dplyr full_join
+.full_join_list <- function(res){
+    df <- Reduce(function(df1, df2){
+        # Get common columns
+        common_cols <- intersect(colnames(df1), colnames(df2))
+        # Merge based on common columns
+        temp <- full_join(df1, df2, by = common_cols)
+        return(temp)
+    }, res)
+    return(df)
 }

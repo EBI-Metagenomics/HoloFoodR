@@ -31,13 +31,13 @@
 #'   from sample types. (Default: \code{TRUE})
 #'   
 #'   \item \strong{use.cache} \code{Logical scalar} specifying whether to
-#'   use.cache (Default: \code{FALSE})
+#'   use cache. (Default: \code{FALSE})
 #'   
-#'   \item \strong{cache.dir} \code{Character scalar} specifying cache directory.
-#'   (Default: \code{tempdir()})
+#'   \item \strong{cache.dir} \code{Character scalar} specifying cache
+#'   directory. (Default: \code{tempdir()})
 #'   
 #'   \item \strong{clear.cache} \code{Logical scalar} specifying whether to
-#'   use.cache (Default: \code{FALSE})
+#'   remove and clear cache (Default: \code{FALSE})
 #'   
 #' }
 #'

@@ -11,16 +11,19 @@ getResult(accession, get.metabolomic = TRUE, ...)
 accession IDs of type samples.}
 
 \item{get.metabolomic}{\code{Logical scalar} specifying whether to retrieve
-also metabolomic samples from MetaboLights database. (Default: \code{TRUE})}
+metabolomic samples from MetaboLights database. (Default: \code{TRUE})}
 
 \item{...}{optional arguments:
 \itemize{
   
   \item \strong{use.cache} \code{Logical scalar} specifying whether to
-  use.cache (Default: \code{FALSE})
+  use cache. Note that when \code{get.metabolomic = TRUE} is specified, the
+  file from the MetaboLights is stored in the local system whether to
+  location specified by \code{cache.dir} despite of the value of
+  \code{use.cache}. (Default: \code{FALSE})
   
-  \item \strong{cache.dir} \code{Character scalar} specifying cache directory.
-  (Default: \code{tempdir()})
+  \item \strong{cache.dir} \code{Character scalar} specifying cache
+  directory. (Default: \code{tempdir()})
   
   \item \strong{clear.cache} \code{Logical scalar} specifying whether to
   use.cache (Default: \code{FALSE})
@@ -45,13 +48,19 @@ fetching the samples data because it converts the data to
 \code{SummarizedExperiment} objects which are optimized for downstream
 analytics.
 
-Moreover, HoloFoodR database does not include metagenomic assembly data, but
-you can fetch the data from MGnify database. For easy access to the database
-you can utilize MGnifyR package. \code{MGnifyR::getResult()} returns data
-also as \code{MultiAssayExperiment} object containing multiple
-\code{TreeSummarizedExperiment} objects. This means that the data from
-HoloFood and MGnify databases are directly compatible for downstream
-analysis.
+The HoloFood database lacks metabolomic data but provides URL addresses
+directing users to the MetaboLights resource. The function \code{getResult}
+facilitates the automatic retrieval of metabolomic data and its integration
+with other datasets from HoloFood.
+
+Furthermore, while the HoloFoodR database does not include metagenomic
+assembly data, users can access such data from the MGnify database. The
+MGnifyR package provides a convenient interface for accessing this database.
+By employing \code{MGnifyR::getResult()}, users can obtain data formatted as
+a \code{MultiAssayExperiment} object, containing multiple
+\code{TreeSummarizedExperiment} objects. Consequently, data from both
+HoloFood and MGnify databases are inherently compatible for subsequent
+downstream analysis.
 }
 \examples{
 

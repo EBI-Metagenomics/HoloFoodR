@@ -40,13 +40,13 @@
 #'   (Default: \code{NULL})
 #'   
 #'   \item \strong{use.cache} \code{Logical scalar} specifying whether to
-#'   use.cache (Default: \code{FALSE})
+#'   use cache (Default: \code{FALSE})
 #'   
-#'   \item \strong{cache.dir} \code{Character scalar} specifying cache directory.
-#'   (Default: \code{tempdir()})
+#'   \item \strong{cache.dir} \code{Character scalar} specifying cache
+#'   directory. (Default: \code{tempdir()})
 #'   
 #'   \item \strong{clear.cache} \code{Logical scalar} specifying whether to
-#'   use.cache (Default: \code{FALSE})
+#'   remove and clear cache (Default: \code{FALSE})
 #'   
 #' }
 #'
@@ -163,6 +163,7 @@ getData <- function(
 
 # There might be multiple data.frames in results, each representing unique
 # datatype. This function combines these datatypes into single data.frame
+#' @importFrom dplyr full_join
 .join_datatypes <- function(res, ...){
     # Check whether data types are empty
     not_empty <- lengths(res) > 0
@@ -196,7 +197,7 @@ getData <- function(
                     temp <- .add_datatype_to_colnames(temp, type)
                 }
                 # Add data based on accession ID
-                tab <- dplyr::full_join(tab, temp, by = "query_accession")
+                tab <- full_join(tab, temp, by = "query_accession")
             }
         }
     } else{
