@@ -47,16 +47,7 @@
     })
     classes_char <- unlist(classes_char)
     # Based on number of acceptable classes, the msg is different
-    if( length(classes_char) > 2 ){
-        class_txt <- paste0(
-            paste(
-                classes_char[seq_len(length(classes_char)-1)], collapse = ", "),
-            " or ", classes_char[length(classes_char)])
-    } else if( length(classes_char) == 2 ){
-        class_txt <- paste0(classes_char[[1]], " or ", classes_char[[2]])
-    } else{
-        class_txt <- classes_char
-    }
+    class_txt <- .create_msg_from_list(classes_char)
     # Create a message
     msg <- paste0("'", variable_name, "' must be ", class_txt, "." )
 
@@ -175,6 +166,22 @@
     return(input_correct)
 }
 
+# This function creates a string from character values provided. The string
+# can be used to messages. It creates a tidy list from list of values.
+.create_msg_from_list <- function(classes_char, and_or = "or", ...){
+    if( length(classes_char) > 2 ){
+        class_txt <- paste0(
+            paste(
+                classes_char[seq_len(length(classes_char)-1)], collapse = ", "),
+            " ", and_or, " ", classes_char[length(classes_char)])
+    } else if( length(classes_char) == 2 ){
+        class_txt <- paste0(
+            classes_char[[1]], " ", and_or, " ", classes_char[[2]])
+    } else{
+        class_txt <- classes_char
+    }
+    return(class_txt)
+}
 
 ############################ OTHER COMMON FUNCTIONS ############################
 
@@ -379,7 +386,8 @@
     return(col)
 }
 
-# This function merges lists with full_join into single data.frame
+# This function merges lists of data.frames with full_join into single
+# data.frame
 #' @importFrom dplyr full_join
 .full_join_list <- function(res){
     df <- Reduce(function(df1, df2){

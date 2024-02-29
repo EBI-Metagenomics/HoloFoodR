@@ -89,4 +89,42 @@ test_that("getResult", {
     expect_true(
         all(char_vals == char_vals_ref |
                 (is.na(char_vals) & is.na(char_vals_ref))))
+    
+    # Check that data from MetaboLights is correct
+    samples <- c("SAMEA112952704", "SAMEA112952705")
+    res <- getResult(samples)
+    ref <- getMetaboLights(
+        "https://www.ebi.ac.uk/metabolights/ws/studies/MTBLS4381")
+    # Get assay and test that the values are correct
+    assay <- assay(res[["METABOLOMIC"]])
+    assay_ref <- ref[["assay"]]
+    rownames(assay_ref) <- assay_ref[["feat_ID"]]
+    assay_ref[["feat_ID"]] <- NULL
+    # The column names are HoloFood IDs in getResult
+    col_names <- ref[["sample_meta"]][["Comment[BioSamples accession]"]][
+        match(colnames(assay_ref), ref[["sample_meta"]][["Sample Name"]])]
+    colnames(assay_ref) <- col_names
+    assay_ref <- assay_ref[ , colnames(assay)]
+    assay_ref <- as.matrix(assay_ref)
+    expect_equal(assay, assay_ref)
+    
+    # Check sample meta
+    coldata <- colData(res[["METABOLOMIC"]])
+    coldata_ref <- ref[["sample_meta"]]
+    # Esnure that the order is correct
+    coldata_ref <- coldata_ref[
+        match(
+            rownames(coldata),
+            coldata_ref[["Comment[BioSamples accession]"]]), ]
+    rownames(coldata) <- NULL
+    coldata <- data.frame(coldata, check.names = FALSE)
+    expect_equal(coldata, coldata_ref)
+    
+    # Check feature meta
+    rowdata <- rowData(res[["METABOLOMIC"]])
+    rowdata_ref <- ref[["feat_meta"]]
+    # Remove rownames and convert to data.frame
+    rownames(rowdata) <- NULL
+    rowdata <- data.frame(rowdata, check.names = FALSE)
+    expect_equal(rowdata, rowdata_ref)
 })

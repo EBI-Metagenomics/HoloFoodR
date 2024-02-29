@@ -8,10 +8,10 @@
 #' \code{SummarizedExperiment} objects which are optimized for downstream
 #' analytics.
 #' 
-#' The HoloFood database lacks metabolomic data but provides URL addresses
-#' directing users to the MetaboLights resource. The function \code{getResult}
-#' facilitates the automatic retrieval of metabolomic data and its integration
-#' with other datasets from HoloFood.
+#' The HoloFood database lacks non-targeted metabolomic data but provides URL
+#' addresses directing users to the MetaboLights resource. The function
+#' \code{getResult} facilitates the automatic retrieval of metabolomic data and
+#' its integration with other datasets from HoloFood.
 #' 
 #' Furthermore, while the HoloFoodR database does not include metagenomic
 #' assembly data, users can access such data from the MGnify database. The
@@ -26,16 +26,16 @@
 #' accession IDs of type samples.
 #' 
 #' @param get.metabolomic \code{Logical scalar} specifying whether to retrieve
-#' metabolomic samples from MetaboLights database. (Default: \code{TRUE})
+#' metabolomic data from MetaboLights database. (Default: \code{TRUE})
 #'
 #' @param ... optional arguments:
 #' \itemize{
 #'   
 #'   \item \strong{use.cache} \code{Logical scalar} specifying whether to
 #'   use cache. Note that when \code{get.metabolomic = TRUE} is specified, the
-#'   file from the MetaboLights is stored in the local system whether to
-#'   location specified by \code{cache.dir} despite of the value of
-#'   \code{use.cache}. (Default: \code{FALSE})
+#'   file from the MetaboLights is stored in the local system to the location
+#'   specified by \code{cache.dir} despite of the value of \code{use.cache}.
+#'   (Default: \code{FALSE})
 #'   
 #'   \item \strong{cache.dir} \code{Character scalar} specifying cache
 #'   directory. (Default: \code{tempdir()})
@@ -134,16 +134,28 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     not_found <- accession[ !accession %in% unlist(colnames(mae)) ]
     if( length(not_found) ){
         # Create a message
-        msg <- "Data for the following samples cannot be found"
+        msg <- "Data for the following samples cannot be found."
         # Get the type of samples
         types <- sample_data[["sample_type"]]
-        types <- types[types[["accession"]] %in% accession, "sample_type"]
-        # If metagenomic assembly was one of the samples that user wanted, give
-        # information that it can be found from MGnify database.
-        if( "metagenomic_assembly" %in% types ){
-            msg <- paste0(
-                msg, ". (Note that metagenomic assemblies can be ",
-                "found from the MGnify database. See MGnifyR package.)")
+        types <- types[types[["accession"]] %in% not_found, "sample_type"]
+        types <- unique(types)
+        # Add sample types to message
+        if( !is.null(types) ){
+            # Add info about sample types
+            msg_temp <- .create_msg_from_list(types, "and")
+            if( length(types) == 1 ){
+                msg_temp2 <- "The sample type is"
+            } else{
+                msg_temp2 <- "The sample types are"
+            }
+            msg <- paste0(msg, " ", msg_temp2, " ", msg_temp, ".")
+            # If metagenomic assembly was one of the samples that user wanted,
+            # give information that it can be found from MGnify database.
+            if( "metagenomic_assembly" %in% types ){
+                msg <- paste0(
+                    msg, " (Note that metagenomic assemblies can be ",
+                    "found from the MGnify database. See MGnifyR package.)")
+            }
         }
         # Add those sample IDs that cannot be found to message
         msg <- paste0(msg, ":\n'", paste(not_found, collapse = "', '"), "'")

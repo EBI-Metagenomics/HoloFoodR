@@ -1,7 +1,12 @@
 #' Get metabolomic data from MetaboLights database
 #'
 #' @details
-#' Non-targeted metabolomics data is in MetaboLigths...
+#' The HoloFood database primarily comprises targeted metabolomic data,
+#' omitting non-targeted metabolomic information. Nonetheless, it features URLs
+#' linking to studies within the MetaboLights database. This functionality
+#' enables users to access non-targeted metabolomic data. The function returns
+#' a structured list encompassing data frames for feature metadata,
+#' sample metadata, and abundance table.
 #'
 #' @param url \code{character vector} specifying the URL address of study in
 #' MetaboLights database.
@@ -9,23 +14,26 @@
 #' @param ... optional arguments:
 #' \itemize{
 #'   
-#'   \item \strong{cache.dir} \code{Character scalar} specifying cache
-#'   directory. (Default: \code{tempdir()})
+#'   \item \strong{cache.dir} \code{Character scalar} specifying directory
+#'   where downloaded file is stored. (Default: \code{tempdir()})
 #'   
 #' }
 #'
 #' @return \code{list}
 #'
 #' @examples
-#'
-#'
+#' 
+#' url <- "https://www.ebi.ac.uk/metabolights/ws/studies/MTBLS4381"
+#' res <- getMetaboLights(url)
+#' names(res)
+#' head(res[["feat_meta"]])
+#' 
 #' @seealso
 #' \code{\link[HoloFoodR:getResult]{getResult}}
 #' \code{\link[HoloFoodR:getData]{getData}}
 #'
 #' @name getMetaboLights
 NULL
-
 
 #' 
 #' @rdname getMetaboLights
@@ -45,8 +53,8 @@ getMetaboLights <- function(url, ...){
     sample_meta <- lapply(res, function(x) x[["sample_meta"]])
     # ...and combine results from different urls
     assay <- .full_join_list(assay)
-    feat_meta <- do.call(rbind, feat_meta)
-    sample_meta <- do.call(rbind, sample_meta)
+    feat_meta <- .full_join_list(feat_meta)
+    sample_meta <- .full_join_list(sample_meta)
     # Drop duplicates
     assay <- unique(assay)
     feat_meta <- feat_meta[ !duplicated(feat_meta[["feat_ID"]]), ]
