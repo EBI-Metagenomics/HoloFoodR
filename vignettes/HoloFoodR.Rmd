@@ -228,10 +228,15 @@ samples <- doQuery("samples", sample_type = "metabolomic")
 # Get the data
 metabolomic <- getMetaboLights(samples[["metabolomics_url"]])
 
-
+# Show names of data.frames
+names(metabolomic)
 ```
 
-The re
+The result is a list that includes three data.frames:
+
+    - study metadata
+    - assay metadata
+    - assay that includes abundance table and feature metadata
 
 ## Session info
 

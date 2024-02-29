@@ -103,8 +103,11 @@ getMetaboLights <- function(url, ...){
     # check the names. This might file if number of columns do not match...
     assay <- .full_join_list(assay)
     assay_metadata <- .full_join_list(assay_metadata)
-    # Make column names unique. For some reason metadata files include
-    # non-unique column names that have unique information. 
+    # Ensure that ID columns is character
+    assay[["feat_ID"]] <- as.character( assay[["feat_ID"]] )
+    # Make column names unique. For some reason files include
+    # non-unique column names that have unique information.
+    colnames(assay) <- make.unique( colnames(assay) )
     colnames(assay_metadata) <- make.unique( colnames(assay_metadata) )
     colnames(study_metadata) <- make.unique(colnames(study_metadata))
     # Create a list of data
