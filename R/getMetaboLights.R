@@ -5,8 +5,8 @@
 #' omitting non-targeted metabolomic information. Nonetheless, it features URLs
 #' linking to studies within the MetaboLights database. This functionality
 #' enables users to access non-targeted metabolomic data. The function returns
-#' a structured list encompassing data frames for feature metadata,
-#' sample metadata, and abundance table.
+#' a structured list encompassing data frames for study metadata,
+#' assay metadata, and assay.
 #'
 #' @param url \code{character vector} specifying the URL address of study in
 #' MetaboLights database.
@@ -47,20 +47,20 @@ getMetaboLights <- function(url, ...){
     url <- unique(url)
     # Loop through those unique url addresses
     res <- lapply(url, function(x) .get_metabolomic_data(x, ...))
-    # Get assay, feature metadata and sample metadata separately
+    # Get assay, assay metadata and study metadata separately
     assay <- lapply(res, function(x) x[["assay"]])
-    feat_meta <- lapply(res, function(x) x[["feat_meta"]])
-    sample_meta <- lapply(res, function(x) x[["sample_meta"]])
+    assay_meta <- lapply(res, function(x) x[["assay_meta"]])
+    study_meta <- lapply(res, function(x) x[["study_meta"]])
     # ...and combine results from different urls
     assay <- .full_join_list(assay)
-    feat_meta <- .full_join_list(feat_meta)
-    sample_meta <- .full_join_list(sample_meta)
+    assay_meta <- .full_join_list(assay_meta)
+    study_meta <- .full_join_list(study_meta)
     # Drop duplicates
     assay <- unique(assay)
-    feat_meta <- unique(feat_meta)
-    sample_meta <- sample_meta[ !duplicated(sample_meta[["Sample Name"]]), ]
+    assay_meta <- unique(assay_meta)
+    study_meta <- unique(study_meta)
     # Return a list
-    res <- list(assay = assay, feat_meta = feat_meta, sample_meta = sample_meta)
+    res <- list(assay = assay, assay_meta = assay_meta, study_meta = study_meta)
     return(res)
 }
 
@@ -103,22 +103,13 @@ getMetaboLights <- function(url, ...){
     # check the names. This might file if number of columns do not match...
     assay <- .full_join_list(assay)
     assay_metadata <- .full_join_list(assay_metadata)
-    # Split assay to abundance table and feature metadata
-    assay_cols <- colnames(assay) %in% assay_metadata[["Sample Name"]]
-    feature_metadata <- assay[ , !assay_cols, drop = FALSE]
-    feature_metadata[["feat_ID"]] <- as.character(feature_metadata[["feat_ID"]])
-    assay <- assay[ , assay_cols, drop = FALSE]
-    assay[["feat_ID"]] <- feature_metadata[["feat_ID"]]
     # Make column names unique. For some reason metadata files include
     # non-unique column names that have unique information. 
     colnames(assay_metadata) <- make.unique( colnames(assay_metadata) )
     colnames(study_metadata) <- make.unique(colnames(study_metadata))
-    # Combine assay and study metadata to metadata on samples
-    common_cols <- intersect(colnames(study_metadata), colnames(assay_metadata))
-    metadata <- left_join(study_metadata, assay_metadata, by = common_cols)
     # Create a list of data
     res <- list(
-        assay = assay, feat_meta = feature_metadata, sample_meta = metadata)
+        assay = assay, assay_meta = assay_metadata, study_meta = study_metadata)
     return(res)
 }
 

@@ -93,6 +93,10 @@ test_that("getResult", {
     # Check that data from MetaboLights is correct
     samples <- c("SAMEA112952704", "SAMEA112952705")
     res <- getResult(samples)
+    # The data must be MAE that have SEs inside
+    expect_s4_class(res, "MultiAssayExperiment")
+    expect_s4_class(res[[1]], "SummarizedExperiment")
+    
     ref <- getMetaboLights(
         "https://www.ebi.ac.uk/metabolights/ws/studies/MTBLS4381")
     # Get assay and test that the values are correct

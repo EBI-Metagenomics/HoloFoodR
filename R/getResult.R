@@ -192,9 +192,20 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     # Get data from MetaboLigths
     res <- getMetaboLights(urls, ...)
     assay <- res[["assay"]]
-    feat_meta <- res[["feat_meta"]]
-    sample_meta <- res[["sample_meta"]]
+    assay_meta <- res[["assay_meta"]]
+    study_meta <- res[["study_meta"]]
     
+    # Split assay to abundance table and feature metadata
+    assay_cols <- colnames(assay) %in% assay_meta[["Sample Name"]]
+    feat_meta <- assay[ , !assay_cols, drop = FALSE]
+    feat_meta[["feat_ID"]] <- as.character(feat_meta[["feat_ID"]])
+    assay <- assay[ , assay_cols, drop = FALSE]
+    assay[["feat_ID"]] <- feat_meta[["feat_ID"]]
+
+    # Combine assay and study metadata to metadata on samples
+    common_cols <- intersect(colnames(study_meta), colnames(assay_meta))
+    sample_meta <- left_join(study_meta, assay_meta, by = common_cols)
+
     # Add rownames to tables
     rownames(assay) <- assay[["feat_ID"]]
     assay[["feat_ID"]] <- NULL
