@@ -99,14 +99,29 @@ test_that("getResult", {
     
     ref <- getMetaboLights(
         "https://www.ebi.ac.uk/metabolights/ws/studies/MTBLS4381")
+    assay_ref <- ref[["assay"]]
+    assay_meta_ref <- ref[["assay_meta"]]
+    study_meta_ref <- ref[["study_meta"]]
+    # getResult mofifies the data so that sample meta and study meta are
+    # combined and feature metadata and abundance table are splitted
+    # Split assay to abundance table and feature metadata
+    assay_cols <- colnames(assay_ref) %in% assay_meta_ref[["Sample Name"]]
+    feat_meta_ref <- assay_ref[ , !assay_cols, drop = FALSE]
+    feat_meta_ref[["feat_ID"]] <- as.character(feat_meta_ref[["feat_ID"]])
+    assay_ref <- assay_ref[ , assay_cols, drop = FALSE]
+    assay_ref[["feat_ID"]] <- feat_meta_ref[["feat_ID"]]
+    # Combine assay and study metadata to metadata on samples
+    common_cols <- intersect(colnames(study_meta_ref), colnames(assay_meta_ref))
+    sample_meta_ref <- left_join(
+        study_meta_ref, assay_meta_ref, by = common_cols)
+    
     # Get assay and test that the values are correct
     assay <- assay(res[["METABOLOMIC"]])
-    assay_ref <- ref[["assay"]]
     rownames(assay_ref) <- assay_ref[["feat_ID"]]
     assay_ref[["feat_ID"]] <- NULL
     # The column names are HoloFood IDs in getResult
-    col_names <- ref[["sample_meta"]][["Comment[BioSamples accession]"]][
-        match(colnames(assay_ref), ref[["sample_meta"]][["Sample Name"]])]
+    col_names <- sample_meta_ref[["Comment[BioSamples accession]"]][
+        match(colnames(assay_ref), sample_meta_ref[["Sample Name"]])]
     colnames(assay_ref) <- col_names
     assay_ref <- assay_ref[ , colnames(assay)]
     assay_ref <- as.matrix(assay_ref)
@@ -114,21 +129,19 @@ test_that("getResult", {
     
     # Check sample meta
     coldata <- colData(res[["METABOLOMIC"]])
-    coldata_ref <- ref[["sample_meta"]]
     # Esnure that the order is correct
-    coldata_ref <- coldata_ref[
+    sample_meta_ref <- sample_meta_ref[
         match(
             rownames(coldata),
-            coldata_ref[["Comment[BioSamples accession]"]]), ]
+            sample_meta_ref[["Comment[BioSamples accession]"]]), ]
     rownames(coldata) <- NULL
     coldata <- data.frame(coldata, check.names = FALSE)
-    expect_equal(coldata, coldata_ref)
+    expect_equal(coldata, sample_meta_ref)
     
     # Check feature meta
     rowdata <- rowData(res[["METABOLOMIC"]])
-    rowdata_ref <- ref[["feat_meta"]]
     # Remove rownames and convert to data.frame
     rownames(rowdata) <- NULL
     rowdata <- data.frame(rowdata, check.names = FALSE)
-    expect_equal(rowdata, rowdata_ref)
+    expect_equal(rowdata, feat_meta_ref)
 })

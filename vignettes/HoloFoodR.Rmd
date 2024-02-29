@@ -65,6 +65,9 @@ samples. Note that this same can be done with `doQuery()` and `getResult()`
 (or `getData()` and `getResult()`) only by utilizing query filters. This
 tutorial is for demonstrating the functionality of the package.
 
+Additionally, the package includes `getMetaboLights()` function which can be
+utilized to retrieve metabolomic data from MetaboLights database.
+
 ### Search data
 
 To search animals, genome catalogues, samples or viral catalogues, you can use
@@ -117,7 +120,9 @@ head(sample_ids)
 ### Get data on samples
 
 To get data on samples, we can utilize `getResult()` function. It returns the
-data in `r BiocStyle::Biocpkg("MultiAssayExperiment")` (`MAE`) format.
+data in `r BiocStyle::Biocpkg("MultiAssayExperiment")` (`MAE`) format. By
+specifying `get.metabolomic = TRUE`, we can fetch also non-targeted metabolomic
+data.
 
 ```{r get_mae}
 mae <- getResult(sample_ids)
@@ -162,7 +167,6 @@ analysis_ids <- readRDS(path)
 ```{r search_analyses3}
 head(analysis_ids)
 ```
-
 
 Then we can fetch data based on accession IDs.
 
@@ -209,6 +213,25 @@ compatibility is ensured as the single omics datasets are in
 cutting-edge downstream analytics tools like
 [miaverse framework](https://microbiome.github.io/) that support these data
 containers seamlessly.
+
+### Extra: Get data from MetaboLights database
+
+The HoloFood database exclusively contains targeted metabolomic data. However,
+it provides URL addresses linking to the MetaboLights database, where untargeted
+metabolomics data can be accessed. To retrieve this data, you can utilize the
+getMetaboLights() function or preferably getResult(). Below, we retrieve all the
+metabolomic data associated with HoloFood.
+
+```{r get_metabolomics}
+# Get untargeted metabolomic samples
+samples <- doQuery("samples", sample_type = "metabolomic")
+# Get the data
+metabolomic <- getMetaboLights(samples[["metabolomics_url"]])
+
+
+```
+
+The re
 
 ## Session info
 
