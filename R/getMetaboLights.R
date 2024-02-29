@@ -57,7 +57,7 @@ getMetaboLights <- function(url, ...){
     sample_meta <- .full_join_list(sample_meta)
     # Drop duplicates
     assay <- unique(assay)
-    feat_meta <- feat_meta[ !duplicated(feat_meta[["feat_ID"]]), ]
+    feat_meta <- unique(feat_meta)
     sample_meta <- sample_meta[ !duplicated(sample_meta[["Sample Name"]]), ]
     # Return a list
     res <- list(assay = assay, feat_meta = feat_meta, sample_meta = sample_meta)
@@ -68,6 +68,7 @@ getMetaboLights <- function(url, ...){
 
 # This function retrieves metabolomic data from MetaboLights database for single
 # URL address
+#' @importFrom dplyr left_join
 .get_metabolomic_data <- function(url, ...){
     # In MetaboLight, the study IDs are different than in HoloFood. Get
     # Info about the study that corresponds to this particular HoloFood study.
@@ -90,7 +91,7 @@ getMetaboLights <- function(url, ...){
             return(temp)
         })
         # Bind tables together
-        assay <- bind_rows(assay)
+        assay <- .full_join_list(assay)
         # Return a list that have metadata and abundance table
         temp <- list(assay = assay, metadata = assay_metadata)
         return(temp)
@@ -100,18 +101,21 @@ getMetaboLights <- function(url, ...){
     assay_metadata <- lapply(assays, function(x) x[["metadata"]])
     # There are columns named ununique. Use R base rbind, because it does not
     # check the names. This might file if number of columns do not match...
-    assay <- do.call(rbind, assay)
-    assay_metadata <- do.call(rbind, assay_metadata)
+    assay <- .full_join_list(assay)
+    assay_metadata <- .full_join_list(assay_metadata)
     # Split assay to abundance table and feature metadata
     assay_cols <- colnames(assay) %in% assay_metadata[["Sample Name"]]
     feature_metadata <- assay[ , !assay_cols, drop = FALSE]
+    feature_metadata[["feat_ID"]] <- as.character(feature_metadata[["feat_ID"]])
     assay <- assay[ , assay_cols, drop = FALSE]
     assay[["feat_ID"]] <- feature_metadata[["feat_ID"]]
-    # Combine assay and study metadata
-    assay_metadata <- assay_metadata[
-        match(study_metadata[["Sample Name"]], assay_metadata[["Sample Name"]]),
-    ]
-    metadata <- cbind(study_metadata, assay_metadata)
+    # Make column names unique. For some reason metadata files include
+    # non-unique column names that have unique information. 
+    colnames(assay_metadata) <- make.unique( colnames(assay_metadata) )
+    colnames(study_metadata) <- make.unique(colnames(study_metadata))
+    # Combine assay and study metadata to metadata on samples
+    common_cols <- intersect(colnames(study_metadata), colnames(assay_metadata))
+    metadata <- left_join(study_metadata, assay_metadata, by = common_cols)
     # Create a list of data
     res <- list(
         assay = assay, feat_meta = feature_metadata, sample_meta = metadata)
