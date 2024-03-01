@@ -107,7 +107,9 @@ remotes::install_github("microbiome/HoloFoodR")
 ```
 
 ## Basic usage
-For more detailed instructions read the associated function help and vignette (`vignette("HoloFoodR")`)
+For more detailed instructions read the associated function help
+[function reference page](https://microbiome.github.io/HoloFoodR/) and
+vignette (`vignette("HoloFoodR")`)
 
 ```
 library(HoloFoodR)
