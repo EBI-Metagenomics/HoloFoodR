@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">HoloFoodR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,7 +51,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">getResult</span><span class="op">(</span><span class="va">accession</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">getResult</span><span class="op">(</span><span class="va">accession</span>, get.metabolomic <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -61,13 +61,24 @@
 accession IDs of type samples.</p></dd>
 
 
+<dt>get.metabolomic</dt>
+<dd><p><code>Logical scalar</code> specifying whether to retrieve
+metabolomic data from MetaboLights database. (Default: <code>TRUE</code>)</p></dd>
+
+
 <dt>...</dt>
-<dd><p>optional arguments:</p><ul><li><p><code>use.cache</code>: <code>Logical scalar</code> specifying whether to
+<dd><p>optional arguments:</p><ul><li><p><strong>use.cache</strong> <code>Logical scalar</code> specifying whether to
+  use cache. Note that when <code>get.metabolomic = TRUE</code> is specified, the
+  file from the MetaboLights is stored in the local system to the location
+  specified by <code>cache.dir</code> despite of the value of <code>use.cache</code>.
+  (Default: <code>FALSE</code>)</p></li>
+<li><p><strong>cache.dir</strong> <code>Character scalar</code> specifying cache
+  directory. (Default: <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>)</p></li>
+<li><p><strong>clear.cache</strong> <code>Logical scalar</code> specifying whether to
   use.cache (Default: <code>FALSE</code>)</p></li>
-<li><p><code>cache.dir</code>: <code>Character scalar</code> specifying cache directory.
-  (Default: <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>)</p></li>
-<li><p><code>clear.cache</code>: <code>Logical scalar</code> specifying whether to
-  use.cache (Default: <code>FALSE</code>)</p></li>
+<li><p><strong>assay.type</strong> <code>Character scalar</code> specifying the name of
+  assay in resulting <code>SummarizedExperiment</code> object.
+  (Default: <code>"counts"</code>)</p></li>
 </ul></dd>
 
 </dl></div>
@@ -87,13 +98,18 @@ fetching the samples data because it converts the data to
 <code>MultiAssayExperiment</code> where different omics are stored as
 <code>SummarizedExperiment</code> objects which are optimized for downstream
 analytics.</p>
-<p>Moreover, HoloFoodR database does not include metagenomic assembly data, but
-you can fetch the data from MGnify database. For easy access to the database
-you can utilize MGnifyR package. <code>MGnifyR::getResult()</code> returns data
-also as <code>MultiAssayExperiment</code> object containing multiple
-<code>TreeSummarizedExperiment</code> objects. This means that the data from
-HoloFood and MGnify databases are directly compatible for downstream
-analytics.</p>
+<p>The HoloFood database lacks non-targeted metabolomic data but fetched from
+MetaboLights resource. The function <code>getResult</code> facilitates the
+automatic retrieval of metabolomic data and its integration with other
+datasets from HoloFood.</p>
+<p>Furthermore, while the HoloFoodR database does not include metagenomic
+assembly data, users can access such data from the MGnify database. The
+MGnifyR package provides a convenient interface for accessing this database.
+By employing <code>MGnifyR::getResult()</code>, users can obtain data formatted as
+a <code>MultiAssayExperiment</code> object, containing multiple
+<code>TreeSummarizedExperiment</code> objects. Consequently, data from both
+HoloFood and MGnify databases are inherently compatible for subsequent
+downstream analysis.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -111,7 +127,7 @@ analytics.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Get the data</span></span></span>
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">getResult</span><span class="op">(</span><span class="va">samples</span><span class="op">[[</span><span class="st">"accession"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Data for the following samples cannot be found. (Note that metagenomic assemblies can be found from the MGnify database. See MGnifyR package.):</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Data for the following samples cannot be found. The sample types are metagenomic_assembly, host_genomic, transcriptomic and metatranscriptomic. (Note that metagenomic assemblies can be found from the MGnify database. See MGnifyR package.):</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> 'SAMEA10130039', 'SAMEA13389496', 'SAMEA13389497', 'SAMEA13901618', 'SAMEA13901619', 'SAMEA13929785', 'SAMEA7571815'</span>
 <span class="r-in"><span><span class="va">res</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> A MultiAssayExperiment object of 4 listed</span>

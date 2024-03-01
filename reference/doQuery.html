@@ -14,7 +14,7 @@ or viral catalogues"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/a
     
     <a class="navbar-brand me-2" href="../index.html">HoloFoodR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,8 +64,8 @@ or viral catalogues</p>
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
     <dl><dt>type</dt>
 <dd><p><code>Character scalar</code> specifying the type of data to
-query. Must be one of the following options: <code>animals</code>,
-<code>genome-catalogues</code>, <code>samples</code> or <code>viral-catalogues</code>.</p></dd>
+query. Must be one of the following options: <code>"animals"</code>,
+<code>"genome-catalogues"</code>, <code>"samples"</code> or <code>"viral-catalogues"</code>.</p></dd>
 
 
 <dt>flatten</dt>
@@ -75,20 +75,20 @@ are separated to multiple columns. (Default: <code>TRUE</code>)</p></dd>
 
 
 <dt>...</dt>
-<dd><p>optional arguments:</p><ul><li><p><code>max.hits</code>: <code>NULL</code> or <code>integer scalar</code> specifying the
+<dd><p>optional arguments:</p><ul><li><p><strong>max.hits</strong> <code>NULL</code> or <code>integer scalar</code> specifying the
   maximum number of results to fetch. When NULL, all results are fetched.
   (Default: <code>NULL</code>)</p></li>
-<li><p><code>spread.sample.types</code>: <code>Logical scalar</code> specifying whether
+<li><p><strong>spread.sample.types</strong> <code>Logical scalar</code> specifying whether
   to create spread sample types column of animals data. In animals data,
   sample types column might have multiple values that might be hard to
   explore. This argument specifies whether to create presence/absence table
   from sample types. (Default: <code>TRUE</code>)</p></li>
-<li><p><code>use.cache</code>: <code>Logical scalar</code> specifying whether to
-  use.cache (Default: <code>FALSE</code>)</p></li>
-<li><p><code>cache.dir</code>: <code>Character scalar</code> specifying cache directory.
-  (Default: <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>)</p></li>
-<li><p><code>clear.cache</code>: <code>Logical scalar</code> specifying whether to
-  use.cache (Default: <code>FALSE</code>)</p></li>
+<li><p><strong>use.cache</strong> <code>Logical scalar</code> specifying whether to
+  use cache. (Default: <code>FALSE</code>)</p></li>
+<li><p><strong>cache.dir</strong> <code>Character scalar</code> specifying cache
+  directory. (Default: <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>)</p></li>
+<li><p><strong>clear.cache</strong> <code>Logical scalar</code> specifying whether to
+  remove and clear cache (Default: <code>FALSE</code>)</p></li>
 </ul></dd>
 
 </dl></div>

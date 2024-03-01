@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">HoloFoodR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,7 +67,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>HoloFoodR: interface to HoloFoodR database</h1>
             
-            <h4 data-toc-skip class="date">2024-02-27</h4>
+            <h4 data-toc-skip class="date">2024-03-01</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/microbiome/HoloFoodR/blob/HEAD/vignettes/HoloFoodR.Rmd" class="external-link"><code>vignettes/HoloFoodR.Rmd</code></a></small>
       <div class="d-none name"><code>HoloFoodR.Rmd</code></div>
@@ -181,6 +181,9 @@ fetch the data on samples. Note that this same can be done with
 <code><a href="../reference/getData.html">getData()</a></code> and <code><a href="../reference/getResult.html">getResult()</a></code>) only by utilizing
 query filters. This tutorial is for demonstrating the functionality of
 the package.</p>
+<p>Additionally, the package includes <code><a href="../reference/getMetaboLights.html">getMetaboLights()</a></code>
+function which can be utilized to retrieve metabolomic data from
+MetaboLights database.</p>
 <div class="section level3">
 <h3 id="search-data">Search data<a class="anchor" aria-label="anchor" href="#search-data"></a>
 </h3>
@@ -279,10 +282,12 @@ from them.</p>
 </h3>
 <p>To get data on samples, we can utilize <code><a href="../reference/getResult.html">getResult()</a></code>
 function. It returns the data in <em><a href="https://bioconductor.org/packages/3.19/MultiAssayExperiment" class="external-link">MultiAssayExperiment</a></em>
-(<code>MAE</code>) format.</p>
+(<code>MAE</code>) format. By specifying
+<code>get.metabolomic = TRUE</code>, we can fetch also non-targeted
+metabolomic data.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mae</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResult.html">getResult</a></span><span class="op">(</span><span class="va">sample_ids</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Data for the following samples cannot be found. (Note that metagenomic assemblies can be found from the MGnify database. See MGnifyR package.):</span></span>
+<span><span class="co">#&gt; Warning: Data for the following samples cannot be found. The sample types are metagenomic_assembly, host_genomic, transcriptomic and metatranscriptomic. (Note that metagenomic assemblies can be found from the MGnify database. See MGnifyR package.):</span></span>
 <span><span class="co">#&gt; 'SAMEA10130025', 'SAMEA13389405', 'SAMEA13389406', 'SAMEA13901590', 'SAMEA13901591', 'SAMEA13929779', 'SAMEA7697591', 'SAMEA10130091', 'SAMEA13389692', 'SAMEA13389693', 'SAMEA13901708', 'SAMEA7571845', 'SAMEA10158030', 'SAMEA13389419', 'SAMEA13389420', 'SAMEA13901594', 'SAMEA13901595', 'SAMEA13929781', 'SAMEA7697592', 'SAMEA10130039', 'SAMEA13389496', 'SAMEA13389497', 'SAMEA13901618', 'SAMEA13901619', 'SAMEA13929785', 'SAMEA7571815', 'SAMEA10130112', 'SAMEA13389794', 'SAMEA13389795', 'SAMEA13901758', 'SAMEA13901759', 'SAMEA13929811', 'SAMEA7571864', 'SAMEA10158022', 'SAMEA13389146', 'SAMEA13389147', 'SAMEA13901511', 'SAMEA13901512', 'SAMEA13929767', 'SAMEA7571777', 'SAMEA10130019', 'SAMEA13389353', 'SAMEA13389354', 'SAMEA13389355', 'SAMEA13901574', 'SAMEA13901575', 'SAMEA14095991', 'SAMEA7722475', 'SAMEA10130101', 'SAMEA13389738', 'SAMEA13389739', 'SAMEA13901730', 'SAMEA13901731', 'SAMEA13929802', 'SAMEA7571856', 'SAMEA10455480', 'SAMEA13389220', 'SAMEA10129993', 'SAMEA13389183', 'SAMEA13389184', 'SAMEA13901520', 'SAMEA13901521', 'SAMEA7697579', 'SAMEA10130017', 'SAMEA13389345', 'SAMEA13389346', 'SAMEA13901571', 'SAMEA13901572', 'SAMEA13929772', 'SAMEA7571801', 'SAMEA10130113', 'SAMEA13389807', 'SAMEA13389808', 'SAMEA13901762', 'SAMEA13901763', 'SAMEA13929813', 'SAMEA7571866', 'SAMEA10455481', 'SAMEA13389227', 'SAMEA10455479', 'SAMEA13389169', 'SAMEA10130020', 'SAMEA13389357', 'SAMEA13389358', 'SAMEA13901576', 'SAMEA13901577', 'SAMEA13929773', 'SAMEA7697587', 'SAMEA10130100', 'SAMEA13389734', 'SAMEA13389735', 'SAMEA13901728', 'SAMEA13901729', 'SAMEA13929801', 'SAMEA7697622', 'SAMEA10130016', 'SAMEA13389342', 'SAMEA13389343', 'SAMEA13901569', 'SAMEA13901570', 'SAMEA13929771', 'SAMEA7571800', 'SAMEA10130040', 'SAMEA13389503', 'SAMEA13389504', 'SAMEA13901620', 'SAMEA13901621', 'SAMEA13929786', 'SAMEA7571816', 'SAMEA10129979', 'SAMEA13389081', 'SAMEA13389082', 'SAMEA13901489', 'SAMEA13901490', 'SAMEA7571769', 'SAMEA10130002', 'SAMEA13389243', 'SAMEA13389244', 'SAMEA13901540', 'SAMEA13901541', 'SAMEA7697582', 'SAMEA10129985', 'SAMEA13389133', 'SAMEA13389134', 'SAMEA13901505', 'SAMEA13901506', 'SAMEA13929764', 'SAMEA7571775', 'SAMEA10455476', 'SAMEA13389110', 'SAMEA10130031', 'SAMEA13389443', 'SAMEA13389444', 'SAMEA13901602', 'SAMEA13901603', 'SAMEA7571811', 'SAMEA10130023', 'SAMEA13389395', 'SAMEA13389396', 'SAMEA13901586', 'SAMEA13901587', 'SAMEA13929777', 'SAMEA7571806', 'SAMEA10130090', 'SAMEA13389687', 'SAMEA13389688', 'SAMEA13901707', 'SAMEA7571844', 'SAMEA10130119', 'SAMEA13389832', 'SAMEA13389833', 'SAMEA13901773', 'SAMEA13929818', 'SAMEA7697633', 'SAMEA10129996', 'SAMEA13389204', 'SAMEA13389205', 'SAMEA13901529', 'SAMEA13901530', 'SAMEA7697580', 'SAMEA10130088', 'SAMEA13389677', 'SAMEA13389678', 'SAMEA13901704', 'SAMEA13929799', 'SAMEA7571843'</span></span>
 <span><span class="va">mae</span></span>
 <span><span class="co">#&gt; A MultiAssayExperiment object of 4 listed</span></span>
@@ -313,8 +318,7 @@ function. It returns the data in <em><a href="https://bioconductor.org/packages/
 <span><span class="co">#&gt; rowData names(4): marker.name marker.type marker.canonical_url units</span></span>
 <span><span class="co">#&gt; colnames(35): SAMEA112906114 SAMEA112906592 ... SAMEA112906002</span></span>
 <span><span class="co">#&gt;   SAMEA112906785</span></span>
-<span><span class="co">#&gt; colData names(20): accession project ...</span></span>
-<span><span class="co">#&gt;   analysis_summaries.canonical_url analysis_summaries.accession</span></span></code></pre></div>
+<span><span class="co">#&gt; colData names(79): accession sample_type ... marker.type Organism</span></span></code></pre></div>
 <p>In <code>SE</code>, each column represents a sample and rows
 represent features.</p>
 </div>
@@ -392,11 +396,34 @@ compatibility allows us to harness cutting-edge downstream analytics
 tools like <a href="https://microbiome.github.io/" class="external-link">miaverse
 framework</a> that support these data containers seamlessly.</p>
 </div>
+<div class="section level3">
+<h3 id="extra-get-data-from-metabolights-database">Extra: Get data from MetaboLights database<a class="anchor" aria-label="anchor" href="#extra-get-data-from-metabolights-database"></a>
+</h3>
+<p>The HoloFood database exclusively contains targeted metabolomic data.
+However, it provides URL addresses linking to the MetaboLights database,
+where untargeted metabolomics data can be accessed. To retrieve this
+data, you can utilize the getMetaboLights() function or preferably
+getResult(). Below, we retrieve all the metabolomic data associated with
+HoloFood.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Get untargeted metabolomic samples</span></span>
+<span><span class="va">samples</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/doQuery.html">doQuery</a></span><span class="op">(</span><span class="st">"samples"</span>, sample_type <span class="op">=</span> <span class="st">"metabolomic"</span><span class="op">)</span></span>
+<span><span class="co"># Get the data</span></span>
+<span><span class="va">metabolomic</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getMetaboLights.html">getMetaboLights</a></span><span class="op">(</span><span class="va">samples</span><span class="op">[[</span><span class="st">"metabolomics_url"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Show names of data.frames</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">metabolomic</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "assay"      "assay_meta" "study_meta"</span></span></code></pre></div>
+<p>The result is a list that includes three data.frames:</p>
+<pre><code>- study metadata
+- assay metadata
+- assay that includes abundance table and feature metadata</code></pre>
+</div>
 </div>
 <div class="section level2">
 <h2 id="session-info">Session info<a class="anchor" aria-label="anchor" href="#session-info"></a>
 </h2>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R Under development (unstable) (2024-02-21 r85967)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
@@ -424,7 +451,7 @@ framework</a> that support these data containers seamlessly.</p>
 <span><span class="co">#&gt; other attached packages:</span></span>
 <span><span class="co">#&gt;  [1] TreeSummarizedExperiment_2.11.0 Biostrings_2.71.2              </span></span>
 <span><span class="co">#&gt;  [3] XVector_0.43.1                  SingleCellExperiment_1.25.0    </span></span>
-<span><span class="co">#&gt;  [5] HoloFoodR_0.1.0                 MultiAssayExperiment_1.29.1    </span></span>
+<span><span class="co">#&gt;  [5] HoloFoodR_0.1.1                 MultiAssayExperiment_1.29.1    </span></span>
 <span><span class="co">#&gt;  [7] SummarizedExperiment_1.33.3     Biobase_2.63.0                 </span></span>
 <span><span class="co">#&gt;  [9] GenomicRanges_1.55.3            GenomeInfoDb_1.39.6            </span></span>
 <span><span class="co">#&gt; [11] IRanges_2.37.1                  S4Vectors_0.41.3               </span></span>
@@ -444,12 +471,12 @@ framework</a> that support these data containers seamlessly.</p>
 <span><span class="co">#&gt; [25] htmltools_0.5.7         sass_0.4.8              lazyeval_0.2.2         </span></span>
 <span><span class="co">#&gt; [28] RCurl_1.98-1.14         yaml_2.3.8              tidyr_1.3.1            </span></span>
 <span><span class="co">#&gt; [31] pkgdown_2.0.7           pillar_1.9.0            crayon_1.5.2           </span></span>
-<span><span class="co">#&gt; [34] jquerylib_0.1.4         BiocParallel_1.37.0     DelayedArray_0.29.5    </span></span>
+<span><span class="co">#&gt; [34] jquerylib_0.1.4         BiocParallel_1.37.0     DelayedArray_0.29.7    </span></span>
 <span><span class="co">#&gt; [37] cachem_1.0.8            abind_1.4-5             nlme_3.1-164           </span></span>
 <span><span class="co">#&gt; [40] tidyselect_1.2.0        digest_0.6.34           stringi_1.8.3          </span></span>
 <span><span class="co">#&gt; [43] dplyr_1.1.4             purrr_1.0.2             bookdown_0.37          </span></span>
 <span><span class="co">#&gt; [46] fastmap_1.1.1           grid_4.4.0              cli_3.6.2              </span></span>
-<span><span class="co">#&gt; [49] SparseArray_1.3.4       magrittr_2.0.3          S4Arrays_1.3.3         </span></span>
+<span><span class="co">#&gt; [49] SparseArray_1.3.4       magrittr_2.0.3          S4Arrays_1.3.4         </span></span>
 <span><span class="co">#&gt; [52] utf8_1.2.4              ape_5.7-1               rappdirs_0.3.3         </span></span>
 <span><span class="co">#&gt; [55] rmarkdown_2.25          ragg_1.2.7              memoise_2.0.1          </span></span>
 <span><span class="co">#&gt; [58] evaluate_0.23           rlang_1.1.3             Rcpp_1.0.12            </span></span>

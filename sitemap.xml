@@ -19,13 +19,16 @@
     <loc>/index.html</loc>
   </url>
   <url>
-    <loc>/reference/HoloFoodR-package.html</loc>
+    <loc>/reference/HoloFoodR.html</loc>
   </url>
   <url>
     <loc>/reference/doQuery.html</loc>
   </url>
   <url>
     <loc>/reference/getData.html</loc>
+  </url>
+  <url>
+    <loc>/reference/getMetaboLights.html</loc>
   </url>
   <url>
     <loc>/reference/getResult.html</loc>

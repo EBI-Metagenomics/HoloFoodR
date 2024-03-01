@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">HoloFoodR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,17 +65,18 @@
     <dl><dt>type</dt>
 <dd><p><code>NULL</code> or <code>character scalar</code> specifying the type of
 data to query. Must be one of the following options:
-<code>analysis-summaries</code>, <code>animals</code>, <code>genome-catalogues</code>,
-<code>samples</code>, <code>sample_metadata_markers</code> or <code>viral-catalogues</code>.
-When genome or viral catalogues is fetched by their accession ID, the type
-can also be <code>genomes</code> or <code>fragments</code>. (Default: <code>NULL</code>)</p></dd>
+<code>"analysis-summaries"</code>, <code>"animals"</code>, <code>"genome-catalogues"</code>,
+<code>"samples"</code>, <code>"sample_metadata_markers"</code> or
+<code>"viral-catalogues"</code>. When genome or viral catalogues is fetched by
+their accession ID, the type can also be <code>"genomes"</code> or
+<code>"fragments"</code>. (Default: <code>NULL</code>)</p></dd>
 
 
 <dt>accession.type</dt>
 <dd><p><code>NULL</code> or <code>character scalar</code> specifying the
-type of accession IDs. Must be one of the following options: <code>animals</code>,
-<code>genome-catalogues</code>, <code>samples</code> or <code>viral-catalogues</code>.
-(Default: <code>NULL</code>)</p></dd>
+type of accession IDs. Must be one of the following options:
+<code>"animals"</code>, <code>"genome-catalogues"</code>, <code>"samples"</code> or
+<code>"viral-catalogues"</code>. (Default: <code>NULL</code>)</p></dd>
 
 
 <dt>accession</dt>
@@ -90,15 +91,15 @@ are separated to multiple columns. (Default: <code>FALSE</code>)</p></dd>
 
 
 <dt>...</dt>
-<dd><p>optional arguments:</p><ul><li><p><code>max.hits</code>: <code>NULL</code> or <code>integer scalar</code> specifying the
+<dd><p>optional arguments:</p><ul><li><p><strong>max.hits</strong> <code>NULL</code> or <code>integer scalar</code> specifying the
   maximum number of results to fetch. When NULL, all results are fetched.
   (Default: <code>NULL</code>)</p></li>
-<li><p><code>use.cache</code>: <code>Logical scalar</code> specifying whether to
-  use.cache (Default: <code>FALSE</code>)</p></li>
-<li><p><code>cache.dir</code>: <code>Character scalar</code> specifying cache directory.
-  (Default: <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>)</p></li>
-<li><p><code>clear.cache</code>: <code>Logical scalar</code> specifying whether to
-  use.cache (Default: <code>FALSE</code>)</p></li>
+<li><p><strong>use.cache</strong> <code>Logical scalar</code> specifying whether to
+  use cache (Default: <code>FALSE</code>)</p></li>
+<li><p><strong>cache.dir</strong> <code>Character scalar</code> specifying cache
+  directory. (Default: <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>)</p></li>
+<li><p><strong>clear.cache</strong> <code>Logical scalar</code> specifying whether to
+  remove and clear cache (Default: <code>FALSE</code>)</p></li>
 </ul></dd>
 
 </dl></div>

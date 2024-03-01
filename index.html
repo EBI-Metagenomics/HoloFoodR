@@ -32,7 +32,7 @@
     
     <a class="navbar-brand me-2" href="index.html">HoloFoodR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,10 +67,58 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="holofoodr-">HoloFoodR <img src="inst/extdata/holofood_logo.png" align="right" width="120"><a class="anchor" aria-label="anchor" href="#holofoodr-"></a>
+<div class="page-header"><h1 id="holofoodr-">HoloFoodR <img src="inst/extdata/holofoodr_logo.png" align="right" width="120"><a class="anchor" aria-label="anchor" href="#holofoodr-"></a>
 </h1></div>
-<p>An R package developed for streamlining the integration and analysis of EBI HoloFood data. This utility package simplifies access to the resource, enabling direct loading of data into formats tailored for downstream analytics. With this tool, users can efficiently search and retrieve data from the EBI HoloFood resource.</p>
-<p>The retrieved data is available in <code>MultiAssayExperiment</code> / <code>SummarizedExperiment</code> formats, enabling effortless integration with metagenomics data acquired through the <code>MGnifyR</code> package from the MGnify database. This compatibility ensures users can seamlessly combine and analyze datasets from both sources, leading to valuable insights into intricate biological systems.</p>
+<p>An R package developed for streamlining the integration and analysis of EMBL-EBI HoloFood data. This utility package simplifies access to the resource, enabling direct loading of data into formats tailored for multiomics downstream analytics. With this tool, users can efficiently search and retrieve data from the EBI HoloFood resource.</p>
+<p>The retrieved data is available in <code>MultiAssayExperiment</code> / <code>SummarizedExperiment</code> format similarly to the data acquired with the <code>MGnifyR</code> package from the MGnify database. This compatibility ensures users can seamlessly combine and analyze datasets from both sources, leading to valuable insights into intricate biological systems.</p>
+<p>This research has received funding from the Horizon 2020 Programme of the European Union within the FindingPheno project under grant agreement No 952914.</p>
+<div class="section level2">
+<h2 id="findingpheno-">FindingPheno <img src="inst/extdata/findingpheno_logo.png" align="right" width="160"><a class="anchor" aria-label="anchor" href="#findingpheno-"></a>
+</h2>
+<p>FindingPheno, an EU-funded project, is dedicated to developing computational tools and methodologies for the integration and analysis of multi-omics data. Its primary objective is to deepen our understanding of the interactions between hosts and their microbiomes.</p>
+<ul>
+<li><a href="https://findingpheno.eu/" class="external-link">FindingPheno website</a></li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="holofood-">HoloFood <img src="inst/extdata/holofood_logo.png" align="right" width="60"><a class="anchor" aria-label="anchor" href="#holofood-"></a>
+</h2>
+<p>HoloFood, a project funded under EU’s Horizon 2020 programme, employed a holistic, “hologenomic”, approach to enhance the efficiency of food production systems. This involved exploring the biomolecular and physiological processes triggered by the incorporation of feed additives and novel sustainable feeds in farmed animals.</p>
+<p>The HoloFood database, hosted by European Bioinformatics Institute (EMBL-EBI), houses data gathered during the project, encompassing multiple omics, including metabolomics and various other biomolecular measurements. Notably, it does not include data on metagenomic and untargeted metabolomic analyses. However, metagenomic data from the project can be accessed through the MGnify database, while untargeted metabolomic data is stored in the MetaboLights database. To explore available datasets in HoloFood, you can utilize the API browser.</p>
+<ul>
+<li><a href="https://www.holofood.eu/" class="external-link">HoloFood website</a></li>
+<li><a href="https://www.holofood.eu/publications.html" class="external-link">HoloFood publications</a></li>
+<li><a href="https://www.holofooddata.org/" class="external-link">API browser</a></li>
+<li><a href="https://docs.holofooddata.org/api.html" class="external-link">API documentation</a></li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="mgnify-">MGnify <img src="inst/extdata/mgnify_logo.jpg" align="right" width="60"><a class="anchor" aria-label="anchor" href="#mgnify-"></a>
+</h2>
+<p>EMBL-EBI’s MGnify serves as a repository for microbiome data, offering a wide array of analyses encompassing metabarcoding, metatranscriptomic, and metagenomic datasets from diverse environments. This platform provides comprehensive taxonomic assignments and functional annotations for these datasets. The data can be accessed through MGnifyR package.</p>
+<ul>
+<li><a href="https://www.ebi.ac.uk/metagenomics" class="external-link">MGnify website</a></li>
+<li><a href="https://github.com/EBI-Metagenomics/MGnifyR" class="external-link">MGnifyR</a></li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="metabolights-">MetaboLights <img src="inst/extdata/metabolights_logo.jpg" align="right" width="160"><a class="anchor" aria-label="anchor" href="#metabolights-"></a>
+</h2>
+<p>MetaboLights, managed by EMBL-EBI, serves as a repository for metabolomic data. It can be accessed through HoloFoodR package.</p>
+<ul>
+<li><a href="https://www.ebi.ac.uk/metabolights/" class="external-link">MetaboLights website</a></li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="miaverse-">miaverse <img src="inst/extdata/mia_logo.png" align="right" width="60"><a class="anchor" aria-label="anchor" href="#miaverse-"></a>
+</h2>
+<p>miaverse is an R/Bioconductor framework specialized for microbiome downstream data analysis, leveraging the TreeSummarizedExperiment class. It offers a comprehensive suite of tools for microbiome bioinformatics. Additionally, miaverse includes the tutorial book Orchestrating Microbiome Analysis (OMA), which aims to guide users in conducting microbiome data analysis and sharing best practices in microbiome data science.</p>
+<ul>
+<li><a href="https://microbiome.github.io/" class="external-link">miaverse website</a></li>
+<li><a href="https://microbiome.github.io/OMA/docs/devel/" class="external-link">Orchestrating Microbiome Analysis (OMA)</a></li>
+</ul>
+<hr>
+</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -85,13 +133,13 @@
 <div class="section level3">
 <h3 id="bioc-devel">Bioc-devel<a class="anchor" aria-label="anchor" href="#bioc-devel"></a>
 </h3>
-<pre><code><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"BiocManager"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"BiocManager"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># The following initializes usage of Bioc devel</span></span>
-<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span>version<span class="op">=</span><span class="st">'devel'</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"HoloFoodR"</span><span class="op">)</span></span></code></pre>
+<pre><code>if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+# The following initializes usage of Bioc devel
+BiocManager::install(version="devel"")
+
+BiocManager::install("HoloFoodR")</code></pre>
 </div>
 <div class="section level3">
 <h3 id="github">GitHub<a class="anchor" aria-label="anchor" href="#github"></a>
@@ -102,7 +150,7 @@
 <div class="section level2">
 <h2 id="basic-usage">Basic usage<a class="anchor" aria-label="anchor" href="#basic-usage"></a>
 </h2>
-<p>For more detailed instructions read the associated function help and vignette (<code><a href="articles/HoloFoodR.html">vignette("HoloFoodR")</a></code>)</p>
+<p>For more detailed instructions read the associated function help <a href="https://microbiome.github.io/HoloFoodR/" class="external-link">function reference page</a> and vignette (<code><a href="articles/HoloFoodR.html">vignette("HoloFoodR")</a></code>)</p>
 <pre><code><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/microbiome/HoloFoodR" class="external-link">HoloFoodR</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Search samples</span></span>
@@ -124,6 +172,9 @@
 <span>    type <span class="op">=</span> <span class="st">"genomes"</span>,</span>
 <span>    accession.type <span class="op">=</span> <span class="st">"genome-catalogues"</span>,</span>
 <span>    accession <span class="op">=</span> <span class="va">catalogues</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Fetch data on untargeted metabolites</span></span>
+<span><span class="va">metabolites</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/getMetaboLights.html">getMetaboLights</a></span><span class="op">(</span><span class="va">url</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Fetch data as MultiAssayExperiment</span></span>
 <span><span class="va">samples</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ACCESSION_ID"</span><span class="op">)</span></span>
