@@ -89,4 +89,59 @@ test_that("getResult", {
     expect_true(
         all(char_vals == char_vals_ref |
                 (is.na(char_vals) & is.na(char_vals_ref))))
+    
+    # Check that data from MetaboLights is correct
+    samples <- c("SAMEA112952704", "SAMEA112952705")
+    res <- getResult(samples)
+    # The data must be MAE that have SEs inside
+    expect_s4_class(res, "MultiAssayExperiment")
+    expect_s4_class(res[[1]], "SummarizedExperiment")
+    
+    ref <- getMetaboLights(
+        "https://www.ebi.ac.uk/metabolights/ws/studies/MTBLS4381")
+    assay_ref <- ref[["assay"]]
+    assay_meta_ref <- ref[["assay_meta"]]
+    study_meta_ref <- ref[["study_meta"]]
+    # getResult mofifies the data so that sample meta and study meta are
+    # combined and feature metadata and abundance table are splitted
+    # Split assay to abundance table and feature metadata
+    assay_cols <- colnames(assay_ref) %in% assay_meta_ref[["Sample Name"]]
+    feat_meta_ref <- assay_ref[ , !assay_cols, drop = FALSE]
+    feat_meta_ref[["feat_ID"]] <- as.character(feat_meta_ref[["feat_ID"]])
+    assay_ref <- assay_ref[ , assay_cols, drop = FALSE]
+    assay_ref[["feat_ID"]] <- feat_meta_ref[["feat_ID"]]
+    # Combine assay and study metadata to metadata on samples
+    common_cols <- intersect(colnames(study_meta_ref), colnames(assay_meta_ref))
+    sample_meta_ref <- left_join(
+        study_meta_ref, assay_meta_ref, by = common_cols)
+    
+    # Get assay and test that the values are correct
+    assay <- assay(res[["METABOLOMIC"]])
+    rownames(assay_ref) <- assay_ref[["feat_ID"]]
+    assay_ref[["feat_ID"]] <- NULL
+    # The column names are HoloFood IDs in getResult
+    col_names <- sample_meta_ref[["Comment[BioSamples accession]"]][
+        match(colnames(assay_ref), sample_meta_ref[["Sample Name"]])]
+    colnames(assay_ref) <- col_names
+    assay_ref <- assay_ref[ , colnames(assay)]
+    assay_ref <- as.matrix(assay_ref)
+    expect_equal(assay, assay_ref)
+    
+    # Check sample meta
+    coldata <- colData(res[["METABOLOMIC"]])
+    # Esnure that the order is correct
+    sample_meta_ref <- sample_meta_ref[
+        match(
+            rownames(coldata),
+            sample_meta_ref[["Comment[BioSamples accession]"]]), ]
+    rownames(coldata) <- NULL
+    coldata <- data.frame(coldata, check.names = FALSE)
+    expect_equal(coldata, sample_meta_ref)
+    
+    # Check feature meta
+    rowdata <- rowData(res[["METABOLOMIC"]])
+    # Remove rownames and convert to data.frame
+    rownames(rowdata) <- NULL
+    rowdata <- data.frame(rowdata, check.names = FALSE)
+    expect_equal(rowdata, feat_meta_ref)
 })

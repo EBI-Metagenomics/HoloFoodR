@@ -9,8 +9,8 @@ doQuery(type, flatten = TRUE, ...)
 }
 \arguments{
 \item{type}{\code{Character scalar} specifying the type of data to
-query. Must be one of the following options: \code{animals},
-\code{genome-catalogues}, \code{samples} or \code{viral-catalogues}.}
+query. Must be one of the following options: \code{"animals"},
+\code{"genome-catalogues"}, \code{"samples"} or \code{"viral-catalogues"}.}
 
 \item{flatten}{\code{Logical scalar} specifying whether to flatten the
 resulting \code{data.frame}. This means that columns with multiple values
@@ -19,24 +19,24 @@ are separated to multiple columns. (Default: \code{TRUE})}
 \item{...}{optional arguments:
 \itemize{
 
-  \item \code{max.hits}: \code{NULL} or \code{integer scalar} specifying the
+  \item \strong{max.hits} \code{NULL} or \code{integer scalar} specifying the
   maximum number of results to fetch. When NULL, all results are fetched.
   (Default: \code{NULL})
   
-  \item \code{spread.sample.types}: \code{Logical scalar} specifying whether
+  \item \strong{spread.sample.types} \code{Logical scalar} specifying whether
   to create spread sample types column of animals data. In animals data,
   sample types column might have multiple values that might be hard to
   explore. This argument specifies whether to create presence/absence table
   from sample types. (Default: \code{TRUE})
   
-  \item \code{use.cache}: \code{Logical scalar} specifying whether to
-  use.cache (Default: \code{FALSE})
+  \item \strong{use.cache} \code{Logical scalar} specifying whether to
+  use cache. (Default: \code{FALSE})
   
-  \item \code{cache.dir}: \code{Character scalar} specifying cache directory.
-  (Default: \code{tempdir()})
+  \item \strong{cache.dir} \code{Character scalar} specifying cache
+  directory. (Default: \code{tempdir()})
   
-  \item \code{clear.cache}: \code{Logical scalar} specifying whether to
-  use.cache (Default: \code{FALSE})
+  \item \strong{clear.cache} \code{Logical scalar} specifying whether to
+  remove and clear cache (Default: \code{FALSE})
   
 }}
 }

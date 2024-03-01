@@ -14,15 +14,16 @@
 #'
 #' @param type \code{NULL} or \code{character scalar} specifying the type of
 #' data to query. Must be one of the following options:
-#' \code{analysis-summaries}, \code{animals}, \code{genome-catalogues},
-#' \code{samples}, \code{sample_metadata_markers} or \code{viral-catalogues}.
-#' When genome or viral catalogues is fetched by their accession ID, the type
-#' can also be \code{genomes} or \code{fragments}. (Default: \code{NULL})
+#' \code{"analysis-summaries"}, \code{"animals"}, \code{"genome-catalogues"},
+#' \code{"samples"}, \code{"sample_metadata_markers"} or
+#' \code{"viral-catalogues"}. When genome or viral catalogues is fetched by
+#' their accession ID, the type can also be \code{"genomes"} or
+#' \code{"fragments"}. (Default: \code{NULL})
 #'
 #' @param accession.type \code{NULL} or \code{character scalar} specifying the
-#' type of accession IDs. Must be one of the following options: \code{animals},
-#' \code{genome-catalogues}, \code{samples} or \code{viral-catalogues}.
-#' (Default: \code{NULL})
+#' type of accession IDs. Must be one of the following options:
+#' \code{"animals"}, \code{"genome-catalogues"}, \code{"samples"} or
+#' \code{"viral-catalogues"}. (Default: \code{NULL})
 #'
 #' @param accession \code{NULL} or \code{character vector} specifying the
 #' accession IDs of type \code{accession.type}. (Default: \code{NULL})
@@ -34,18 +35,18 @@
 #' @param ... optional arguments:
 #' \itemize{
 #' 
-#'   \item \code{max.hits}: \code{NULL} or \code{integer scalar} specifying the
+#'   \item \strong{max.hits} \code{NULL} or \code{integer scalar} specifying the
 #'   maximum number of results to fetch. When NULL, all results are fetched.
 #'   (Default: \code{NULL})
 #'   
-#'   \item \code{use.cache}: \code{Logical scalar} specifying whether to
-#'   use.cache (Default: \code{FALSE})
+#'   \item \strong{use.cache} \code{Logical scalar} specifying whether to
+#'   use cache (Default: \code{FALSE})
 #'   
-#'   \item \code{cache.dir}: \code{Character scalar} specifying cache directory.
-#'   (Default: \code{tempdir()})
+#'   \item \strong{cache.dir} \code{Character scalar} specifying cache
+#'   directory. (Default: \code{tempdir()})
 #'   
-#'   \item \code{clear.cache}: \code{Logical scalar} specifying whether to
-#'   use.cache (Default: \code{FALSE})
+#'   \item \strong{clear.cache} \code{Logical scalar} specifying whether to
+#'   remove and clear cache (Default: \code{FALSE})
 #'   
 #' }
 #'
@@ -162,6 +163,7 @@ getData <- function(
 
 # There might be multiple data.frames in results, each representing unique
 # datatype. This function combines these datatypes into single data.frame
+#' @importFrom dplyr full_join
 .join_datatypes <- function(res, ...){
     # Check whether data types are empty
     not_empty <- lengths(res) > 0
@@ -195,7 +197,7 @@ getData <- function(
                     temp <- .add_datatype_to_colnames(temp, type)
                 }
                 # Add data based on accession ID
-                tab <- dplyr::full_join(tab, temp, by = "query_accession")
+                tab <- full_join(tab, temp, by = "query_accession")
             }
         }
     } else{

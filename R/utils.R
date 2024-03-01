@@ -47,16 +47,7 @@
     })
     classes_char <- unlist(classes_char)
     # Based on number of acceptable classes, the msg is different
-    if( length(classes_char) > 2 ){
-        class_txt <- paste0(
-            paste(
-                classes_char[seq_len(length(classes_char)-1)], collapse = ", "),
-            " or ", classes_char[length(classes_char)])
-    } else if( length(classes_char) == 2 ){
-        class_txt <- paste0(classes_char[[1]], " or ", classes_char[[2]])
-    } else{
-        class_txt <- classes_char
-    }
+    class_txt <- .create_msg_from_list(classes_char)
     # Create a message
     msg <- paste0("'", variable_name, "' must be ", class_txt, "." )
 
@@ -175,6 +166,22 @@
     return(input_correct)
 }
 
+# This function creates a string from character values provided. The string
+# can be used to messages. It creates a tidy list from list of values.
+.create_msg_from_list <- function(classes_char, and_or = "or", ...){
+    if( length(classes_char) > 2 ){
+        class_txt <- paste0(
+            paste(
+                classes_char[seq_len(length(classes_char)-1)], collapse = ", "),
+            " ", and_or, " ", classes_char[length(classes_char)])
+    } else if( length(classes_char) == 2 ){
+        class_txt <- paste0(
+            classes_char[[1]], " ", and_or, " ", classes_char[[2]])
+    } else{
+        class_txt <- classes_char
+    }
+    return(class_txt)
+}
 
 ############################ OTHER COMMON FUNCTIONS ############################
 
@@ -233,7 +240,7 @@
 #' @importFrom jsonlite fromJSON
 .perform_single_query <- function(
         path, use.cache = FALSE, cache.dir = tempdir(), clear.cache = FALSE,
-        base.url = "https://www.holofooddata.org/api", ...){
+        base.url = "https://www.holofooddata.org/api", full.url = NULL, ...){
     # Check base.url
     temp <- .check_input(base.url, list("character scalar"))
     # Check use.cache
@@ -242,9 +249,15 @@
     temp <- .check_input(cache.dir, list("character scalar"))
     # Check clear.cache
     temp <- .check_input(clear.cache, list("logical scalar"))
+    # Check full.url
+    temp <- .check_input(full.url, list("NULL", "character scalar"))
     #
     # Create url address
-    url <- paste0(base.url, "/", path)
+    if( is.null(full.url) ){
+        url <- paste0(base.url, "/", path)
+    } else{
+        url <- full.url
+    }
     # Get query options
     query_params <- list(...)
     query_params <- lapply(query_params, function(x) paste(x, collapse = ","))
@@ -254,11 +267,14 @@
     if( use.cache || clear.cache ){
         # It is built from query info
         temp <- unlist(query_params)
+        # Construct directory path
+        cache_dir <- file.path(cache.dir, "HoloFoodR_cache")
+        # Construct file path
         cache_path <- c(path, names(temp), temp)
         cache_path <- paste(cache_path, collapse = "_")
         cache_path <- gsub(":|/", "_", cache_path)
         cache_path <- paste0(cache_path, ".RDS")
-        cache_path <- paste0(cache.dir, cache_path)
+        cache_path <- file.path(cache_dir, cache_path)
     }
     # Remove the file from path if specified
     if( clear.cache ){
@@ -286,8 +302,8 @@
             res <- fromJSON(res, flatten = TRUE)
             # Add the result to cache if specified
             if( use.cache ){
-                if( !dir.exists(cache.dir) ){
-                    dir.create(cache.dir)
+                if( !dir.exists(cache_dir) ){
+                    dir.create(cache_dir)
                 }
                 saveRDS(res, cache_path)
             }
@@ -368,4 +384,18 @@
     col <- as.data.frame(col)
     rownames(col) <- NULL
     return(col)
+}
+
+# This function merges lists of data.frames with full_join into single
+# data.frame
+#' @importFrom dplyr full_join
+.full_join_list <- function(res){
+    df <- Reduce(function(df1, df2){
+        # Get common columns
+        common_cols <- intersect(colnames(df1), colnames(df2))
+        # Merge based on common columns
+        temp <- full_join(df1, df2, by = common_cols)
+        return(temp)
+    }, res)
+    return(df)
 }

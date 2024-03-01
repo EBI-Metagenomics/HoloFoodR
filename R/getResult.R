@@ -7,29 +7,45 @@
 #' \code{MultiAssayExperiment} where different omics are stored as
 #' \code{SummarizedExperiment} objects which are optimized for downstream
 #' analytics.
-#'
-#' Moreover, HoloFoodR database does not include metagenomic assembly data, but
-#' you can fetch the data from MGnify database. For easy access to the database
-#' you can utilize MGnifyR package. \code{MGnifyR::getResult()} returns data
-#' also as \code{MultiAssayExperiment} object containing multiple
-#' \code{TreeSummarizedExperiment} objects. This means that the data from
-#' HoloFood and MGnify databases are directly compatible for downstream
-#' analytics.
+#' 
+#' The HoloFood database lacks non-targeted metabolomic data but fetched from
+#' MetaboLights resource. The function \code{getResult} facilitates the
+#' automatic retrieval of metabolomic data and its integration with other
+#' datasets from HoloFood.
+#' 
+#' Furthermore, while the HoloFoodR database does not include metagenomic
+#' assembly data, users can access such data from the MGnify database. The
+#' MGnifyR package provides a convenient interface for accessing this database.
+#' By employing \code{MGnifyR::getResult()}, users can obtain data formatted as
+#' a \code{MultiAssayExperiment} object, containing multiple
+#' \code{TreeSummarizedExperiment} objects. Consequently, data from both
+#' HoloFood and MGnify databases are inherently compatible for subsequent
+#' downstream analysis.
 #'
 #' @param accession \code{Character vector} specifying the
 #' accession IDs of type samples.
+#' 
+#' @param get.metabolomic \code{Logical scalar} specifying whether to retrieve
+#' metabolomic data from MetaboLights database. (Default: \code{TRUE})
 #'
 #' @param ... optional arguments:
 #' \itemize{
 #'   
-#'   \item \code{use.cache}: \code{Logical scalar} specifying whether to
+#'   \item \strong{use.cache} \code{Logical scalar} specifying whether to
+#'   use cache. Note that when \code{get.metabolomic = TRUE} is specified, the
+#'   file from the MetaboLights is stored in the local system to the location
+#'   specified by \code{cache.dir} despite of the value of \code{use.cache}.
+#'   (Default: \code{FALSE})
+#'   
+#'   \item \strong{cache.dir} \code{Character scalar} specifying cache
+#'   directory. (Default: \code{tempdir()})
+#'   
+#'   \item \strong{clear.cache} \code{Logical scalar} specifying whether to
 #'   use.cache (Default: \code{FALSE})
 #'   
-#'   \item \code{cache.dir}: \code{Character scalar} specifying cache directory.
-#'   (Default: \code{tempdir()})
-#'   
-#'   \item \code{clear.cache}: \code{Logical scalar} specifying whether to
-#'   use.cache (Default: \code{FALSE})
+#'   \item \strong{assay.type} \code{Character scalar} specifying the name of
+#'   assay in resulting \code{SummarizedExperiment} object.
+#'   (Default: \code{"counts"}) 
 #'   
 #' }
 #'
@@ -55,9 +71,11 @@ NULL
 
 #' @rdname getResult
 #' @export
-getResult <- function(accession, ...){
+getResult <- function(accession, get.metabolomic = TRUE, ...){
     # Check accession
     temp <- .check_input(accession, list("character vector"))
+    # Check get.metabolomic
+    temp <- .check_input(get.metabolomic, list("logical scalar"))
     #
     # If user tries to feed accession.type or type, disable them
     args <- list(...)
@@ -79,6 +97,18 @@ getResult <- function(accession, ...){
     omics_list <- .construct_MAE(sample_data)
     mae <- omics_list[["mae"]]
     sample_metadata <- omics_list[["metadata"]]
+    
+    # If user wants to get metabolites data and retrieved sample IDs include
+    # metabolite samples. It requires loading files from MetaboLights which
+    # is why there is an option for not loading the data.
+    metabolomics_url <- sample_metadata[["metabolomics_url"]]
+    metabolomics_url <- metabolomics_url[ !is.na(metabolomics_url) ]
+    if( get.metabolomic && length(metabolomics_url) > 0 ){
+        # Get metabolomic data
+        se_metabolomic <- .construct_metabolomic_SE(metabolomics_url, ...)
+        # Add it to MAE
+        mae <- .add_metabolomic_data_to_MAE(mae, se_metabolomic, accession)
+    }
 
     # Get animal metadata for colData of MAE
     # Get all the animals present in sample metadata
@@ -104,16 +134,28 @@ getResult <- function(accession, ...){
     not_found <- accession[ !accession %in% unlist(colnames(mae)) ]
     if( length(not_found) ){
         # Create a message
-        msg <- "Data for the following samples cannot be found"
+        msg <- "Data for the following samples cannot be found."
         # Get the type of samples
         types <- sample_data[["sample_type"]]
-        types <- types[types[["accession"]] %in% accession, "sample_type"]
-        # If metagenomic assembly was one of the samples that user wanted, give
-        # information that it can be found from MGnify database.
-        if( "metagenomic_assembly" %in% types ){
-            msg <- paste0(
-                msg, ". (Note that metagenomic assemblies can be ",
-                "found from the MGnify database. See MGnifyR package.)")
+        types <- types[types[["accession"]] %in% not_found, "sample_type"]
+        types <- unique(types)
+        # Add sample types to message
+        if( !is.null(types) ){
+            # Add info about sample types
+            msg_temp <- .create_msg_from_list(types, "and")
+            if( length(types) == 1 ){
+                msg_temp2 <- "The sample type is"
+            } else{
+                msg_temp2 <- "The sample types are"
+            }
+            msg <- paste0(msg, " ", msg_temp2, " ", msg_temp, ".")
+            # If metagenomic assembly was one of the samples that user wanted,
+            # give information that it can be found from MGnify database.
+            if( "metagenomic_assembly" %in% types ){
+                msg <- paste0(
+                    msg, " (Note that metagenomic assemblies can be ",
+                    "found from the MGnify database. See MGnifyR package.)")
+            }
         }
         # Add those sample IDs that cannot be found to message
         msg <- paste0(msg, ":\n'", paste(not_found, collapse = "', '"), "'")
@@ -123,6 +165,72 @@ getResult <- function(accession, ...){
 }
 
 ################################ HELP FUNCTIONS ################################
+
+# This function subsets metabolomic SE based on accession and adds the data
+# to MAE.
+.add_metabolomic_data_to_MAE <- function(mae, se, accession){
+    # Since MetaboLights data is fetched from the files including all samples
+    # from study and subsetting was not done, there might be samples that was
+    # not listed in accession. --> subset
+    ind <- colnames(se) %in% accession
+    se <- se[, ind]
+    # Create  experiment list from  metabolomic data
+    experiment_list <- ExperimentList(METABOLOMIC = se)
+    # Add it to existing experiment list and create MAE
+    experiment_list <- c(experiments(mae), experiment_list)
+    res <- MultiAssayExperiment(experiment_list)
+    return(res)
+}
+
+# This function retrieves metabolomic data and constructs SE from it
+.construct_metabolomic_SE <- function(urls, assay.type = "counts", ...){
+    # Check assay.type
+    temp <- .check_input(assay.type, list("character scalar"))
+    #
+    # Get unique urls
+    urls <- unique(urls)
+    # Get data from MetaboLigths
+    res <- getMetaboLights(urls, ...)
+    assay <- res[["assay"]]
+    assay_meta <- res[["assay_meta"]]
+    study_meta <- res[["study_meta"]]
+    
+    # Split assay to abundance table and feature metadata
+    assay_cols <- colnames(assay) %in% assay_meta[["Sample Name"]]
+    feat_meta <- assay[ , !assay_cols, drop = FALSE]
+    feat_meta[["feat_ID"]] <- as.character(feat_meta[["feat_ID"]])
+    assay <- assay[ , assay_cols, drop = FALSE]
+    assay[["feat_ID"]] <- feat_meta[["feat_ID"]]
+
+    # Combine assay and study metadata to metadata on samples
+    common_cols <- intersect(colnames(study_meta), colnames(assay_meta))
+    sample_meta <- left_join(study_meta, assay_meta, by = common_cols)
+
+    # Add rownames to tables
+    rownames(assay) <- assay[["feat_ID"]]
+    assay[["feat_ID"]] <- NULL
+    rownames(feat_meta) <- feat_meta[["Sample Name"]]
+    
+    # Order metadatas based on assay
+    feat_meta <- feat_meta[match(rownames(assay), feat_meta[["feat_ID"]]), ]
+    sample_meta <- sample_meta[
+        match(colnames(assay), sample_meta[["Sample Name"]]), ]
+    
+    # Convert to classes supported by SE
+    assay <- as.matrix(assay)
+    assays <- SimpleList(assay)
+    names(assays) <- assay.type
+    feat_meta <- DataFrame(feat_meta, check.names = FALSE)
+    sample_meta <- DataFrame(sample_meta, check.names = FALSE)
+    # Create SummarizedExperiment
+    se <- SummarizedExperiment(
+        assays = assays, rowData = feat_meta, colData = sample_meta)
+    
+    # The data still has sample names from MetaboLights and not from HoloFood
+    # replace them.
+    colnames(se) <- colData(se)[["Comment[BioSamples accession]"]]
+    return(se)
+}
 
 # This function replaces query_accession with accession --> this is to ensure
 # that we merge the data based on query_accession which always point to samples.
@@ -176,6 +284,7 @@ getResult <- function(accession, ...){
 # We have already sample metadata from structured metadata. However, sample
 # data also includes some additional tables. This function adds those additional
 # tables to metadata.
+#' @importFrom dplyr full_join left_join
 .add_sample_data_to_metadata <- function(sample_data, metadata){
     # Get non empty tables
     sample_data <- sample_data[ lengths(sample_data) > 0 ]
@@ -185,19 +294,18 @@ getResult <- function(accession, ...){
         # Get colnames
         cols <- colnames(sample_data[["analysis_summaries"]])
         # Add prefix
-        cols[ !cols %in% c("query_accession")] <- paste0(
-            "analysis_summaries.", cols[ !cols %in% c("query_accession")])
+        cols[ !cols %in% c("accession")] <- paste0(
+            "analysis_summaries.", cols[ !cols %in% c("accession")])
         # Add colnames back
         colnames(sample_data[["analysis_summaries"]]) <- cols
     }
     # Merge sample data
-    sample_data <- Reduce(
-        function(df1, df2) merge(df1, df2, all = TRUE), sample_data)
+    sample_data <- .full_join_list(sample_data)
     # Sample data has same title column that metadata --> remove
     sample_data <- sample_data[ , !colnames(
         sample_data) %in% c("title"), drop = FALSE]
-    # Add to metadata
-    metadata <- merge(metadata, sample_data, by = "accession", all = TRUE)
+    # Add metadata to sample data --> sample data includes all accessions
+    metadata <- full_join(sample_data, metadata, by = "accession")
     # Remove duplicated accessions.
     metadata <- metadata[ !duplicated(metadata[["accession"]]), ]
     rownames(metadata) <- metadata[["accession"]]
@@ -206,6 +314,7 @@ getResult <- function(accession, ...){
 
 # This function creates a sample metadata from specific markers of structured
 # metadata.
+#' @importFrom dplyr bind_rows
 .construct_metadata_from_markers <- function(res){
     # If there are results
     if( length(res) > 0 ){
@@ -213,7 +322,7 @@ getResult <- function(accession, ...){
         # single sample
         res <- lapply(res, .convert_type_to_table)
         # Combine data
-        res <- Reduce(function(df1, df2) merge(df1, df2, all = TRUE), res)
+        res <- bind_rows(res)
         # Check if duplicated accession IDs
         dupl_acc <- duplicated(res[["accession"]])
         if( any(dupl_acc) ){
@@ -233,6 +342,7 @@ getResult <- function(accession, ...){
 # This function gets single datatype as an input. The data is in long format.
 # It converts it to suitable format for sample metadata.
 #' @importFrom stats reshape
+#' @importFrom dplyr full_join
 .convert_type_to_table <- function(type){
     # Get those columns that are in long format and wide
     long_info <- c("accession", "measurement", "marker.name")
@@ -262,7 +372,7 @@ getResult <- function(accession, ...){
     cols <- c(cols, "accession")
     long_data <- long_data[ , cols, drop = FALSE]
     # Add to wide data
-    table <- merge(table, long_data, by = "accession", suffixes = c("",".y"))
+    table <- full_join(table, long_data, by = "accession")
 
     # If there is units info, add it to column since now variables are as
     # columns so units are not defined correctly
