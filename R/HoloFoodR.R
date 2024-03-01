@@ -8,7 +8,7 @@
 #' details on the JSONAPI implementation.
 #'
 #' @name HoloFoodR
-#' @docType _PACKAGE
+#' @docType package
 #' @seealso
 #' \link[SummarizedExperiment:SummarizedExperiment-class]{SummarizedExperiment}
 #' \link[MultiAssayExperiment:MultiAssayExperiment-class]{MultiAssaySummarizedExperiment}
