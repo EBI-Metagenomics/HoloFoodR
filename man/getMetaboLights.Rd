@@ -13,8 +13,8 @@ MetaboLights database.}
 \item{...}{optional arguments:
 \itemize{
   
-  \item \strong{cache.dir} \code{Character scalar} specifying cache
-  directory. (Default: \code{tempdir()})
+  \item \strong{cache.dir} \code{Character scalar} specifying directory
+  where downloaded file is stored. (Default: \code{tempdir()})
   
 }}
 }
@@ -25,7 +25,20 @@ MetaboLights database.}
 Get metabolomic data from MetaboLights database
 }
 \details{
-Non-targeted metabolomics data is in MetaboLigths...
+The HoloFood database primarily comprises targeted metabolomic data,
+omitting non-targeted metabolomic information. Nonetheless, it features URLs
+linking to studies within the MetaboLights database. This functionality
+enables users to access non-targeted metabolomic data. The function returns
+a structured list encompassing data frames for study metadata,
+assay metadata, and assay.
+}
+\examples{
+
+url <- "https://www.ebi.ac.uk/metabolights/ws/studies/MTBLS4381"
+res <- getMetaboLights(url)
+names(res)
+head(res[["feat_meta"]])
+
 }
 \seealso{
 \code{\link[HoloFoodR:getResult]{getResult}}

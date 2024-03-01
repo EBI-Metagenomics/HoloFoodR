@@ -8,10 +8,10 @@
 #' \code{SummarizedExperiment} objects which are optimized for downstream
 #' analytics.
 #' 
-#' The HoloFood database lacks non-targeted metabolomic data but provides URL
-#' addresses directing users to the MetaboLights resource. The function
-#' \code{getResult} facilitates the automatic retrieval of metabolomic data and
-#' its integration with other datasets from HoloFood.
+#' The HoloFood database lacks non-targeted metabolomic data but fetched from
+#' MetaboLights resource. The function \code{getResult} facilitates the
+#' automatic retrieval of metabolomic data and its integration with other
+#' datasets from HoloFood.
 #' 
 #' Furthermore, while the HoloFoodR database does not include metagenomic
 #' assembly data, users can access such data from the MGnify database. The

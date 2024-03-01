@@ -11,16 +11,16 @@ getResult(accession, get.metabolomic = TRUE, ...)
 accession IDs of type samples.}
 
 \item{get.metabolomic}{\code{Logical scalar} specifying whether to retrieve
-metabolomic samples from MetaboLights database. (Default: \code{TRUE})}
+metabolomic data from MetaboLights database. (Default: \code{TRUE})}
 
 \item{...}{optional arguments:
 \itemize{
   
   \item \strong{use.cache} \code{Logical scalar} specifying whether to
   use cache. Note that when \code{get.metabolomic = TRUE} is specified, the
-  file from the MetaboLights is stored in the local system whether to
-  location specified by \code{cache.dir} despite of the value of
-  \code{use.cache}. (Default: \code{FALSE})
+  file from the MetaboLights is stored in the local system to the location
+  specified by \code{cache.dir} despite of the value of \code{use.cache}.
+  (Default: \code{FALSE})
   
   \item \strong{cache.dir} \code{Character scalar} specifying cache
   directory. (Default: \code{tempdir()})
@@ -48,10 +48,10 @@ fetching the samples data because it converts the data to
 \code{SummarizedExperiment} objects which are optimized for downstream
 analytics.
 
-The HoloFood database lacks metabolomic data but provides URL addresses
-directing users to the MetaboLights resource. The function \code{getResult}
-facilitates the automatic retrieval of metabolomic data and its integration
-with other datasets from HoloFood.
+The HoloFood database lacks non-targeted metabolomic data but fetched from
+MetaboLights resource. The function \code{getResult} facilitates the
+automatic retrieval of metabolomic data and its integration with other
+datasets from HoloFood.
 
 Furthermore, while the HoloFoodR database does not include metagenomic
 assembly data, users can access such data from the MGnify database. The
