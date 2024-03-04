@@ -1,0 +1,211 @@
+---
+title: "ECCB Paper - Salmon"
+format: html
+---
+
+```{r}
+library(HoloFoodR)
+library(MGnifyR)
+library(TreeSummarizedExperiment)
+library(reprex)
+library(dplyr)
+library(knitr)
+
+# Get salmon samples
+salmons <- HoloFoodR::doQuery("animals", system = "salmon", use.cache = TRUE, cache.dir = "../.HoloFoodR_cache/salmon_query/")
+
+# Get only salmon metagenomic and metabolomic data
+salmons_metagenomic_metabolomic <- salmons |>
+  filter(metabolomic == TRUE & metagenomic_assembly == TRUE)
+
+# Get only salmon samples that include metagenomic assemblies
+
+```
+
+```{r}
+# Get salmon data
+salmon_data <- HoloFoodR::getData(
+  accession.type = "animals",
+  accession = salmons_metagenomic_metabolomic[["accession"]],
+  use.cache = TRUE,
+  cache.dir = "../.HoloFoodR_cache/salmon_data/"
+)
+
+# Get salmon samples
+salmon_samples <- salmon_data[["samples"]]
+```
+
+```{r}
+salmon_sample_ids <- unique(salmon_samples[["accession"]])
+```
+
+```{r}
+salmon_mae <- HoloFoodR::getResult(
+  salmon_sample_ids,
+  use.cache = TRUE,
+  cache.dir = "../.HoloFoodR_cache/salmon_results/"
+)
+```
+
+```{r}
+# Fetch available salmon experiments
+experiments(salmon_mae)
+```
+
+```{r}
+# Fetch FATTY ACIDS AG TreeSummarizedExperiment
+fatty_acids_mg_tse <- getWithColData(salmon_mae, "FATTY ACIDS MG")
+
+assay(fatty_acids_mg_tse, "counts", withDimnames = TRUE)[0:10, ] |> kable("pipe")
+```
+We have quite a lot of data for fatty acids concentrations in `mg/g`,
+for example, https://www.holofooddata.org/sample/SAMEA112950847.
+
+Same with percentages:
+
+```{r}
+# Fetch FATTY ACIDS PERCENTAGE TreeSummarizedExperiment
+fatty_acids_percentage_tse <- getWithColData(salmon_mae, "FATTY ACIDS PERCENTAGE")
+
+assay(fatty_acids_percentage_tse, "counts", withDimnames = TRUE)[0:10, ] |> kable("pipe")
+```
+
+Now we can fetch metagenomic data.
+
+```{r}
+mg_salmon <- MgnifyClient(useCache = TRUE)
+
+metagenomic_salmon_samples <- salmon_samples[
+    salmon_samples[["sample_type"]] == "metagenomic_assembly", ]
+
+# Search for 410 sample IDs in MGnify database
+salmon_analysis_ids <- searchAnalysis(
+  mg_salmon,
+  type = "samples",
+  metagenomic_salmon_samples[["accession"]]
+)
+# We only find 393 accession IDs
+```
+```{r}
+head(salmon_analysis_ids)
+```
+
+```{r}
+# Get MAE metagenomic taxonomic data for salmon from MGnify
+salmon_metagenomic_tse <- MGnifyR::getResult(
+  mg_salmon,
+  get.func = FALSE,
+  salmon_analysis_ids)
+# And we only get 392 results by querying 393 salmon_analysis_ids
+
+# salmon_metagenomic_mae <- MGnifyR::getResult(
+#   mg_salmon,
+#   salmon_analysis_ids)
+```
+
+```{r}
+# Get experiments of salmon metagenomic data
+# salmon_experiments <- experiments(salmon_metagenomic_mae)
+
+# Convert analysis names to sample names
+salmon_sample_id <-
+  names(salmon_analysis_ids)[
+    match(
+      colnames(salmon_metagenomic_tse),
+      salmon_analysis_ids
+    )
+  ]
+
+# Before assigning colnames to MAE object,
+# their ids are analysis like MGYA00606450
+# salmon_analysis_ids containers these ids
+# as a character vector
+# SAMEA7688025   SAMEA7687961 
+# "MGYA00606450" "MGYA00606358"
+# We need to change colnames of salmon_metagenomic_mae to these ids
+colnames(salmon_metagenomic_tse) <- salmon_sample_id
+
+# Build MAE experiment from TSE
+salmon_metagenomic_mae <- MultiAssayExperiment(
+  experiments = list("METAGENOMIC COUNTS" = salmon_metagenomic_tse),
+  colData = colData(salmon_metagenomic_tse)
+)
+
+# Merge HoloFood and MGnify MultiAssayExperiment objects
+# salmon_mae[["METAGENOME"]] <- salmon_metagenomic_mae
+# salmon_merged_mae <- c(experiments(salmon_mae), salmon_mae)
+
+# There are 392 colNames in salmon_metagenomic_mae
+# and 410 in each experiment of salmon_mae
+# I need to filter the salmon_mae object to
+# only have matching colname() entries in TSE and MAE
+#match(colnames(salmon_mae[["FATTY ACIDS MG"]]), colnames(salmon_metagenomic_mae))
+
+# Merge MAE objects
+salmon_merged_mae <- c(salmon_mae, salmon_metagenomic_mae)
+
+# Save to RDS
+saveRDS(object = salmon_merged_mae, file = "output/salmon_merged_mae.RDS")
+```
+
+
+## Fetch samples
+
+We can also fetch samples instead of animals from Holofood database.
+
+```{r}
+# We can also fetch samples instead of animals
+samples <- HoloFoodR::doQuery("samples", use.cache = TRUE, cache.dir = "../.HoloFoodR_cache/salmon_query/", system = "salmon")
+
+# Get SAMPLE data
+sample_data <- HoloFoodR::getData(
+  accession.type = "samples",
+  accession = samples[["accession"]],
+  use.cache = TRUE,
+  cache.dir = "../.HoloFoodR_cache/salmon_data/"
+)
+
+# Sample data as data.frame
+sample_data_flat <- HoloFoodR::getData(
+  accession.type = "samples",
+  accession = samples[["accession"]],
+  flatten = TRUE,
+  use.cache = TRUE,
+  cache.dir = "../.HoloFoodR_cache/salmon_data/"
+)
+
+# We can filter sample_data to get the results only
+# on metagenomic_assembly, fatty_acids, heavy_metals, iodine,
+# and metabolomic sample types
+# sample_filter <- sample_data_flat[["sample_type"]] %in%
+#   c(
+#     "metagenomic_assembly",
+#     "fatty_acids",
+#     "heavy_metals",
+#     "iodine",
+#     "metabolomic"
+#   )
+# 
+# # Fetch 5 sample types from HoloFood
+# sample_filtered_sample_ids <- unique(sample_data_flat[filter, ]$accession)
+```
+
+```{r}
+# # Get data on 5 sample types specified above
+# sample_filtered_mae <- HoloFoodR::getResult(
+#   sample_filtered_sample_ids,
+#   use.cache = TRUE,
+#   cache.dir = ".HoloFoodR_cache/salmon_results/"
+# )
+
+sample_ids <- unique(sample_data[["accession"]][["accession"]])
+
+# Get data on all samples
+sample_mae <- HoloFoodR::getResult(
+  sample_ids,
+  use.cache = TRUE,
+  cache.dir = "../.HoloFoodR_cache/salmon_results/"
+)
+```
+
+

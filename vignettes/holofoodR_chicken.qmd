@@ -1,0 +1,95 @@
+---
+title: "ECCB Paper - Chicken"
+---
+
+```{r}
+library(HoloFoodR)
+library(reprex)
+library(MGnifyR)
+library(dplyr)
+# Get samples of chicken
+chickens <- HoloFoodR::doQuery("animals", system = "chicken", use.cache = TRUE, cache.dir = ".HoloFoodR_cache/chicken_query/")
+
+# Get only chicken metagenomic and metabolomic data
+chickens_metagenomic_metabolomic <- chickens |>
+  filter(metabolomic_targeted == TRUE & metagenomic_assembly == TRUE)
+```
+
+```{r}
+# Get chicken data
+chicken_data <- HoloFoodR::getData(
+  accession.type = "animals",
+  accession = chickens_metagenomic_metabolomic[["accession"]],
+  use.cache = TRUE,
+  cache.dir = ".HoloFoodR_cache/chicken_data/"
+)
+
+# Get chicken samples
+chicken_samples <- chicken_data[["samples"]]
+```
+
+```{r}
+# Get only metagenomic assemblies and targeted metabolomics
+chicken_samples_metagenomic_metabolomic <-
+  chicken_samples |>
+  filter(sample_type == "metagenomic_assembly" | sample_type == "metabolomic_targeted")
+```
+
+```{r}
+# Get sample ids
+chicken_sample_ids <- unique(chicken_samples_metagenomic_metabolomic[["accession"]])
+```
+
+```{r}
+chicken_mae <- HoloFoodR::getResult(
+  chicken_sample_ids,
+  use.cache = TRUE,
+  cache.dir = ".HoloFoodR_cache/chicken_result/")
+```
+
+```{r}
+# Fetch available salmon experiments
+experiments(chicken_mae)
+
+# Fetch FATTY ACIDS AG TreeSummarizedExperiment
+fatty_acids_mg_tse <- getWithColData(salmon_mae, "FATTY ACIDS MG")
+
+assay(fatty_acids_mg_tse, "counts", withDimnames = TRUE)[0:10, ] |> kable("pipe")
+```
+
+## Integrate chicken data with MGnify data
+
+```{r}
+# Create MgnifyClient object with caching for chicken samples
+mg_chicken <- MgnifyClient(
+  useCache = TRUE,
+  cacheDir = ".MGnifyR_cache_chicken/")
+
+# Fetch only samples of metagenomic assembly type
+metagenomic_chicken_samples <- chicken_samples[
+    chicken_samples[["sample_type"]] == "metagenomic_assembly", ]
+
+# Get analysis IDs of metagenomic chicken runs
+chicken_analysis_ids <- searchAnalysis(
+  mg_chicken,
+  type = "samples",
+  metagenomic_chicken_samples[["accession"]]
+)
+```
+
+```{r}
+# Fetch metagenomic MAE objects of chicken
+chicken_metagenomic_mae <-
+  MGnifyR::getResult(mg_chicken,
+                     chicken_analysis_ids)
+
+chicken_metagenomic_mae
+```
+
+```{r}
+
+```
+
+
+
+
