@@ -73,7 +73,10 @@ assay(fatty_acids_percentage_tse, "counts", withDimnames = TRUE)[0:10, ] |> kabl
 Now we can fetch metagenomic data.
 
 ```{r}
-mg_salmon <- MgnifyClient(useCache = TRUE)
+mg_salmon <- MgnifyClient(
+  useCache = TRUE,
+  cacheDir = "../.MGnifyR_cache/"
+  )
 
 metagenomic_salmon_samples <- salmon_samples[
     salmon_samples[["sample_type"]] == "metagenomic_assembly", ]
