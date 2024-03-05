@@ -63,4 +63,32 @@ salmon_merged_mae[["METAGENOMIC COUNTS"]] <- transformAssay(salmon_merged_mae[["
 salmon_merged_mae[["METAGENOMIC COUNTS"]] <- transformAssay(salmon_merged_mae[["METAGENOMIC COUNTS"]], assay.type = "relabundance", method = "rclr")
 ```
 
+## MOFA analysis
+
+```{r}
+# Remove entries from MAE that do not have animal metadata
+colData(salmon_merged_mae) <- colData(salmon_merged_mae)[!is.na(colData(salmon_merged_mae)[["animal"]]), ]
+
+# We need to add treatment description to colData of the MAE object
+# to use it as a grouping variable in MOFA
+fatty_acid_cols_to_merge <- colData(salmon_merged_mae[["FATTY ACIDS MG"]])[c("Treatment description", "animal", "accession")]
+
+colData(salmon_merged_mae) <- merge(
+  as.data.frame(colData(salmon_merged_mae),
+  as.data.frame(fatty_acid_cols_to_merge), by = c("animal")
+))
+
+colData(salmon_merged_mae)[["treatment"]] <- fatty_acid_cols_to_merge[["Treatment description"]]
+
+
+
+colData(salmon_merged_mae[["FATTY ACIDS MG"]])["Treatment description"]
+
+colnames(salmon_merged_mae[["FATTY ACIDS MG"]])
+```
+
+```{r}
+colData(salmon_merged_mae)
+```
+
 

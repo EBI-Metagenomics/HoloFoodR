@@ -129,7 +129,7 @@ salmon_sample_id <-
 colnames(salmon_metagenomic_tse) <- salmon_sample_id
 
 # Add salmon sample accession numbers from Holofood
-colData(salmon_metagenomic_mae)@listData$accession <- salmon_sample_id
+#colData(salmon_metagenomic_mae)@listData$accession <- salmon_sample_id
 
 # Build MAE experiment from TSE
 salmon_metagenomic_mae <- MultiAssayExperiment(
