@@ -109,7 +109,46 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
         # Add it to MAE
         mae <- .add_metabolomic_data_to_MAE(mae, se_metabolomic, accession)
     }
-
+    
+    # If there are samples that user wanted to include but are not present in
+    # the data (they do not have data in HoloFood database), give warning.
+    # Moreover, add them as empty experiments so that animal metadata can still
+    # be included for them also.
+    not_found <- accession[ !accession %in% unlist(colnames(mae)) ]
+    if( length(not_found) ){
+        # Create a message
+        msg <- "Data for the following samples cannot be found."
+        # Get the type of samples
+        types <- sample_data[["sample_type"]]
+        types <- types[types[["accession"]] %in% not_found, ]
+        type_names <- types[["sample_type"]]
+        type_names <- unique(type_names)
+        # Add sample types to message
+        if( !is.null(type_names) ){
+            # Add info about sample types
+            msg_temp <- .create_msg_from_list(type_names, "and")
+            if( length(types) == 1 ){
+                msg_temp2 <- "The sample type is"
+            } else{
+                msg_temp2 <- "The sample types are"
+            }
+            msg <- paste0(msg, " ", msg_temp2, " ", msg_temp, ".")
+            # If metagenomic assembly was one of the samples that user wanted,
+            # give information that it can be found from MGnify database.
+            if( "metagenomic_assembly" %in% type_names ){
+                msg <- paste0(
+                    msg, " (Note that metagenomic assemblies can be ",
+                    "found from the MGnify database. See MGnifyR package.)")
+            }
+        }
+        # Add those sample IDs that cannot be found to message
+        msg <- paste0(msg, ":\n'", paste(not_found, collapse = "', '"), "'")
+        warning(msg, call. = FALSE)
+        
+        # Create empty SE objects and add them to MAE
+        mae <- .add_empty_experiments(mae, types)
+    }
+    
     # Get animal metadata for colData of MAE
     # Get all the animals present in sample metadata
     uniq_animals <- unique(sample_metadata[["animal"]])
@@ -128,43 +167,33 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     animal_metadata <- mae_animal_list[["metadata"]]
     # Combine sample and animal data
     mae <- .add_animal_data_to_MAE(mae, mae_animal, animal_metadata)
-
-    # If there are samples that user wanted to include but are not present in
-    # the data (they do not have data in HoloFood database), give warning
-    not_found <- accession[ !accession %in% unlist(colnames(mae)) ]
-    if( length(not_found) ){
-        # Create a message
-        msg <- "Data for the following samples cannot be found."
-        # Get the type of samples
-        types <- sample_data[["sample_type"]]
-        types <- types[types[["accession"]] %in% not_found, "sample_type"]
-        types <- unique(types)
-        # Add sample types to message
-        if( !is.null(types) ){
-            # Add info about sample types
-            msg_temp <- .create_msg_from_list(types, "and")
-            if( length(types) == 1 ){
-                msg_temp2 <- "The sample type is"
-            } else{
-                msg_temp2 <- "The sample types are"
-            }
-            msg <- paste0(msg, " ", msg_temp2, " ", msg_temp, ".")
-            # If metagenomic assembly was one of the samples that user wanted,
-            # give information that it can be found from MGnify database.
-            if( "metagenomic_assembly" %in% types ){
-                msg <- paste0(
-                    msg, " (Note that metagenomic assemblies can be ",
-                    "found from the MGnify database. See MGnifyR package.)")
-            }
-        }
-        # Add those sample IDs that cannot be found to message
-        msg <- paste0(msg, ":\n'", paste(not_found, collapse = "', '"), "'")
-        warning(msg, call. = FALSE)
-    }
     return(mae)
 }
 
 ################################ HELP FUNCTIONS ################################
+
+# If accession cannot be found, animal metadata is not included for that
+# accession in MAE. Since user wanted to get the data for that also, add empty
+# SEs to MAE with accessions, so that animal metadata can be included for those
+# accessions in colData(mae).
+.add_empty_experiments <- function(mae, types){
+    # Loop through types and create SE from them
+    type_names <- unique(types[["sample_type"]])
+    ses <- lapply(type_names, function(type){
+        # Get all the accessions for that sample type
+        accessions <- types[types[["sample_type"]] == type, "accession"]
+        # Create empty SE
+        se <- SummarizedExperiment(colData = DataFrame(row.names = accessions))
+        return(se)
+    })
+    names(ses) <- type_names
+    # Convert to ExperimentList
+    ses <- ExperimentList(ses)
+    # Add to MAE
+    exp_list <- c(experiments(mae), ses)
+    mae <- MultiAssayExperiment(exp_list)
+    return(mae)
+}
 
 # This function subsets metabolomic SE based on accession and adds the data
 # to MAE.
