@@ -148,7 +148,7 @@ salmon_metagenomic_mae <- MultiAssayExperiment(
 salmon_merged_mae <- c(salmon_mae, salmon_metagenomic_mae)
 
 # Save to RDS
-saveRDS(object = salmon_merged_mae, file = "output/salmon_merged_mae.RDS")
+saveRDS(object = salmon_merged_mae, file = "../inst/extdata/salmon_merged_mae.RDS")
 ```
 
 
