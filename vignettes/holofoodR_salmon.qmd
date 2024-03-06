@@ -214,4 +214,24 @@ sample_mae <- HoloFoodR::getResult(
 )
 ```
 
+## Add MGnify data to samples
+
+```{r}
+mg_sample_salmon <- MgnifyClient(useCache = TRUE)
+
+# Extract sample type dataframe from sample_data
+sample_types <- sample_data[["sample_type"]]
+
+# Fetch only metagenomic samples for MGnify
+metagenomic_samples <- sample_types[sample_types[["sample_type"]] == "metagenomic_assembly", ]
+```
+
+```{r}
+sample_analysis_ids <-
+  MGnifyR::searchAnalysis(
+    mg_sample_salmon,
+    type = "samples",
+    
+  )
+```
 
