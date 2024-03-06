@@ -8,9 +8,11 @@ library(mia)
 library(MOFA2)
 library(reticulate)
 library(knitr)
-# path <- system.file("extdata", "salmon_merged_mae.RDS", package = "HoloFoodR")
-# salmon_merged_mae <- readRDS(path)
-salmon_merged_mae <- readRDS("../inst/extdata/salmon_merged_mae.RDS")
+library(patchwork)
+library(ggplot2)
+path <- system.file("extdata", "salmon_merged_mae.RDS", package = "HoloFoodR")
+salmon_merged_mae <- readRDS(path)
+# salmon_merged_mae <- readRDS("../inst/extdata/salmon_merged_mae.RDS")
 ```
 
 ## Data exploration
@@ -20,6 +22,7 @@ colData(salmon_merged_mae) |>
   head() |>
   kable()
 ```
+
 ```{r}
 colData(salmon_merged_mae) |> names()
 ```
@@ -30,7 +33,6 @@ salmon_merged_mae[["FATTY ACIDS MG"]] |> colData() |> head()
 
 ```{r}
 # Rename assays in each of experimentList() for more clarity
-
 assayNames(salmon_merged_mae[["FATTY ACIDS MG"]]) <- "fatty_acid_mg"
 assayNames(salmon_merged_mae[["FATTY ACIDS PERCENTAGE"]]) <- "fatty_acid_percentage"
 assayNames(salmon_merged_mae[["IODINE"]]) <- "iodine"
@@ -71,24 +73,85 @@ colData(salmon_merged_mae) <- colData(salmon_merged_mae)[!is.na(colData(salmon_m
 
 # We need to add treatment description to colData of the MAE object
 # to use it as a grouping variable in MOFA
-fatty_acid_cols_to_merge <- colData(salmon_merged_mae[["FATTY ACIDS MG"]])[c("Treatment description", "animal", "accession")]
-
-colData(salmon_merged_mae) <- merge(
-  as.data.frame(colData(salmon_merged_mae),
-  as.data.frame(fatty_acid_cols_to_merge), by = c("animal")
-))
-
-colData(salmon_merged_mae)[["treatment"]] <- fatty_acid_cols_to_merge[["Treatment description"]]
-
-
-
-colData(salmon_merged_mae[["FATTY ACIDS MG"]])["Treatment description"]
-
-colnames(salmon_merged_mae[["FATTY ACIDS MG"]])
+# fatty_acid_cols_to_merge <- colData(salmon_merged_mae[["FATTY ACIDS MG"]])[c("Treatment description", "animal", "accession")]
+# 
+# colData(salmon_merged_mae) <- merge(
+#   as.data.frame(colData(salmon_merged_mae),
+#   as.data.frame(fatty_acid_cols_to_merge), by = c("animal")
+# ))
+# 
+# colData(salmon_merged_mae)[["treatment"]] <- fatty_acid_cols_to_merge[["Treatment description"]]
+# 
+# colData(salmon_merged_mae[["FATTY ACIDS MG"]])["Treatment description"]
+# 
+# colnames(salmon_merged_mae[["FATTY ACIDS MG"]])
 ```
 
 ```{r}
-colData(salmon_merged_mae)
+# Extract Trial letter from Animal code
+colData(salmon_merged_mae)[["Trial code"]] <- substr(colData(salmon_merged_mae)[["Animal code"]], 2, 2)
 ```
 
+
+```{r}
+# Remove experiments that are not required for the model
+salmon_merged_mae_without_assays <- salmon_merged_mae
+experiments(salmon_merged_mae)[["FATTY ACIDS PERCENTAGE"]] <- NULL
+experiments(salmon_merged_mae)[["IODINE"]] <- NULL
+experiments(salmon_merged_mae)[["METABOLOMIC"]] <- NULL
+
+# assay(salmon_merged_mae_without_assays[["FATTY ACIDS PERCENTAGE"]], "counts") <- NULL
+# assay(salmon_merged_mae_without_assays[["IODINE"]], "counts") <- NULL
+# assay(salmon_merged_mae_without_assays[["METABOLOMIC"]], "counts") <- NULL
+
+# Create model from MAE
+model <- create_mofa_from_MultiAssayExperiment(salmon_merged_mae,
+                                               group = "Trial code",
+                                               extract_metadata = TRUE)
+model
+```
+```{r}
+# Set model's options
+model_opts <- get_default_model_options(model)
+model_opts$num_factors <- 5
+
+train_opts <- get_default_training_options(model)
+
+# Prepare MOFA model
+model.prepared <- prepare_mofa(
+  object = model,
+  model_options = model_opts
+)
+
+# Train model
+model.trained <- run_mofa(model.prepared, use_basilisk = TRUE)
+```
+```{r}
+model.trained
+```
+
+```{r, fig.width=15}
+plot_list <- plot_variance_explained(model.trained,
+                                     x = "view", y = "factor",
+                                     plot_total = T)
+
+wrap_plots(plot_list, nrow = 2) +
+  plot_annotation(title = "Variance Explained per factor and assay",
+                  theme = theme(plot.title = element_text(hjust = 0.5)))
+```
+```{r}
+custom_plotter <- function(name) {
+  
+  p <- plot_top_weights(model.trained,
+                        view = name,
+                        factors = "all",
+                        nfeatures = 10) +
+    labs(title = paste0("Top weights of the ", name, " assay"))
+  
+}
+
+plot_list <- lapply(c("FATTY ACIDS MG", "METAGENOMIC COUNTS"), custom_plotter)
+
+wrap_plots(plot_list, nrow = 2) & theme(text = element_text(size = 8))
+```
 
