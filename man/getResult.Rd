@@ -68,8 +68,8 @@ downstream analysis.
 samples <- doQuery("samples", animal_accession = "SAMEA112904746")
 
 # Get the data
-res <- getResult(samples[["accession"]])
-res
+mae <- getResult(samples[["accession"]])
+mae
 
 }
 \seealso{
