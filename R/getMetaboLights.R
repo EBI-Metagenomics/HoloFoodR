@@ -127,6 +127,7 @@ getMetaboLights <- function(url, ...){
 }
 
 # This is a common function for downloading a file from MetaboLights database
+#' @importFrom utils download.file read.delim
 .get_metabolights_file <- function(
         study.id, file.name, cache.dir = tempdir(),
         metabolights.base.url = "http://ftp.ebi.ac.uk/pub/databases/metabolights/studies/public/", ...){
