@@ -230,7 +230,7 @@
     },
     "S4Arrays": {
       "Package": "S4Arrays",
-      "Version": "1.3.5",
+      "Version": "1.3.6",
       "Source": "Bioconductor",
       "Repository": "Bioconductor 3.19",
       "Requirements": [
@@ -244,11 +244,11 @@
         "methods",
         "stats"
       ],
-      "Hash": "07aaedbe9bbda51084797a9bf91506ac"
+      "Hash": "49cabd8e4bba792795ec2b8d787c7924"
     },
     "S4Vectors": {
       "Package": "S4Vectors",
-      "Version": "0.41.3",
+      "Version": "0.41.4",
       "Source": "Bioconductor",
       "Repository": "Bioconductor 3.19",
       "Requirements": [
@@ -259,7 +259,7 @@
         "stats4",
         "utils"
       ],
-      "Hash": "5e675116835bfc4a1140e131fc00e826"
+      "Hash": "59eef8fb01df6ba9080e421ca1e09736"
     },
     "SparseArray": {
       "Package": "SparseArray",
