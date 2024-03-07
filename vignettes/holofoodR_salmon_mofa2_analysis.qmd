@@ -10,9 +10,9 @@ library(reticulate)
 library(knitr)
 library(patchwork)
 library(ggplot2)
-path <- system.file("extdata", "salmon_merged_mae.RDS", package = "HoloFoodR")
-salmon_merged_mae <- readRDS(path)
-# salmon_merged_mae <- readRDS("../inst/extdata/salmon_merged_mae.RDS")
+# path <- system.file("extdata", "salmon_merged_mae.RDS", package = "HoloFoodR")
+# salmon_merged_mae <- readRDS(path)
+salmon_merged_mae <- readRDS("../inst/extdata/salmon_merged_mae.RDS")
 ```
 
 ## Data exploration
@@ -69,17 +69,22 @@ salmon_merged_mae[["METAGENOMIC COUNTS"]] <- transformAssay(salmon_merged_mae[["
 
 ```{r}
 # Remove entries from MAE that do not have animal metadata
-colData(salmon_merged_mae) <- colData(salmon_merged_mae)[!is.na(colData(salmon_merged_mae)[["animal"]]), ]
+# colData(salmon_merged_mae) <- colData(salmon_merged_mae)[!is.na(colData(salmon_merged_mae)[["animal"]]), ]
 
 # We need to add treatment description to colData of the MAE object
 # to use it as a grouping variable in MOFA
 # fatty_acid_cols_to_merge <- colData(salmon_merged_mae[["FATTY ACIDS MG"]])[c("Treatment description", "animal", "accession")]
 # 
-# colData(salmon_merged_mae) <- merge(
-#   as.data.frame(colData(salmon_merged_mae),
-#   as.data.frame(fatty_acid_cols_to_merge), by = c("animal")
-# ))
+# # Get metadata of MAE object
+# mae_metadata <- colData(salmon_merged_mae)
 # 
+# # Merge animal and sample metadata
+# merged_metadata <- merge(mae_metadata, fatty_acid_cols_to_merge, all.x = TRUE, by = "accession")
+# merged_metadata <- DataFrame(merged_metadata)
+# 
+# rownames(merged_metadata) <- rownames(fatty_acid_cols_to_merge)
+
+# colData(salmon_merged_mae) <- merged_metadata
 # colData(salmon_merged_mae)[["treatment"]] <- fatty_acid_cols_to_merge[["Treatment description"]]
 # 
 # colData(salmon_merged_mae[["FATTY ACIDS MG"]])["Treatment description"]
@@ -106,7 +111,7 @@ experiments(salmon_merged_mae)[["METABOLOMIC"]] <- NULL
 
 # Create model from MAE
 model <- create_mofa_from_MultiAssayExperiment(salmon_merged_mae,
-                                               group = "Trial code",
+                                               group = "Treatment code",
                                                extract_metadata = TRUE)
 model
 ```
@@ -139,6 +144,7 @@ wrap_plots(plot_list, nrow = 2) +
   plot_annotation(title = "Variance Explained per factor and assay",
                   theme = theme(plot.title = element_text(hjust = 0.5)))
 ```
+
 ```{r}
 custom_plotter <- function(name) {
   
@@ -154,4 +160,6 @@ plot_list <- lapply(c("FATTY ACIDS MG", "METAGENOMIC COUNTS"), custom_plotter)
 
 wrap_plots(plot_list, nrow = 2) & theme(text = element_text(size = 8))
 ```
+
+
 
