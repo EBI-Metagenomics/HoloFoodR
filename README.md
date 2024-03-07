@@ -1,4 +1,4 @@
-# HoloFoodR <img src="inst/extdata/holofoodr_logo.png" align="right" width="120" />
+# HoloFoodR <img src="man/figures/holofoodr_logo.png" align="right" width="120" />
 
 An R package developed for streamlining the integration and analysis of EMBL-EBI
 HoloFood data. This utility package simplifies access to the resource, enabling
@@ -15,7 +15,7 @@ valuable insights into intricate biological systems.
 This research has received funding from the Horizon 2020 Programme of the
 European Union within the FindingPheno project under grant agreement No 952914.
 
-## FindingPheno <img src="inst/extdata/findingpheno_logo.png" align="right" width="160" />
+## FindingPheno <img src="man/figures/findingpheno_logo.png" align="right" width="160" />
 
 FindingPheno, an EU-funded project, is dedicated to developing computational
 tools and methodologies for the integration and analysis of multi-omics data.
@@ -24,7 +24,7 @@ between hosts and their microbiomes.
 
 - [FindingPheno website](https://findingpheno.eu/)
 
-## HoloFood <img src="inst/extdata/holofood_logo.png" align="right" width="60" />
+## HoloFood <img src="man/figures/holofood_logo.png" align="right" width="60" />
 
 HoloFood, a project funded under EU's Horizon 2020 programme, employed a
 holistic, "hologenomic", approach to enhance the efficiency of food production 
@@ -45,7 +45,7 @@ explore available datasets in HoloFood, you can utilize the API browser.
 - [API browser](https://www.holofooddata.org/)
 - [API documentation](https://docs.holofooddata.org/api.html)
 
-## MGnify <img src="inst/extdata/mgnify_logo.jpg" align="right" width="60" />
+## MGnify <img src="man/figures/mgnify_logo.jpg" align="right" width="60" />
 
 EMBL-EBI's MGnify serves as a repository for microbiome data, offering a wide array
 of analyses encompassing metabarcoding, metatranscriptomic, and metagenomic
@@ -56,14 +56,14 @@ can be accessed through MGnifyR package.
 - [MGnify website](https://www.ebi.ac.uk/metagenomics)
 - [MGnifyR](https://github.com/EBI-Metagenomics/MGnifyR)
 
-## MetaboLights <img src="inst/extdata/metabolights_logo.jpg" align="right" width="160" />
+## MetaboLights <img src="man/figures/metabolights_logo.jpg" align="right" width="160" />
 
 MetaboLights, managed by EMBL-EBI, serves as a repository for metabolomic data.
 It can be accessed through HoloFoodR package.
 
 - [MetaboLights website](https://www.ebi.ac.uk/metabolights/)
 
-## miaverse <img src="inst/extdata/mia_logo.png" align="right" width="60" />
+## miaverse <img src="man/figures/mia_logo.png" align="right" width="60" />
 
 miaverse is an R/Bioconductor framework specialized for microbiome downstream
 data analysis, leveraging the TreeSummarizedExperiment class. It offers a
