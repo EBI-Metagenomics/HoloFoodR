@@ -292,7 +292,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
 
     # Some metadata markers are sample information that goes to sample metadata.
     # Some metadata is common for certain animal. That information goes to
-    # common metadata.
+    # common "study" metadata --> colData(mae).
     sample_metadata_types <- c("ENA Checklist", "SAMPLE")
     study_metadata_types <- c(
         "TRIAL", "TREATMENT", "TANK",
