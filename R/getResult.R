@@ -593,6 +593,9 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     vec_cols <- lapply(vec_cols, function(x){
         # Some numeric values have comma instead of point
         temp <- gsub(",", ".", x)
+        # Some values have percentage symbol. The unit already tells that it is
+        # percentage.
+        temp <- gsub("%", "", x)
         # Try to convert to numeric
         temp_num <- suppressWarnings( as.numeric(temp) )
         # Check if we lost info. If we did, then the column is not numeric. If
