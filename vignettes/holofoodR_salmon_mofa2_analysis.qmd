@@ -52,14 +52,9 @@ print(is_identical)
 # If a number is < 0.01, I assume it's a 0
 fatty_acid_mg_assay <- assay(salmon_merged_mae[["FATTY ACIDS MG"]], "fatty_acid_mg")
 fatty_acid_mg_assay[fatty_acid_mg_assay == "<0.01"] <- 0
-#fatty_acid_mg_assay_numeric <- apply(fatty_acid_mg_assay, 2, as.numeric) 
+fatty_acid_mg_assay <- apply(fatty_acid_mg_assay, c(1, 2), function(x) as.numeric(gsub(",", ".", x)))
 
-fatty_acid_mg_assay_numeric <- matrix(fatty_acid_mg_assay_numeric,
-                                      nrow = nrow(fatty_acid_mg_assay),
-                                      byrow = TRUE,
-                                      dimnames = dimnames(fatty_acid_mg_assay))
-
-assay(salmon_merged_mae[["FATTY ACIDS MG"]], "fatty_acid_mg") <- fatty_acid_mg_assay_numeric
+assay(salmon_merged_mae[["FATTY ACIDS MG"]], "fatty_acid_mg") <- fatty_acid_mg_assay
 ```
 
 
