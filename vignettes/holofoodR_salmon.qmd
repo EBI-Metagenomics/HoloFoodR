@@ -130,11 +130,27 @@ colnames(salmon_metagenomic_tse) <- salmon_sample_id
 
 # Test with merging by row.names
 # Do inner join
+colData(salmon_metagenomic_tse)$accession <- rownames(colData(salmon_metagenomic_tse))
+metagenomic_tse_coldata <- colData(salmon_metagenomic_tse)
+salmon_metadata <- colData(salmon_mae[["metagenomic_assembly"]])
+# Performing inner join
+merged_coldata <- merge(
+  metagenomic_tse_coldata,
+  salmon_metadata,
+  by = "accession",
+  all = FALSE
+)
+# Add rownames to merged data
+rownames(merged_coldata) <- merged_coldata$accession
+# Assign merged data to TSE object
+colData(salmon_metagenomic_tse) <- merged_coldata
+  
 # colData(salmon_metagenomic_tse) <- merge(
 #   colData(salmon_mae[["metagenomic_assembly"]]), colData(salmon_metagenomic_tse),
-#   by = 0, all = FALSE
+#   by = "accession", all = FALSE
 # )
 # rownames(colData(salmon_metagenomic_tse)) <- colData(salmon_metagenomic_tse)$Row.names
+
 #rownames(merged_coldata) <- merged_coldata$Row.names
 #colData(salmon_metagenomic_tse) <- merged_coldata
 
@@ -185,7 +201,8 @@ salmon_metagenomic_mae <- MultiAssayExperiment(
 # colData(salmon_metagenomic_mae) <- merged_coldata
 
 # Merge MAE objects
-salmon_merged_mae <- c(salmon_mae, salmon_metagenomic_mae)
+salmon_merged_mae <- c(salmon_mae,salmon_metagenomic_mae)
+salmon_merged_mae <- c(experiments(salmon_mae), salmon_metagenomic_mae)
 
 # Save to RDS
 saveRDS(object = salmon_merged_mae, file = "../inst/extdata/salmon_merged_mae.RDS")
