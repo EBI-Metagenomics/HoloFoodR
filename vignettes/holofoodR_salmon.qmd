@@ -147,6 +147,25 @@ salmon_metagenomic_mae <- MultiAssayExperiment(
 # only have matching colname() entries in TSE and MAE
 #match(colnames(salmon_mae[["FATTY ACIDS MG"]]), colnames(salmon_metagenomic_mae))
 
+# Add accession values from rownames to column names to merge on
+# Full join with by row.names does not keep all 410 rows
+# of colData of salmon_mae object
+# However, MGnify only find 392 accessions, thus when setting colData(colData(salmon_metagenomic_mae)), R complains about the discrepancies
+# in the number of rows
+colData(salmon_mae[["metagenomic_assembly"]])$accession <- rownames(colData(salmon_mae[["metagenomic_assembly"]]))
+colData(salmon_metagenomic_mae)$accession <-
+  rownames(colData(salmon_metagenomic_mae))
+# Before adding MGnify data to MAE object, we can add appropriate colData from
+# metagenomic_assemply MAE experiment to it
+merged_coldata <- merge(
+  colData(salmon_mae[["metagenomic_assembly"]]), colData(salmon_metagenomic_mae),
+  by = "accession", all = TRUE
+)
+# Set rownames of merged colData
+rownames(merged_coldata) <- merged_coldata$accession
+# Set colData of salmon metagenomic counts to merged colData
+colData(salmon_metagenomic_mae) <- merged_coldata
+
 # Merge MAE objects
 salmon_merged_mae <- c(salmon_mae, salmon_metagenomic_mae)
 

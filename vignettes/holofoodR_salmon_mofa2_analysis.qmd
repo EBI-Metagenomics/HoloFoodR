@@ -110,7 +110,6 @@ experiments(salmon_merged_mae_without_assays)[["IODINE"]] <- NULL
 experiments(salmon_merged_mae_without_assays)[["METABOLOMIC"]] <- NULL
 experiments(salmon_merged_mae_without_assays)[["transcriptomic"]] <- NULL
 experiments(salmon_merged_mae_without_assays)[["heavy_metals"]] <- NULL
-experiments(salmon_merged_mae_without_assays)[["metagenomic_assembly"]] <- NULL
 experiments(salmon_merged_mae_without_assays)[["metatranscriptomic"]] <- NULL
 experiments(salmon_merged_mae_without_assays)[["host_genomic"]] <- NULL
 experiments(salmon_merged_mae_without_assays)[["metabolomic"]] <- NULL
@@ -120,6 +119,10 @@ experiments(salmon_merged_mae_without_assays)[["metagenomic_amplicon"]] <- NULL
 assay(salmon_merged_mae_without_assays[[1]], "fatty_acid_mg") <- NULL
 assay(salmon_merged_mae_without_assays[[2]], "counts") <- NULL
 assay(salmon_merged_mae_without_assays[[2]], "relabundance") <- NULL
+
+
+
+renameColname(salmon_merged_mae_without_assays)
 
 # assay(salmon_merged_mae_without_assays[["FATTY ACIDS PERCENTAGE"]], "counts") <- NULL
 # assay(salmon_merged_mae_without_assays[["IODINE"]], "counts") <- NULL
