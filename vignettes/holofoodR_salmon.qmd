@@ -168,7 +168,7 @@ salmon_metagenomic_mae <- MultiAssayExperiment(
 # merged_coldata$treatment.code <- sub(":.*", "", merged_coldata$`host diet treatment`)
 
 # Set colData of salmon metagenomic counts to merged colData
-colData(salmon_metagenomic_mae) <- merged_coldata
+# colData(salmon_metagenomic_mae) <- merged_coldata
 
 # Merge MAE objects
 salmon_merged_mae <- c(salmon_mae, salmon_metagenomic_mae)
