@@ -126,12 +126,16 @@ assay(salmon_merged_mae_without_assays[[2]], "relabundance") <- NULL
 # assay(salmon_merged_mae_without_assays[["IODINE"]], "counts") <- NULL
 # assay(salmon_merged_mae_without_assays[["METABOLOMIC"]], "counts") <- NULL
 
+colData(salmon_merged_mae_without_assays) <- colData(salmon_merged_mae_without_assays)[, names(colData(salmon_merged_mae_without_assays)) %in% c("accession", "Treatment code")]
+
 # Create model from MAE
 model <- create_mofa_from_MultiAssayExperiment(salmon_merged_mae_without_assays,
                                                group = "Treatment code",
                                                extract_metadata = TRUE)
 model
 ```
+
+
 ```{r}
 # Set model's options
 model_opts <- get_default_model_options(model)

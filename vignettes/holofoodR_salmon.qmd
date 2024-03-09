@@ -128,6 +128,16 @@ salmon_sample_id <-
 # We need to change colnames of salmon_metagenomic_mae to these ids
 colnames(salmon_metagenomic_tse) <- salmon_sample_id
 
+# Test with merging by row.names
+# Do inner join
+# colData(salmon_metagenomic_tse) <- merge(
+#   colData(salmon_mae[["metagenomic_assembly"]]), colData(salmon_metagenomic_tse),
+#   by = 0, all = FALSE
+# )
+# rownames(colData(salmon_metagenomic_tse)) <- colData(salmon_metagenomic_tse)$Row.names
+#rownames(merged_coldata) <- merged_coldata$Row.names
+#colData(salmon_metagenomic_tse) <- merged_coldata
+
 # Add salmon sample accession numbers from Holofood
 #colData(salmon_metagenomic_mae)@listData$accession <- salmon_sample_id
 
@@ -152,6 +162,10 @@ salmon_metagenomic_mae <- MultiAssayExperiment(
 # of colData of salmon_mae object
 # However, MGnify only find 392 accessions, thus when setting colData(colData(salmon_metagenomic_mae)), R complains about the discrepancies
 # in the number of rows
+
+
+# rownames(merged_coldata) <- merged_coldata$Row.names
+
 # colData(salmon_mae[["metagenomic_assembly"]])$accession <- rownames(colData(salmon_mae[["metagenomic_assembly"]]))
 # colData(salmon_metagenomic_mae)$accession <-
 #   rownames(colData(salmon_metagenomic_mae))
@@ -176,7 +190,6 @@ salmon_merged_mae <- c(salmon_mae, salmon_metagenomic_mae)
 # Save to RDS
 saveRDS(object = salmon_merged_mae, file = "../inst/extdata/salmon_merged_mae.RDS")
 ```
-
 
 ## Fetch samples
 
