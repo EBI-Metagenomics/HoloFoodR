@@ -109,7 +109,7 @@
     },
     "GenomeInfoDb": {
       "Package": "GenomeInfoDb",
-      "Version": "1.39.7",
+      "Version": "1.39.8",
       "Source": "Bioconductor",
       "Repository": "Bioconductor 3.19",
       "Requirements": [
@@ -123,7 +123,7 @@
         "stats4",
         "utils"
       ],
-      "Hash": "e0077c5860fb0112aba2b3cef8ae317e"
+      "Hash": "2eaa776fd87ea28f8fe1aebaf707ae36"
     },
     "GenomeInfoDbData": {
       "Package": "GenomeInfoDbData",
