@@ -201,12 +201,57 @@ salmon_metagenomic_mae <- MultiAssayExperiment(
 # colData(salmon_metagenomic_mae) <- merged_coldata
 
 # Merge MAE objects
-salmon_merged_mae <- c(salmon_mae,salmon_metagenomic_mae)
-salmon_merged_mae <- c(experiments(salmon_mae), salmon_metagenomic_mae)
+# This merging messes up mapping of sample accession numbers to their
+# treatment codes
+# The correct treatment codes can extracted from the
+# host.diet.treatment.y column
+salmon_merged_mae <- c(experiments(salmon_mae), experiments(salmon_metagenomic_mae))
+
+# Create metagenomic count map following example on
+# https://bioconductor.org/packages/release/bioc/vignettes/MultiAssayExperiment/inst/doc/MultiAssayExperiment.html#creation-of-the-multiassayexperiment-class-object
+
+(metagenomic_map <- data.frame(primary=rownames(colData(salmon_merged_mae$metagenomic_assembly)),
+                       colname=colnames(salmon_merged_mae$metagenomic_assembly),
+                       stringsAsFactors = FALSE))
+
+listmap <- list(metagenomic_map)
+names(listmap) <- c("metagenomic_counts")
+
+# Convert list of dataframes to sampleMap
+dfmap <- listToMap(listmap)
+
+# Create list of objects for 
+objlist <- list(
+  "FATTY ACIDS MG" = salmon_merged_mae$`FATTY ACIDS MG`,
+  "metagenomic_counts" = salmon_merged_mae$`METAGENOMIC COUNTS`
+)
+#    "Mirna" = microdat, "CNV gistic" = rse)
+
+# Get animal metadata from one of 
+animal.data <- colData(salmon_merged_mae$metagenomic_assembly)@listData |> as.data.frame()
+
+myMultiAssay <- MultiAssayExperiment(objlist, animal.data, dfmap)
+myMultiAssay
+
+# salmon_merged_mae <- c(experiments(salmon_mae), experiments(salmon_metagenomic_mae))
+salmon_merged_mae <- MultiAssayExperiment(salmon_merged_mae, colData = colData(salmon_merged_mae$`FATTY ACIDS MG`))
 
 # Save to RDS
 saveRDS(object = salmon_merged_mae, file = "../inst/extdata/salmon_merged_mae.RDS")
 ```
+
+```{r}
+exprss1 <- matrix(rnorm(16), ncol = 4,
+        dimnames = list(sprintf("ENST00000%i", sample(288754:290000, 4)),
+                c("Jack", "Jill", "Bob", "Bobby")))
+exprss2 <- matrix(rnorm(12), ncol = 3,
+        dimnames = list(sprintf("ENST00000%i", sample(288754:290000, 4)),
+                c("Jack", "Jane", "Bob")))
+doubleExp <- list("methyl 2k"  = exprss1, "methyl 3k" = exprss2)
+simpleMultiAssay <- MultiAssayExperiment(experiments=doubleExp)
+simpleMultiAssay
+```
+
 
 ## Fetch samples
 
