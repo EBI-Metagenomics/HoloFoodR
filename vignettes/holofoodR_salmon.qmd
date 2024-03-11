@@ -101,6 +101,11 @@ salmon_metagenomic_tse <- MGnifyR::getResult(
   salmon_analysis_ids)
 # And we only get 392 results by querying 393 salmon_analysis_ids
 
+# Save salmon_metagenomic_tse to RDS
+saveRDS(
+  object = salmon_metagenomic_tse,
+  file = "../inst/extdata/salmon_metagenomic_tse.RDS"
+)
 # salmon_metagenomic_mae <- MGnifyR::getResult(
 #   mg_salmon,
 #   salmon_analysis_ids)
@@ -206,7 +211,7 @@ colData(salmon_metagenomic_tse) <- merged_coldata
 # The correct treatment codes can extracted from the
 # host.diet.treatment.y column
 salmon_merged_mae <- c(
-  salmon_mae,
+  experiments(salmon_mae),
   METAGENOMIC_COUNTS = salmon_metagenomic_tse
 )
 salmon_merged_mae <- MultiAssayExperiment(salmon_merged_mae)
