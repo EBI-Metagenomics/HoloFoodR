@@ -158,10 +158,10 @@ colData(salmon_metagenomic_tse) <- merged_coldata
 #colData(salmon_metagenomic_mae)@listData$accession <- salmon_sample_id
 
 # Build MAE experiment from TSE
-salmon_metagenomic_mae <- MultiAssayExperiment(
-  experiments = list("METAGENOMIC COUNTS" = salmon_metagenomic_tse),
-  colData = colData(salmon_metagenomic_tse)
-)
+# salmon_metagenomic_mae <- MultiAssayExperiment(
+#   experiments = list("METAGENOMIC COUNTS" = salmon_metagenomic_tse),
+#   colData = colData(salmon_metagenomic_tse)
+# )
 
 # Merge HoloFood and MGnify MultiAssayExperiment objects
 # salmon_mae[["METAGENOME"]] <- salmon_metagenomic_mae
@@ -205,8 +205,17 @@ salmon_metagenomic_mae <- MultiAssayExperiment(
 # treatment codes
 # The correct treatment codes can extracted from the
 # host.diet.treatment.y column
-salmon_merged_mae <- c(experiments(salmon_mae), experiments(salmon_metagenomic_mae))
+salmon_merged_mae <- c(
+  salmon_mae,
+  METAGENOMIC_COUNTS = salmon_metagenomic_tse
+)
+salmon_merged_mae <- MultiAssayExperiment(salmon_merged_mae)
 
+# Get sample names from MAE
+all_samples <- unique(unlist(colnames(salmon_merged_mae)))
+```
+
+```{r}
 # Create metagenomic count map following example on
 # https://bioconductor.org/packages/release/bioc/vignettes/MultiAssayExperiment/inst/doc/MultiAssayExperiment.html#creation-of-the-multiassayexperiment-class-object
 
@@ -225,7 +234,6 @@ objlist <- list(
   "FATTY ACIDS MG" = salmon_merged_mae$`FATTY ACIDS MG`,
   "metagenomic_counts" = salmon_merged_mae$`METAGENOMIC COUNTS`
 )
-#    "Mirna" = microdat, "CNV gistic" = rse)
 
 # Get animal metadata from one of 
 animal.data <- colData(salmon_merged_mae$metagenomic_assembly)@listData |> as.data.frame()
