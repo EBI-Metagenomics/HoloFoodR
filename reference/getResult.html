@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">HoloFoodR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.3</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -97,7 +97,9 @@ database. Compared to <code>getData</code>, this function is more convenient for
 fetching the samples data because it converts the data to
 <code>MultiAssayExperiment</code> where different omics are stored as
 <code>SummarizedExperiment</code> objects which are optimized for downstream
-analytics.</p>
+analytics. Columns of returned <code>MultiAssayExperiment</code> are individual
+animals. These columns are linked with individual samples that are stored in
+<code>SummarizedExperiment</code> objects.</p>
 <p>The HoloFood database lacks non-targeted metabolomic data but fetched from
 MetaboLights resource. The function <code>getResult</code> facilitates the
 automatic retrieval of metabolomic data and its integration with other
@@ -129,6 +131,8 @@ downstream analysis.</p>
 <span class="r-in"><span><span class="va">mae</span> <span class="op">&lt;-</span> <span class="fu">getResult</span><span class="op">(</span><span class="va">samples</span><span class="op">[[</span><span class="st">"accession"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Data for the following samples cannot be found. The sample types are metagenomic_assembly, host_genomic, transcriptomic and metatranscriptomic. (Note that metagenomic assemblies can be found from the MGnify database. See MGnifyR package.):</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> 'SAMEA10130039', 'SAMEA13389496', 'SAMEA13389497', 'SAMEA13901618', 'SAMEA13901619', 'SAMEA13929785', 'SAMEA7571815'</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Direct call of 'as.data.frame.numeric()' is deprecated.  Use 'as.data.frame.vector()' or 'as.data.frame()' instead</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Direct call of 'as.data.frame.numeric()' is deprecated.  Use 'as.data.frame.vector()' or 'as.data.frame()' instead</span>
 <span class="r-in"><span><span class="va">mae</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> A MultiAssayExperiment object of 8 listed</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  experiments with user-defined names and respective classes.</span>
