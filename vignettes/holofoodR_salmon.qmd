@@ -101,10 +101,23 @@ salmon_metagenomic_tse <- MGnifyR::getResult(
   salmon_analysis_ids)
 # And we only get 392 results by querying 393 salmon_analysis_ids
 
-# Save salmon_metagenomic_tse to RDS
+# Get MAE metagenomic taxonomic and fucntional data for salmon from MGnify
+salmon_metagenomic_mae <- MGnifyR::getResult(
+  mg_salmon,
+  get.func = TRUE,
+  salmon_analysis_ids
+)
+
+# Save salmon taxonomic data to RDS
 saveRDS(
   object = salmon_metagenomic_tse,
   file = "../inst/extdata/salmon_metagenomic_tse.RDS"
+)
+
+# Save salmon taxonomic and functional data to RD
+saveRDS(
+  object = salmon_metagenomic_mae,
+  file = "../inst/extdata/salmon_metagenomic_mae.RDS"
 )
 # salmon_metagenomic_mae <- MGnifyR::getResult(
 #   mg_salmon,
