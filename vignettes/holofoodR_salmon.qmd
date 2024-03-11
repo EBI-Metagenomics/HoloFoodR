@@ -232,6 +232,28 @@ salmon_merged_mae <- MultiAssayExperiment(salmon_merged_mae)
 # Get sample names from MAE
 all_samples <- unique(unlist(colnames(salmon_merged_mae)))
 ```
+## Add MGify MAE Object (taxonomic and functional data) to HoloFoodR MAE object
+
+```{r}
+# Get experiments from MGnify metagenomic data
+exps <- experiments(salmon_metagenomic_mae)
+
+# Convert analysis names to sample names
+exps <- lapply(exps, function(x) {
+  sample_id <- names(salmon_analysis_ids)[match(colnames(x), salmon_analysis_ids)]
+  colnames(x) <- sample_id
+  return(x)
+})
+
+# Merge experiments from HoloFood and MGnify
+mae <- c(experiments(salmon_mae), exps)
+
+# Convert ExperimentList to MAE
+mae <- MultiAssayExperiment(mae)
+
+mae <- mae[[c("FATTY ACIDS MG", "microbiota")]]
+```
+
 
 ```{r}
 # Create metagenomic count map following example on
