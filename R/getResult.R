@@ -173,8 +173,8 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     # Combine sample and animal data
     mae <- .add_animal_data_to_MAE(mae, mae_animal)
     # Add study metadata to MAE
-    mae <- .add_study_metadata_to_MAE(
-        mae, list(study_metadata, study_metadata2, study_metadata3))
+    metadata_list <- list(study_metadata, study_metadata2, study_metadata3)
+    mae <- .add_study_metadata_to_MAE(mae, metadata_list)
     # Modify MAE so that top-level has animal IDs which points to samples in
     # individual SEs
     mae <- .MAE_cols_to_animals(mae)
@@ -361,9 +361,9 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
         sample_data) %in% c("title"), drop = FALSE]
     # Add metadata to sample data --> sample data includes all accessions
     if( !is.null(metadata) ){
-        metadata <- full_join(sample_data, metadata, by = "accession")
+        sample_data <- full_join(sample_data, metadata, by = "accession")
     }
-    return(metadata)
+    return(sample_data)
 }
 
 # This function creates a sample metadata from specific markers of structured
