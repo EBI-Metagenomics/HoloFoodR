@@ -46,7 +46,9 @@ database. Compared to \code{getData}, this function is more convenient for
 fetching the samples data because it converts the data to
 \code{MultiAssayExperiment} where different omics are stored as
 \code{SummarizedExperiment} objects which are optimized for downstream
-analytics.
+analytics. Columns of returned \code{MultiAssayExperiment} are individual
+animals. These columns are linked with individual samples that are stored in
+\code{SummarizedExperiment} objects.
 
 The HoloFood database lacks non-targeted metabolomic data but fetched from
 MetaboLights resource. The function \code{getResult} facilitates the
