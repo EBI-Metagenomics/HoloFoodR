@@ -46,14 +46,15 @@
     },
     "BiocBaseUtils": {
       "Package": "BiocBaseUtils",
-      "Version": "1.5.0",
+      "Version": "1.5.1",
       "Source": "Bioconductor",
+      "Repository": "Bioconductor 3.19",
       "Requirements": [
         "R",
         "methods",
         "utils"
       ],
-      "Hash": "a1a6e509ad3efe8b9715c42e8a1679db"
+      "Hash": "873e894c237a3ac8ab43eb32e9ef806d"
     },
     "BiocGenerics": {
       "Package": "BiocGenerics",
