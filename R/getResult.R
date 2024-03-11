@@ -6,7 +6,9 @@
 #' fetching the samples data because it converts the data to
 #' \code{MultiAssayExperiment} where different omics are stored as
 #' \code{SummarizedExperiment} objects which are optimized for downstream
-#' analytics.
+#' analytics. Columns of returned \code{MultiAssayExperiment} are individual
+#' animals. These columns are linked with individual samples that are stored in
+#' \code{SummarizedExperiment} objects.
 #' 
 #' The HoloFood database lacks non-targeted metabolomic data but fetched from
 #' MetaboLights resource. The function \code{getResult} facilitates the
@@ -166,11 +168,16 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     # Construct MAE from animal data
     mae_animal_list <- .construct_MAE(animal_data)
     mae_animal <- mae_animal_list[["mae"]]
-    study_metadata2 <- mae_animal_list[["study_metadata"]]
+    study_metadata2 <- mae_animal_list[["sample_metadata"]]
+    study_metadata3 <- mae_animal_list[["study_metadata"]]
     # Combine sample and animal data
     mae <- .add_animal_data_to_MAE(mae, mae_animal)
     # Add study metadata to MAE
-    mae <- .add_study_metadata_to_MAE(mae, study_metadata, study_metadata2)
+    metadata_list <- list(study_metadata, study_metadata2, study_metadata3)
+    mae <- .add_study_metadata_to_MAE(mae, metadata_list)
+    # Modify MAE so that top-level has animal IDs which points to samples in
+    # individual SEs
+    mae <- .MAE_cols_to_animals(mae)
     return(mae)
 }
 
@@ -354,9 +361,9 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
         sample_data) %in% c("title"), drop = FALSE]
     # Add metadata to sample data --> sample data includes all accessions
     if( !is.null(metadata) ){
-        metadata <- full_join(sample_data, metadata, by = "accession")
+        sample_data <- full_join(sample_data, metadata, by = "accession")
     }
-    return(metadata)
+    return(sample_data)
 }
 
 # This function creates a sample metadata from specific markers of structured
@@ -649,9 +656,9 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
 
 # This functions combines metadata from samples and animals and add it to
 # colData slot of MAE
-.add_study_metadata_to_MAE <- function(mae, metadata1, metadata2){
+.add_study_metadata_to_MAE <- function(mae, metadata_list){
     # Combine metadata
-    metadata <- .full_join_list(list(metadata1, metadata2))
+    metadata <- .full_join_list(metadata_list)
     # There might be multiple values for each accession. This means that there
     # are multiple values for each data type. Collapse values so that values
     # becomes to list
@@ -668,5 +675,35 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     metadata <- metadata[ rownames(metadata) %in% unlist(colnames(mae)), ]
     # Add it to colData
     colData(mae) <- metadata
+    return(mae)
+}
+
+# This function modifies MAE so that each column in MAE is an animal. These
+# columns are pointing to samples in individual experiments.
+.MAE_cols_to_animals <- function(mae){
+    # Get experiments
+    exp_list <- experiments(mae)
+    # Get sample mapping
+    sample_map <- sampleMap(mae)
+    # Get animal metadata
+    col_data <- colData(mae)
+    # Replace MAE-level key with animal ID
+    animal_ids <- col_data[ , c("accession", "animal")]
+    ind <- match(sample_map[["primary"]], animal_ids[["accession"]])
+    animal_ids <- animal_ids[ind, ]
+    sample_map[["primary"]] <- animal_ids[["animal"]]
+    # Remove samples from animal metadata
+    col_data[["accession"]] <- NULL
+    # Rename rows with animal IDs
+    rownames(col_data) <- col_data[["animal"]]
+    # Remove duplicates so that there is only one row per animal
+    col_data <- unique(col_data)
+    
+    # Finally, create MAE
+    mae <- MultiAssayExperiment(
+        experiments = exp_list,
+        colData = col_data,
+        sampleMap = sample_map
+    )
     return(mae)
 }
