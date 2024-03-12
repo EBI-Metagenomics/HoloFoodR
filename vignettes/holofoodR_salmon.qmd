@@ -106,6 +106,10 @@ salmon_metagenomic_tse <- MGnifyR::getResult(
   accession = salmon_analysis_ids,
   get.func = FALSE
 )
+
+# Save salmon_metagenomic_tse
+saveRDS <- saveRDS(object = salmon_metagenomic_tse,
+                   file = "../inst/extdata/salmon_metagenomic_tse.RDS")
 # And we only get 392 results by querying 393 salmon_analysis_ids
 
 # Get MAE metagenomic taxonomic and fucntional data for salmon from MGnify
@@ -151,7 +155,20 @@ salmon_sample_id <-
 # SAMEA7688025   SAMEA7687961 
 # "MGYA00606450" "MGYA00606358"
 # We need to change colnames of salmon_metagenomic_mae to these ids
-colnames(salmon_metagenomic_tse) <- salmon_sample_id
+# colnames(salmon_metagenomic_tse) <- salmon_sample_id
+# 
+# sampleMap(salmon_mae)[sampleMap(salmon_mae)[, "assay"] == "metagenomic_assembly", "colname"]
+# 
+# sample_map <- sampleMap(salmon_mae)[sampleMap(salmon_mae)[, "assay"] == "metagenomic_assembly", "colname"]
+# cd1 <- colData(salmon_metagenomic_tse)
+# cd1 <- cd1[match(sample_map, rownames(cd1)), ]
+# cd1 <- DataFrame(cd1)
+# 
+# colData(salmon_metagenomic_tse) <- cd1
+# 
+# salmon_metagenomic_tse
+# 
+# salmon_mae[[6]] <- salmon_metagenomic_tse
 
 # Test with merging by row.names
 # Do inner join
@@ -165,21 +182,43 @@ colnames(salmon_metagenomic_tse) <- salmon_sample_id
 #   by = "accession",
 #   all = FALSE
 # )
-salmon_metagenomic_tse_test <- salmon_metagenomic_tse
+# salmon_metagenomic_tse_test <- salmon_metagenomic_tse
 tse1 <- salmon_metagenomic_tse_test
 tse2 <- salmon_mae[["metagenomic_assembly"]]
-# Combine sample metadata
+# # Combine sample metadata
 cd1 <- as.data.frame(colData(tse1))
 cd2 <- as.data.frame(colData(tse2))
-cd <- merge(cd1, cd2, by.x = "sample_biosample", by.y = "accession")
+cd <- merge(cd1, cd2,
+            by.x = "sample_biosample",
+            by.y = "accession",
+            all.x = TRUE
+)
 rownames(cd) <- cd[["sample_biosample"]]
+# Now order colData to ensure that order is correct
+cd <- cd[colnames(tse1), ]
+# Add it to TreeSE
+colData(tse1) <- DataFrame(cd, check.names = FALSE)
+
+# Rename to match Holofood
+colnames(tse1) <- colData(tse1)[["sample_biosample"]]
+
+# Now order the data based on TreeSE in MAE
+# First take those columns that can be found
+salmon_mae[["metagenomic_assembly"]] <- salmon_mae[["metagenomic_assembly"]][ , colnames(salmon_mae[["metagenomic_assembly"]]) %in% colnames(tse1) ]
+
+# Then order
+tse1 <- tse1[, match(colnames(salmon_mae[["metagenomic_assembly"]]), colnames(tse1))]
+# And add to MAE in place of old experiment
+salmon_mae[["metagenomic_assembly"]] <- tse1
+
+# rownames(cd) <- cd[["sample_biosample"]]
 
 # Match with MGnify data
-cd <- cd[match(rownames(colData(salmon_metagenomic_tse_test)), cd$sample_biosample), ]
-
-cd <- DataFrame(cd)
-#colData(salmon_metagenomic_tse) <- NULL
-colData(tse1) <- cd
+# cd <- cd[match(rownames(colData(salmon_metagenomic_tse_test)), cd$sample_biosample), ]
+# 
+# cd <- DataFrame(cd)
+# #colData(salmon_metagenomic_tse) <- NULL
+# colData(tse1) <- cd
 # rownames(cd) <- cd[["analysis_accession"]]
 # # Add back
 # cd <- DataFrame(cd)
@@ -187,7 +226,7 @@ colData(tse1) <- cd
 # # Rename samples with HoloFood IDs
 # colnames(tse1) <- cd[["sample_biosample"]]
 # # Add back to MAE
-salmon_mae[["metagenomic_assembly"]] <- tse1
+# salmon_mae[["metagenomic_assembly"]] <- tse1
 
 # Add trial timepoint to colData(salmon_mae)
 # animal_meta <- as.data.frame(colData(salmon_mae))

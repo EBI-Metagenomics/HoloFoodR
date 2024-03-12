@@ -14,31 +14,10 @@ library(ggplot2)
 # salmon_merged_mae <- readRDS(path)
 salmon_merged_mae <- readRDS("../inst/extdata/salmon_merged_mae.RDS")
 
+# Fetch only experiments that we need
 salmon_merged_mae <-
   salmon_merged_mae[, ,  c("FATTY ACIDS MG", "metagenomic_assembly")]
-
-test <- salmon_mae[, ,  c("FATTY ACIDS MG", "IODINE")]
-create_mofa_from_MultiAssayExperiment(
-  test,
-  groups = "Treatment code")
-
-sampleMap(salmon_merged_mae)[sampleMap(salmon_merged_mae)[, "assay"] == "metagenomic_assembly", "colname"] == colnames(as.matrix(
-    MultiAssayExperiment::assays(
-        salmon_merged_mae)[["metagenomic_assembly"]]))
-
-model <- create_mofa_from_MultiAssayExperiment(salmon_merged_mae,
-                                               group = "Treatment.code",)
-#                                               extract_metadata = TRUE)
-
-# This check fails
 ```
-
-```{r}
-a <- example(MultiAssayExperiment)
-drops(a$value)
-a
-```
-
 
 ## Data exploration
 
@@ -57,37 +36,30 @@ salmon_merged_mae[["FATTY ACIDS MG"]] |> colData() |> head()
 ```
 
 ```{r}
-# Rename assays in each of experimentList() for more clarity
-assayNames(salmon_merged_mae[["FATTY ACIDS MG"]]) <- "fatty_acid_mg"
-assayNames(salmon_merged_mae[["FATTY ACIDS PERCENTAGE"]]) <- "fatty_acid_percentage"
-assayNames(salmon_merged_mae[["IODINE"]]) <- "iodine"
-```
-
-```{r}
 # Remove organ-fatty acids row as it only contains a string value "muscle"
 fatty_acids_mg_tse <- salmon_merged_mae[["FATTY ACIDS MG"]]
 fatty_acids_mg_tse <- fatty_acids_mg_tse[!(rowData(fatty_acids_mg_tse)$marker.name %in% c("Organ-fatty acids"))]
 salmon_merged_mae[["FATTY ACIDS MG"]] <- fatty_acids_mg_tse
 
 # Test one row to ensure that it did not change
-is_identical <- identical(assay(fatty_acids_mg_tse, "fatty_acid_mg")["Sum 16:1", ], assay(salmon_merged_mae[["FATTY ACIDS MG"]])["Sum 16:1", ])
-print(is_identical)
+# is_identical <- identical(assay(fatty_acids_mg_tse, "fatty_acid_mg")["Sum 16:1", ], assay(salmon_merged_mae[["FATTY ACIDS MG"]])["Sum 16:1", ])
+# print(is_identical)
 
 # Transform matrices to numeric
 # If a number is < 0.01, I assume it's a 0
-fatty_acid_mg_assay <- assay(salmon_merged_mae[["FATTY ACIDS MG"]], "fatty_acid_mg")
+fatty_acid_mg_assay <- assay(salmon_merged_mae[["FATTY ACIDS MG"]], "counts")
 fatty_acid_mg_assay[fatty_acid_mg_assay == "<0.01"] <- 0
 fatty_acid_mg_assay <- apply(fatty_acid_mg_assay, c(1, 2), function(x) as.numeric(gsub(",", ".", x)))
 # fatty_acid_mg_assay <-  matrix(as.numeric(fatty_acid_mg_assay), nrow = nrow(fatty_acid_mg_assay), ncol = ncol(fatty_acid_mg_assay), dimnames = dimnames(fatty_acid_mg_assay))
 
-assay(salmon_merged_mae[["FATTY ACIDS MG"]], "fatty_acid_mg") <- fatty_acid_mg_assay
+assay(salmon_merged_mae[["FATTY ACIDS MG"]], "counts") <- fatty_acid_mg_assay
 ```
 
 
 ```{r}
 # Transform fatty acids in mg with log10
 salmon_merged_mae[["FATTY ACIDS MG"]] <- transformAssay(salmon_merged_mae[["FATTY ACIDS MG"]],
-                                                        assay.type = "fatty_acid_mg",
+                                                        assay.type = "counts",
                                                         method = "log10",
                                                         pseudocount = 0.01 / 2)
 # Transform microbiome with rclr
@@ -129,35 +101,11 @@ salmon_merged_mae[["metagenomic_assembly"]] <- transformAssay(salmon_merged_mae[
 
 
 ```{r}
-# Remove experiments that are not required for the model
-salmon_merged_mae_without_assays <- salmon_merged_mae
-experiments(salmon_merged_mae_without_assays)[["FATTY ACIDS PERCENTAGE"]] <- NULL
-experiments(salmon_merged_mae_without_assays)[["IODINE"]] <- NULL
-experiments(salmon_merged_mae_without_assays)[["METABOLOMIC"]] <- NULL
-experiments(salmon_merged_mae_without_assays)[["transcriptomic"]] <- NULL
-experiments(salmon_merged_mae_without_assays)[["heavy_metals"]] <- NULL
-# experiments(salmon_merged_mae_without_assays)[["metagenomic_assembly"]] <- NULL
-experiments(salmon_merged_mae_without_assays)[["metatranscriptomic"]] <- NULL
-experiments(salmon_merged_mae_without_assays)[["host_genomic"]] <- NULL
-experiments(salmon_merged_mae_without_assays)[["metabolomic"]] <- NULL
-experiments(salmon_merged_mae_without_assays)[["metagenomic_amplicon"]] <- NULL
+colData(salmon_merged_mae) <- colData(salmon_merged_mae)[, names(colData(salmon_merged_mae)) %in% c("animal", "Treatment code")]
 
-# Remove assays that are not required
-assay(salmon_merged_mae_without_assays[[1]], "fatty_acid_mg") <- NULL
-assay(salmon_merged_mae_without_assays[[2]], "counts") <- NULL
-assay(salmon_merged_mae_without_assays[[2]], "relabundance") <- NULL
-
-# assay(salmon_merged_mae_without_assays[["FATTY ACIDS PERCENTAGE"]], "counts") <- NULL
-# assay(salmon_merged_mae_without_assays[["IODINE"]], "counts") <- NULL
-# assay(salmon_merged_mae_without_assays[["METABOLOMIC"]], "counts") <- NULL
-
-colData(salmon_merged_mae_without_assays) <- colData(salmon_merged_mae_without_assays)[, names(colData(salmon_merged_mae_without_assays)) %in% c("animal", "Treatment.code")]
-
-# Create model from MAE
-model <- create_mofa_from_MultiAssayExperiment(salmon_merged_mae_without_assays,
-                                               group = "Treatment.code",
+model <- create_mofa_from_MultiAssayExperiment(salmon_merged_mae,
+                                               group = "Treatment code",
                                                extract_metadata = TRUE)
-model
 ```
 
 
