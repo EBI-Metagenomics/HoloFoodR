@@ -54,6 +54,10 @@ salmon_mae <- HoloFoodR::getResult(
   use.cache = TRUE,
   cache.dir = holofood_cache_dir
 )
+
+# Save salmon MAE
+saveRDS(object = salmon_mae,
+        file = "../inst/extdata/salmon_mae_without_mgnify.RDS")
 ```
 
 ```{r}
@@ -171,8 +175,7 @@ cd <- merge(cd1, cd2, by.x = "sample_biosample", by.y = "accession")
 rownames(cd) <- cd[["sample_biosample"]]
 
 # Match with MGnify data
-cd <- cd[match(cd1$sample_biosample, cd2$sample_biosample), ]
-# cd <- cd[match(cd2$sample_biosample, cd1$sample_biosample), ]
+cd <- cd[match(rownames(colData(salmon_metagenomic_tse_test)), cd$sample_biosample), ]
 
 cd <- DataFrame(cd)
 #colData(salmon_metagenomic_tse) <- NULL

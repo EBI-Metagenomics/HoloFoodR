@@ -22,9 +22,9 @@ create_mofa_from_MultiAssayExperiment(
   test,
   groups = "Treatment code")
 
-# sampleMap(salmon_merged_mae)[sampleMap(salmon_merged_mae)[, "assay"] == "metagenomic_assembly", "colname"] == colnames(as.matrix(
-#     MultiAssayExperiment::assays(
-#         salmon_merged_mae)[["metagenomic_assembly"]]))
+sampleMap(salmon_merged_mae)[sampleMap(salmon_merged_mae)[, "assay"] == "metagenomic_assembly", "colname"] == colnames(as.matrix(
+    MultiAssayExperiment::assays(
+        salmon_merged_mae)[["metagenomic_assembly"]]))
 
 model <- create_mofa_from_MultiAssayExperiment(salmon_merged_mae,
                                                group = "Treatment.code",)
