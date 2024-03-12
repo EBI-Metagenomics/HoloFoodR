@@ -12,24 +12,23 @@ library(dplyr)
 library(knitr)
 
 # Create cache directories
-holofood_cache <- file.path("..", ".HoloFoodR_cache")
+holofood_cache_dir <- file.path("..", ".HoloFoodR_cache")
 if (!dir.exists(holofood_cache)) {
   dir.create(holofood_cache, recursive = TRUE)
 }
-mgnify_cache <-  file.path("..", ".MGnifyR_cache")
+mgnify_cache_dir <-  file.path("..", ".MGnifyR_cache")
 if (!dir.exists(mgnify_cache)) {
   dir.create(mgnify_cache, recursive = TRUE)
 }
 
 # Get salmon samples
-salmons <- HoloFoodR::doQuery("animals", system = "salmon", use.cache = TRUE, cache.dir = "../.HoloFoodR_cache/")
+salmons <- HoloFoodR::doQuery("animals", system = "salmon", use.cache = TRUE, cache.dir = holofood_cache_dir)
 
 # Get only salmon metagenomic and fatty acid data
 salmons <- salmons |>
   filter(fatty_acids == TRUE & metagenomic_assembly == TRUE)
 
 # Get only salmon samples that include metagenomic assemblies
-
 ```
 
 ```{r}
@@ -38,7 +37,7 @@ salmon_data <- HoloFoodR::getData(
   accession.type = "animals",
   accession = salmons[["accession"]],
   use.cache = TRUE,
-  cache.dir = "../.HoloFoodR_cache/"
+  cache.dir = holofood_cache_dir
 )
 
 # Get salmon samples
@@ -53,7 +52,7 @@ salmon_sample_ids <- unique(salmon_samples[["accession"]])
 salmon_mae <- HoloFoodR::getResult(
   salmon_sample_ids,
   use.cache = TRUE,
-  cache.dir = "../.HoloFoodR_cache"
+  cache.dir = holofood_cache_dir
 )
 ```
 
@@ -62,25 +61,21 @@ salmon_mae <- HoloFoodR::getResult(
 experiments(salmon_mae)
 ```
 
-```{r}
-# Fetch FATTY ACIDS AG TreeSummarizedExperiment
-fatty_acids_mg_tse <- getWithColData(salmon_mae, "FATTY ACIDS MG")
+Note that only the "FATTY ACIDS MG", "FATTY ACIDS PERCENTAGE", "IODINE", and
+"METABOLOMIC" experiments include a `counts` assay.
 
+It is possible to inspect a `SummarizedExperiment` object and its count data.
+In this case, the "count" data is concentrations of fatty acids (mg/ml).
+
+```{r}
+# Fetch FATTY ACIDS AG SummarizedExperiment
+fatty_acids_mg_tse <- getWithColData(salmon_mae, "FATTY ACIDS MG")
 assay(fatty_acids_mg_tse, "counts", withDimnames = TRUE)[0:10, ] |> kable("pipe")
 ```
-We have quite a lot of data for fatty acids concentrations in `mg/g`,
-for example, https://www.holofooddata.org/sample/SAMEA112950847.
 
-Same with percentages:
+## Fetch metagenomic data from MGnify
 
-```{r}
-# Fetch FATTY ACIDS PERCENTAGE TreeSummarizedExperiment
-fatty_acids_percentage_tse <- getWithColData(salmon_mae, "FATTY ACIDS PERCENTAGE")
-
-assay(fatty_acids_percentage_tse, "counts", withDimnames = TRUE)[0:10, ] |> kable("pipe")
-```
-
-Now we can fetch metagenomic data.
+As noted above, HoloFood database only includes the data for fatty acids, iodine
 
 ```{r}
 mg_salmon <- MgnifyClient(
@@ -333,14 +328,14 @@ We can also fetch samples instead of animals from Holofood database.
 
 ```{r}
 # We can also fetch samples instead of animals
-samples <- HoloFoodR::doQuery("samples", use.cache = TRUE, cache.dir = "../.HoloFoodR_cache", system = "salmon")
+samples <- HoloFoodR::doQuery("samples", use.cache = TRUE, cache.dir = holofood_cache_dir, system = "salmon")
 
 # Get SAMPLE data
 sample_data <- HoloFoodR::getData(
   accession.type = "samples",
   accession = samples[["accession"]],
   use.cache = TRUE,
-  cache.dir = "../.HoloFoodR_cache/"
+  cache.dir = holofood_cache_dir
 )
 
 # Sample data as data.frame
@@ -349,7 +344,7 @@ sample_data_flat <- HoloFoodR::getData(
   accession = samples[["accession"]],
   flatten = TRUE,
   use.cache = TRUE,
-  cache.dir = "../.HoloFoodR_cache/"
+  cache.dir = holofood_cache_dir
 )
 
 # We can filter sample_data to get the results only
@@ -382,7 +377,7 @@ sample_ids <- unique(sample_data[["accession"]][["accession"]])
 sample_mae <- HoloFoodR::getResult(
   sample_ids,
   use.cache = TRUE,
-  cache.dir = "../.HoloFoodR_cache/"
+  cache.dir = holofood_cache_dir
 )
 ```
 
