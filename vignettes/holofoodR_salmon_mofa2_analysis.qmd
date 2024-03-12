@@ -52,8 +52,8 @@ print(is_identical)
 # If a number is < 0.01, I assume it's a 0
 fatty_acid_mg_assay <- assay(salmon_merged_mae[["FATTY ACIDS MG"]], "fatty_acid_mg")
 fatty_acid_mg_assay[fatty_acid_mg_assay == "<0.01"] <- 0
-# fatty_acid_mg_assay <- apply(fatty_acid_mg_assay, c(1, 2), function(x) as.numeric(gsub(",", ".", x)))
-fatty_acid_mg_assay <-  matrix(as.numeric(fatty_acid_mg_assay), nrow = nrow(fatty_acid_mg_assay), ncol = ncol(fatty_acid_mg_assay), dimnames = dimnames(fatty_acid_mg_assay))
+fatty_acid_mg_assay <- apply(fatty_acid_mg_assay, c(1, 2), function(x) as.numeric(gsub(",", ".", x)))
+# fatty_acid_mg_assay <-  matrix(as.numeric(fatty_acid_mg_assay), nrow = nrow(fatty_acid_mg_assay), ncol = ncol(fatty_acid_mg_assay), dimnames = dimnames(fatty_acid_mg_assay))
 
 assay(salmon_merged_mae[["FATTY ACIDS MG"]], "fatty_acid_mg") <- fatty_acid_mg_assay
 ```
@@ -66,8 +66,8 @@ salmon_merged_mae[["FATTY ACIDS MG"]] <- transformAssay(salmon_merged_mae[["FATT
                                                         method = "log10",
                                                         pseudocount = 0.01 / 2)
 # Transform microbiome with rclr
-salmon_merged_mae[["METAGENOMIC COUNTS"]] <- transformAssay(salmon_merged_mae[["METAGENOMIC COUNTS"]], method = "relabundance")
-salmon_merged_mae[["METAGENOMIC COUNTS"]] <- transformAssay(salmon_merged_mae[["METAGENOMIC COUNTS"]], assay.type = "relabundance", method = "rclr")
+salmon_merged_mae[["metagenomic_assembly"]] <- transformAssay(salmon_merged_mae[["metagenomic_assembly"]], method = "relabundance")
+salmon_merged_mae[["metagenomic_assembly"]] <- transformAssay(salmon_merged_mae[["metagenomic_assembly"]], assay.type = "relabundance", method = "rclr")
 ```
 
 ## MOFA analysis
@@ -111,7 +111,7 @@ experiments(salmon_merged_mae_without_assays)[["IODINE"]] <- NULL
 experiments(salmon_merged_mae_without_assays)[["METABOLOMIC"]] <- NULL
 experiments(salmon_merged_mae_without_assays)[["transcriptomic"]] <- NULL
 experiments(salmon_merged_mae_without_assays)[["heavy_metals"]] <- NULL
-experiments(salmon_merged_mae_without_assays)[["metagenomic_assembly"]] <- NULL
+# experiments(salmon_merged_mae_without_assays)[["metagenomic_assembly"]] <- NULL
 experiments(salmon_merged_mae_without_assays)[["metatranscriptomic"]] <- NULL
 experiments(salmon_merged_mae_without_assays)[["host_genomic"]] <- NULL
 experiments(salmon_merged_mae_without_assays)[["metabolomic"]] <- NULL
@@ -126,7 +126,7 @@ assay(salmon_merged_mae_without_assays[[2]], "relabundance") <- NULL
 # assay(salmon_merged_mae_without_assays[["IODINE"]], "counts") <- NULL
 # assay(salmon_merged_mae_without_assays[["METABOLOMIC"]], "counts") <- NULL
 
-colData(salmon_merged_mae_without_assays) <- colData(salmon_merged_mae_without_assays)[, names(colData(salmon_merged_mae_without_assays)) %in% c("accession", "Treatment code")]
+colData(salmon_merged_mae_without_assays) <- colData(salmon_merged_mae_without_assays)[, names(colData(salmon_merged_mae_without_assays)) %in% c("animal", "Treatment code")]
 
 # Create model from MAE
 model <- create_mofa_from_MultiAssayExperiment(salmon_merged_mae_without_assays,
