@@ -176,6 +176,15 @@ colnames(tse1) <- cd[["sample_biosample"]]
 # Add back to MAE
 salmon_mae[["metagenomic_assembly"]] <- tse1
 
+# Add trial timepoint to colData(salmon_mae)
+animal_meta <- as.data.frame(colData(salmon_mae))
+tse_meta <- as.data.frame(colData(tse1)) |>
+  select(c("animal", "trial.timepoint"))
+merged_coldata_meta <- merge(animal_meta, tse_meta, by = "animal")
+merged_coldata_meta <- DataFrame(merged_coldata_meta)
+rownames(merged_coldata_meta) <- merged_coldata_meta$animal
+colData(salmon_mae) <- merged_coldata_meta
+
 # Save to merged MAE object to RDS
 salmon_merged_mae <- salmon_mae
 saveRDS(object = salmon_merged_mae,
