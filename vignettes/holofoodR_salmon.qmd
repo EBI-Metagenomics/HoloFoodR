@@ -100,7 +100,8 @@ salmon_analysis_ids <- searchAnalysis(
 salmon_metagenomic_tse <- MGnifyR::getResult(
   mg_salmon,
   get.func = FALSE,
-  salmon_analysis_ids)
+  salmon_analysis_ids
+)
 # And we only get 392 results by querying 393 salmon_analysis_ids
 
 # Get MAE metagenomic taxonomic and fucntional data for salmon from MGnify
