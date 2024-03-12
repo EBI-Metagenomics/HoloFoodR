@@ -13,12 +13,12 @@ library(knitr)
 
 # Create cache directories
 holofood_cache_dir <- file.path("..", ".HoloFoodR_cache")
-if (!dir.exists(holofood_cache)) {
-  dir.create(holofood_cache, recursive = TRUE)
+if (!dir.exists(holofood_cache_dir)) {
+  dir.create(holofood_cache_dir, recursive = TRUE)
 }
 mgnify_cache_dir <-  file.path("..", ".MGnifyR_cache")
-if (!dir.exists(mgnify_cache)) {
-  dir.create(mgnify_cache, recursive = TRUE)
+if (!dir.exists(mgnify_cache_dir)) {
+  dir.create(mgnify_cache_dir, recursive = TRUE)
 }
 
 # Get salmon samples
