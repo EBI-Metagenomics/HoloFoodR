@@ -24,9 +24,9 @@ if (!dir.exists(mgnify_cache)) {
 # Get salmon samples
 salmons <- HoloFoodR::doQuery("animals", system = "salmon", use.cache = TRUE, cache.dir = "../.HoloFoodR_cache/")
 
-# Get only salmon metagenomic and metabolomic data
+# Get only salmon metagenomic and fatty acid data
 salmons_metagenomic_metabolomic <- salmons |>
-  filter(metabolomic == TRUE & metagenomic_assembly == TRUE)
+  filter(fatty_acids == TRUE & metagenomic_assembly == TRUE)
 
 # Get only salmon samples that include metagenomic assemblies
 
