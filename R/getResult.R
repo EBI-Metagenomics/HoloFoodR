@@ -496,6 +496,10 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
         if( all(lengths(col) == 1) ){
             col <- unlist(col)
         }
+        # Order data based on original table where the data will be added.
+        # The order can be changed during the process.
+        ind <- match(table[["accession"]], names(col))
+        col <- col[ ind ]
         # Add it to back to original table
         table[[name]] <- col
     }
