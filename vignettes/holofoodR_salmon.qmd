@@ -68,7 +68,7 @@ It is possible to inspect a `SummarizedExperiment` object and its count data.
 In this case, the "count" data is concentrations of fatty acids (mg/ml).
 
 ```{r}
-# Fetch FATTY ACIDS AG SummarizedExperiment
+# Fetch FATTY ACIDS MG SummarizedExperiment
 fatty_acids_mg_tse <- getWithColData(salmon_mae, "FATTY ACIDS MG")
 assay(fatty_acids_mg_tse, "counts", withDimnames = TRUE)[0:10, ] |> kable("pipe")
 ```
@@ -80,7 +80,7 @@ As noted above, HoloFood database only includes the data for fatty acids, iodine
 ```{r}
 mg_salmon <- MgnifyClient(
   useCache = TRUE,
-  cacheDir = "../.MGnifyR_cache/"
+  cacheDir = mgnify_cache_dir
   )
 
 metagenomic_salmon_samples <- salmon_samples[
@@ -98,9 +98,9 @@ salmon_analysis_ids <- searchAnalysis(
 ```{r}
 # Get MAE metagenomic taxonomic data for salmon from MGnify
 salmon_metagenomic_tse <- MGnifyR::getResult(
-  mg_salmon,
-  get.func = FALSE,
-  salmon_analysis_ids
+  x = mg_salmon,
+  accession = salmon_analysis_ids,
+  get.func = FALSE
 )
 # And we only get 392 results by querying 393 salmon_analysis_ids
 
@@ -112,10 +112,10 @@ salmon_metagenomic_tse <- MGnifyR::getResult(
 # )
 
 # Save salmon taxonomic data to RDS
-saveRDS(
-  object = salmon_metagenomic_tse,
-  file = "../inst/extdata/salmon_metagenomic_tse.RDS"
-)
+# saveRDS(
+#   object = salmon_metagenomic_tse,
+#   file = "../inst/extdata/salmon_metagenomic_tse.RDS"
+# )
 
 # Save salmon taxonomic and functional data to RD
 # saveRDS(
@@ -161,29 +161,39 @@ colnames(salmon_metagenomic_tse) <- salmon_sample_id
 #   by = "accession",
 #   all = FALSE
 # )
-tse1 <- salmon_metagenomic_tse
+salmon_metagenomic_tse_test <- salmon_metagenomic_tse
+tse1 <- salmon_metagenomic_tse_test
 tse2 <- salmon_mae[["metagenomic_assembly"]]
 # Combine sample metadata
 cd1 <- as.data.frame(colData(tse1))
 cd2 <- as.data.frame(colData(tse2))
 cd <- merge(cd1, cd2, by.x = "sample_biosample", by.y = "accession")
-rownames(cd) <- cd[["analysis_accession"]]
-# Add back
+rownames(cd) <- cd[["sample_biosample"]]
+
+# Match with MGnify data
+cd <- cd[match(cd1$sample_biosample, cd2$sample_biosample), ]
+# cd <- cd[match(cd2$sample_biosample, cd1$sample_biosample), ]
+
 cd <- DataFrame(cd)
+#colData(salmon_metagenomic_tse) <- NULL
 colData(tse1) <- cd
-# Rename samples with HoloFood IDs
-colnames(tse1) <- cd[["sample_biosample"]]
-# Add back to MAE
+# rownames(cd) <- cd[["analysis_accession"]]
+# # Add back
+# cd <- DataFrame(cd)
+# colData(tse1) <- cd
+# # Rename samples with HoloFood IDs
+# colnames(tse1) <- cd[["sample_biosample"]]
+# # Add back to MAE
 salmon_mae[["metagenomic_assembly"]] <- tse1
 
 # Add trial timepoint to colData(salmon_mae)
-animal_meta <- as.data.frame(colData(salmon_mae))
-tse_meta <- as.data.frame(colData(tse1)) |>
-  select(c("animal", "trial.timepoint"))
-merged_coldata_meta <- merge(animal_meta, tse_meta, by = "animal")
-merged_coldata_meta <- DataFrame(merged_coldata_meta)
-rownames(merged_coldata_meta) <- merged_coldata_meta$animal
-colData(salmon_mae) <- merged_coldata_meta
+# animal_meta <- as.data.frame(colData(salmon_mae))
+# tse_meta <- as.data.frame(colData(tse1)) |>
+#   select(c("animal", "trial.timepoint"))
+# merged_coldata_meta <- merge(animal_meta, tse_meta, by = "animal")
+# merged_coldata_meta <- DataFrame(merged_coldata_meta)
+# rownames(merged_coldata_meta) <- merged_coldata_meta$animal
+# colData(salmon_mae) <- merged_coldata_meta
 
 # Save to merged MAE object to RDS
 salmon_merged_mae <- salmon_mae

@@ -13,7 +13,32 @@ library(ggplot2)
 # path <- system.file("extdata", "salmon_merged_mae.RDS", package = "HoloFoodR")
 # salmon_merged_mae <- readRDS(path)
 salmon_merged_mae <- readRDS("../inst/extdata/salmon_merged_mae.RDS")
+
+salmon_merged_mae <-
+  salmon_merged_mae[, ,  c("FATTY ACIDS MG", "metagenomic_assembly")]
+
+test <- salmon_mae[, ,  c("FATTY ACIDS MG", "IODINE")]
+create_mofa_from_MultiAssayExperiment(
+  test,
+  groups = "Treatment code")
+
+# sampleMap(salmon_merged_mae)[sampleMap(salmon_merged_mae)[, "assay"] == "metagenomic_assembly", "colname"] == colnames(as.matrix(
+#     MultiAssayExperiment::assays(
+#         salmon_merged_mae)[["metagenomic_assembly"]]))
+
+model <- create_mofa_from_MultiAssayExperiment(salmon_merged_mae,
+                                               group = "Treatment.code",)
+#                                               extract_metadata = TRUE)
+
+# This check fails
 ```
+
+```{r}
+a <- example(MultiAssayExperiment)
+drops(a$value)
+a
+```
+
 
 ## Data exploration
 
@@ -126,11 +151,11 @@ assay(salmon_merged_mae_without_assays[[2]], "relabundance") <- NULL
 # assay(salmon_merged_mae_without_assays[["IODINE"]], "counts") <- NULL
 # assay(salmon_merged_mae_without_assays[["METABOLOMIC"]], "counts") <- NULL
 
-colData(salmon_merged_mae_without_assays) <- colData(salmon_merged_mae_without_assays)[, names(colData(salmon_merged_mae_without_assays)) %in% c("animal", "Treatment code")]
+colData(salmon_merged_mae_without_assays) <- colData(salmon_merged_mae_without_assays)[, names(colData(salmon_merged_mae_without_assays)) %in% c("animal", "Treatment.code")]
 
 # Create model from MAE
 model <- create_mofa_from_MultiAssayExperiment(salmon_merged_mae_without_assays,
-                                               group = "Treatment code",
+                                               group = "Treatment.code",
                                                extract_metadata = TRUE)
 model
 ```
@@ -156,6 +181,45 @@ model.trained <- run_mofa(model.prepared, use_basilisk = TRUE)
 model.trained
 ```
 
+```{r}
+# Retrieve view names
+views_names(model.trained)
+```
+
+
+## Pearson Correlation between Factors
+
+As sanity check, we expect factors to be uncorrelated.
+
+
+```{r}
+plot_factor_cor(
+  model.trained,
+  method = "pearson"
+ )
+```
+
+
+## Factor Clustering
+
+It is possible to cluster samples within one or more factors. The latter
+allows integration of several sources of variation.
+
+However, this type of clustering does not take into account the importance of
+single factors.
+
+```{r}
+# Cluster samples from all factors into 5 clusters
+clustered_samples <- cluster_samples(
+  model.trained,
+  k = 5
+)
+```
+
+## Visualization 
+
+### Variance Explained
+
 ```{r, fig.width=15}
 plot_list <- plot_variance_explained(model.trained,
                                      x = "view", y = "factor",
@@ -177,10 +241,98 @@ custom_plotter <- function(name) {
   
 }
 
-plot_list <- lapply(c("FATTY ACIDS MG", "METAGENOMIC COUNTS"), custom_plotter)
+plot_list <- lapply(c("FATTY ACIDS MG", "metagenomic_assembly"), custom_plotter)
 
 wrap_plots(plot_list, nrow = 2) & theme(text = element_text(size = 8))
 ```
 
+## Plot Factors
 
+### Single Factors
+
+```{r, fig.width=15}
+plot_factor(model.trained,
+            groups = c("Tiger", "Neptune"),
+            factor = 1:3,
+            color_by = "Treatment code",
+            add_violin = TRUE,
+            violin_alpha = 0.25
+)
+
+
+```
+
+### Combinations of Factors
+
+```{r}
+plot_factors(model.trained, 
+  factors = 1:3,
+  color_by = "Treatment code"
+)
+```
+
+## Plot Feature Weights
+
+```{r}
+plot_weights(model.trained,
+  view = "view_0",
+  factor = 1,
+  nfeatures = 10,     
+  scale = TRUE,         
+  abs = FALSE            
+)
+```
+
+```{r}
+# Top weights
+plot_top_weights(model.trained,
+  view = "view_0",
+  factor = 1,
+  nfeatures = 10
+)
+```
+
+## Plot covariation patterns
+
+```{r}
+# Heatmap
+plot_data_heatmap(model,
+  view = "view_0",         
+  factor = 1,             
+  features = 20,
+  
+  cluster_rows = TRUE, cluster_cols = FALSE,
+  show_rownames = TRUE, show_colnames = FALSE
+)
+```
+
+```{r}
+# Scatter plot
+
+
+plot_data_scatter(model,
+  view = "view_1",    
+  factor = 1,          
+  features = 5,
+  add_lm = TRUE,         
+  color_by = "Treatment code"
+)
+```
+
+## Non-linear dimensionality reduction
+
+### Uniform Manifold Approximation and Projection for Dimension Reduction (UMAP)
+
+```{r}
+set.seed(1)
+model.trained <- run_umap(model.trained)
+model.trained <- run_tsne(model.trained)
+
+plot_dimred(
+  model.trained,
+  method = c("UMAP", "TSNE"),
+  group = # trial?/treatment code,
+  color_by = "Treatment code"
+)
+```
 
