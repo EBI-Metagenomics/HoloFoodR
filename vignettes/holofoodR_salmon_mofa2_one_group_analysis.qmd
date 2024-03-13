@@ -1,0 +1,86 @@
+---
+title: "HolofoodR salmon one-group analysis"
+format: html
+---
+
+## Introduction
+
+This notebook describes the MOFA2 analysis using only one group to train the
+model. In short, that means that the `group` parameter is not used in the
+`create_mofa_from_MultiAssayExperiment()` function.
+
+```{r}
+library(MOFA2)
+library(reticulate)
+
+salmon_mae <- readRDS("../inst/extdata/salmon_mae.RDS")
+
+# Fetch only experiments that we need
+salmon_mae <-
+  salmon_mae[, ,  c("FATTY ACIDS MG", "metagenomic_assembly")]
+
+# Remove NA data from experiments
+salmon_mae[[2]] <- salmon_mae[[2]][!is.na(rowData(salmon_mae[[2]])$Phylum), ]
+
+# Remove organ-fatty acids row as it only contains a string value "muscle"
+fatty_acids_mg_tse <- salmon_mae[["FATTY ACIDS MG"]]
+fatty_acids_mg_tse <- fatty_acids_mg_tse[!(rowData(fatty_acids_mg_tse)$marker.name %in% c("Organ-fatty acids"))]
+salmon_mae[["FATTY ACIDS MG"]] <- fatty_acids_mg_tse
+
+# Transform matrices to numeric
+# If a number is < 0.01, assume it to be 0
+fatty_acid_mg_assay <- assay(salmon_mae[["FATTY ACIDS MG"]], "counts")
+fatty_acid_mg_assay[fatty_acid_mg_assay == "<0.01"] <- 0
+fatty_acid_mg_assay <- apply(fatty_acid_mg_assay, c(1, 2), function(x) as.numeric(gsub(",", ".", x)))
+
+# Reassign assay back to MAE
+assay(salmon_mae[["FATTY ACIDS MG"]], "counts") <- fatty_acid_mg_assay
+
+# Transform fatty acids in mg with log10
+salmon_mae[["FATTY ACIDS MG"]] <- transformAssay(
+  salmon_mae[["FATTY ACIDS MG"]],
+  assay.type = "counts",
+  MARGIN = "samples",
+  method = "log10",
+  pseudocount = 0.001 / 2
+)
+
+# Transform microbiome with robust centered log-ratio method
+salmon_mae[["metagenomic_assembly"]] <- transformAssay(salmon_mae[["metagenomic_assembly"]], method = "relabundance")
+salmon_mae[["metagenomic_assembly"]] <- transformAssay(salmon_mae[["metagenomic_assembly"]], assay.type = "relabundance", method = "rclr")
+
+# Remove assays that are not needed
+assay(salmon_mae[[1]], "counts") <- NULL
+assay(salmon_mae[[2]], "counts") <- NULL
+assay(salmon_mae[[2]], "relabundance") <- NULL
+```
+
+## MOFA analysis
+
+```{r}
+# Select only colData columns of interest
+colData(salmon_mae) <- colData(salmon_mae)[, names(colData(salmon_mae)) %in% c("animal", "Treatment code")]
+
+model <- create_mofa_from_MultiAssayExperiment(salmon_mae,
+                                               extract_metadata = TRUE)
+```
+
+```{r}
+# Set model's options
+model_opts <- get_default_model_options(model)
+model_opts$num_factors <- 5
+
+train_opts <- get_default_training_options(model)
+
+# Prepare MOFA model
+model.prepared <- prepare_mofa(
+  object = model,
+  model_options = model_opts
+)
+
+# Train model
+model.trained <- run_mofa(model.prepared, use_basilisk = TRUE)
+```
+
+
+
