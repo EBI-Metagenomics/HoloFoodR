@@ -9,6 +9,9 @@ This notebook describes the MOFA2 analysis using only one group to train the
 model. In short, that means that the `group` parameter is not used in the
 `create_mofa_from_MultiAssayExperiment()` function.
 
+The purpose of one-group analysis is to find factors that differentiate the
+groups.
+
 ```{r}
 library(MOFA2)
 library(reticulate)
@@ -82,5 +85,50 @@ model.prepared <- prepare_mofa(
 model.trained <- run_mofa(model.prepared, use_basilisk = TRUE)
 ```
 
+## MOFA visualizations
 
+## Pearson Correlation between Factors
+
+As sanity check, we expect factors to be uncorrelated.
+
+```{r}
+plot_factor_cor(
+  model.trained,
+  method = "pearson"
+ )
+```
+
+The first factor appears to be strongly correlated with with other factor
+that might indicate that these factors are not independent.
+
+### Variance Explained
+
+```{r, fig.width=15}
+plot_list <- plot_variance_explained(model.trained,
+                                     x = "view", y = "factor",
+                                     plot_total = T)
+
+wrap_plots(plot_list, nrow = 2) +
+  plot_annotation(title = "Variance Explained per factor and assay",
+                  theme = theme(plot.title = element_text(hjust = 0.5)))
+```
+
+Most variability between the samples is explained by the fatty acid concentration
+differences.
+
+```{r}
+ plot_top_weights(model.trained,
+                        view = "FATTY ACIDS MG",
+                        factors = 1:3,
+                        nfeatures = 10) +
+    labs(title = paste0("Top weights of the ", "FATTY ACIDS MG", " assay"))
+  
+```
+
+```{r}
+plot_factors(model.trained, 
+  factors = 1:3,
+  color_by = "Treatment code"
+)
+```
 
