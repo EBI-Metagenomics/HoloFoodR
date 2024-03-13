@@ -119,7 +119,7 @@ differences.
 ```{r}
  plot_top_weights(model.trained,
                         view = "FATTY ACIDS MG",
-                        factors = 1:3,
+                        factors = 1,
                         nfeatures = 10) +
     labs(title = paste0("Top weights of the ", "FATTY ACIDS MG", " assay"))
   
