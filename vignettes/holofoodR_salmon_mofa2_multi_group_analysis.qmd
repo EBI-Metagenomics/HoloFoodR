@@ -10,100 +10,72 @@ library(reticulate)
 library(knitr)
 library(patchwork)
 library(ggplot2)
-# path <- system.file("extdata", "salmon_merged_mae.RDS", package = "HoloFoodR")
-# salmon_merged_mae <- readRDS(path)
-salmon_merged_mae <- readRDS("../inst/extdata/salmon_merged_mae.RDS")
+# path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
+# salmon_mae <- readRDS(path)
+salmon_mae <- readRDS("../inst/extdata/salmon_mae.RDS")
 
 # Fetch only experiments that we need
-salmon_merged_mae <-
-  salmon_merged_mae[, ,  c("FATTY ACIDS MG", "metagenomic_assembly")]
+salmon_mae <-
+  salmon_mae[, ,  c("FATTY ACIDS MG", "metagenomic_assembly")]
 ```
 
 ## Data exploration
 
 ```{r}
-colData(salmon_merged_mae) |>
+colData(salmon_mae) |>
   head() |>
   kable()
 ```
 
 ```{r}
-colData(salmon_merged_mae) |> names()
-```
-
-```{r}
-salmon_merged_mae[["FATTY ACIDS MG"]] |> colData() |> head()
+# Display columns of MAE object to select those of interest
+colData(salmon_mae) |> names()
 ```
 
 ```{r}
 # Remove organ-fatty acids row as it only contains a string value "muscle"
-fatty_acids_mg_tse <- salmon_merged_mae[["FATTY ACIDS MG"]]
+fatty_acids_mg_tse <- salmon_mae[["FATTY ACIDS MG"]]
 fatty_acids_mg_tse <- fatty_acids_mg_tse[!(rowData(fatty_acids_mg_tse)$marker.name %in% c("Organ-fatty acids"))]
-salmon_merged_mae[["FATTY ACIDS MG"]] <- fatty_acids_mg_tse
-
-# Test one row to ensure that it did not change
-# is_identical <- identical(assay(fatty_acids_mg_tse, "fatty_acid_mg")["Sum 16:1", ], assay(salmon_merged_mae[["FATTY ACIDS MG"]])["Sum 16:1", ])
-# print(is_identical)
+salmon_mae[["FATTY ACIDS MG"]] <- fatty_acids_mg_tse
 
 # Transform matrices to numeric
-# If a number is < 0.01, I assume it's a 0
-fatty_acid_mg_assay <- assay(salmon_merged_mae[["FATTY ACIDS MG"]], "counts")
+# If a number is < 0.01, assume it to be 0
+fatty_acid_mg_assay <- assay(salmon_mae[["FATTY ACIDS MG"]], "counts")
 fatty_acid_mg_assay[fatty_acid_mg_assay == "<0.01"] <- 0
 fatty_acid_mg_assay <- apply(fatty_acid_mg_assay, c(1, 2), function(x) as.numeric(gsub(",", ".", x)))
-# fatty_acid_mg_assay <-  matrix(as.numeric(fatty_acid_mg_assay), nrow = nrow(fatty_acid_mg_assay), ncol = ncol(fatty_acid_mg_assay), dimnames = dimnames(fatty_acid_mg_assay))
 
-assay(salmon_merged_mae[["FATTY ACIDS MG"]], "counts") <- fatty_acid_mg_assay
+# Reassign assay back to MAE
+assay(salmon_mae[["FATTY ACIDS MG"]], "counts") <- fatty_acid_mg_assay
 ```
 
 
 ```{r}
 # Transform fatty acids in mg with log10
-salmon_merged_mae[["FATTY ACIDS MG"]] <- transformAssay(salmon_merged_mae[["FATTY ACIDS MG"]],
-                                                        assay.type = "counts",
-                                                        method = "log10",
-                                                        pseudocount = 0.01 / 2)
-# Transform microbiome with rclr
-salmon_merged_mae[["metagenomic_assembly"]] <- transformAssay(salmon_merged_mae[["metagenomic_assembly"]], method = "relabundance")
-salmon_merged_mae[["metagenomic_assembly"]] <- transformAssay(salmon_merged_mae[["metagenomic_assembly"]], assay.type = "relabundance", method = "rclr")
+salmon_mae[["FATTY ACIDS MG"]] <- transformAssay(
+  salmon_mae[["FATTY ACIDS MG"]],
+  assay.type = "counts",
+  MARGIN = "samples",
+  method = "log10",
+  pseudocount = 0.001 / 2
+)
+
+# Transform microbiome with robust centered log-ratio method
+salmon_mae[["metagenomic_assembly"]] <- transformAssay(salmon_mae[["metagenomic_assembly"]], method = "relabundance")
+salmon_mae[["metagenomic_assembly"]] <- transformAssay(salmon_mae[["metagenomic_assembly"]], assay.type = "relabundance", method = "rclr")
+
+# Remove assays that are not needed
+assay(salmon_mae[[1]], "counts") <- NULL
+assay(salmon_mae[[2]], "counts") <- NULL
+assay(salmon_mae[[2]], "relabundance") <- NULL
 ```
 
 ## MOFA analysis
 
 ```{r}
-# Remove entries from MAE that do not have animal metadata
-# colData(salmon_merged_mae) <- colData(salmon_merged_mae)[!is.na(colData(salmon_merged_mae)[["animal"]]), ]
+# Select only colData columns of interest
+colData(salmon_mae) <- colData(salmon_mae)[, names(colData(salmon_mae)) %in% c("animal", "Treatment code")]
 
-# We need to add treatment description to colData of the MAE object
-# to use it as a grouping variable in MOFA
-# fatty_acid_cols_to_merge <- colData(salmon_merged_mae[["FATTY ACIDS MG"]])[c("Treatment description", "animal", "accession")]
-# 
-# # Get metadata of MAE object
-# mae_metadata <- colData(salmon_merged_mae)
-# 
-# # Merge animal and sample metadata
-# merged_metadata <- merge(mae_metadata, fatty_acid_cols_to_merge, all.x = TRUE, by = "accession")
-# merged_metadata <- DataFrame(merged_metadata)
-# 
-# rownames(merged_metadata) <- rownames(fatty_acid_cols_to_merge)
-
-# colData(salmon_merged_mae) <- merged_metadata
-# colData(salmon_merged_mae)[["treatment"]] <- fatty_acid_cols_to_merge[["Treatment description"]]
-# 
-# colData(salmon_merged_mae[["FATTY ACIDS MG"]])["Treatment description"]
-# 
-# colnames(salmon_merged_mae[["FATTY ACIDS MG"]])
-```
-
-```{r}
-# Extract Trial letter from Animal code
-# colData(salmon_merged_mae)[["Trial code"]] <- substr(colData(salmon_merged_mae)[["Animal code"]], 2, 2)
-```
-
-
-```{r}
-colData(salmon_merged_mae) <- colData(salmon_merged_mae)[, names(colData(salmon_merged_mae)) %in% c("animal", "Treatment code")]
-
-model <- create_mofa_from_MultiAssayExperiment(salmon_merged_mae,
+model <- create_mofa_from_MultiAssayExperiment(salmon_mae,
                                                group = "Treatment code",
                                                extract_metadata = TRUE)
 ```
@@ -112,7 +84,7 @@ model <- create_mofa_from_MultiAssayExperiment(salmon_merged_mae,
 ```{r}
 # Set model's options
 model_opts <- get_default_model_options(model)
-model_opts$num_factors <- 5
+model_opts$num_factors <- 4
 
 train_opts <- get_default_training_options(model)
 
