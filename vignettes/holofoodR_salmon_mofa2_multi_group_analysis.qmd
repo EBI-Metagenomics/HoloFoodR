@@ -14,9 +14,12 @@ library(ggplot2)
 # salmon_mae <- readRDS(path)
 salmon_mae <- readRDS("../inst/extdata/salmon_mae.RDS")
 
+# Remove NA data from experiments
+salmon_mae[[2]] <- salmon_mae[[2]][!is.na(rowData(salmon_mae[[2]])$Phylum), ]
+
 # Fetch only experiments that we need
 salmon_mae <-
-  salmon_mae[, ,  c("FATTY ACIDS MG", "metagenomic_assembly")]
+  salmon_mae[, , c("FATTY ACIDS MG", "metagenomic_assembly")]
 ```
 
 ## Data exploration
@@ -61,7 +64,7 @@ salmon_mae[["FATTY ACIDS MG"]] <- transformAssay(
 
 # Transform microbiome with robust centered log-ratio method
 salmon_mae[["metagenomic_assembly"]] <- transformAssay(salmon_mae[["metagenomic_assembly"]], method = "relabundance")
-salmon_mae[["metagenomic_assembly"]] <- transformAssay(salmon_mae[["metagenomic_assembly"]], assay.type = "relabundance", method = "rclr")
+salmon_mae[["metagenomic_assembly"]] <- transformAssay(salmon_mae[["metagenomic_assembly"]], assay.type = "relabundance", method = "rclr", pseudocount = TRUE)
 
 # Remove assays that are not needed
 assay(salmon_mae[[1]], "counts") <- NULL
@@ -90,7 +93,7 @@ salmon_mae <- salmon_mae[, trial_a, ]
 names(colData(salmon_mae)) <- tolower(gsub(" ", "_", names(colData(salmon_mae))))
 ```
 
-Trial code `Tiger` describes trials without added fermented algae meal (0%),
+Treatment code `Tiger` describes treatments without added fermented algae meal (0%),
 and the other codes describe different concentrations.
 
 Next step is to create a column to be used a grouping variable for MOFA2.
@@ -103,8 +106,9 @@ colData(salmon_mae)$added_meal <-
 
 ```{r}
 model <- create_mofa_from_MultiAssayExperiment(salmon_mae,
-                                               group = "added_meal",
-                                               extract_metadata = TRUE)
+  #                                               groups = "added_meal"
+  extract_metadata = TRUE
+)
 ```
 
 
@@ -115,6 +119,9 @@ model_opts$num_factors <- 5
 
 train_opts <- get_default_training_options(model)
 
+# Change convergence mode to slightly improve accuracy
+train_opts$convergence_mode <- "slow"
+
 # Prepare MOFA model
 model.prepared <- prepare_mofa(
   object = model,
@@ -124,28 +131,24 @@ model.prepared <- prepare_mofa(
 # Train model
 model.trained <- run_mofa(model.prepared, use_basilisk = TRUE)
 ```
-```{r}
-model.trained
-```
 
 ```{r}
 # Retrieve view names
 views_names(model.trained)
 ```
 
-
 ## Pearson Correlation between Factors
 
 As sanity check, we expect factors to be uncorrelated.
-
 
 ```{r}
 plot_factor_cor(
   model.trained,
   method = "pearson"
- )
+)
 ```
 
+Overall, we do not observer highly correlated factors.
 
 ## Factor Clustering
 
@@ -156,10 +159,10 @@ However, this type of clustering does not take into account the importance of
 single factors.
 
 ```{r}
-# Cluster samples from all factors into 5 clusters
+# Cluster samples from all factors into 3 clusters
 clustered_samples <- cluster_samples(
   model.trained,
-  k = 5
+  k = 3
 )
 ```
 
@@ -169,130 +172,160 @@ clustered_samples <- cluster_samples(
 
 ```{r, fig.width=15}
 plot_list <- plot_variance_explained(model.trained,
-                                     x = "view", y = "factor",
-                                     plot_total = T)
+  x = "view", y = "factor",
+  plot_total = T
+)
 
 wrap_plots(plot_list, nrow = 2) +
-  plot_annotation(title = "Variance Explained per factor and assay",
-                  theme = theme(plot.title = element_text(hjust = 0.5)))
+  plot_annotation(
+    title = "Variance Explained per factor and assay",
+    theme = theme(plot.title = element_text(hjust = 0.5))
+  )
 ```
 
-```{r}
-plot_top_weights(model.trained,
-                        view = "FATTY ACIDS MG",
-                        factors = 1,
-                        nfeatures = 10) +
-    labs(title = paste0("Top weights of the ", "FATTY ACID MG", " assay"))
-```
+The first factor explains most of the variability within the fatty acid
+view object while the only factor that explains variability within
+metagenomic assembly view is factor 2.
 
+## Plot weights
+
+### Plot top weights
+
+It is possible to plot top weight per each view per each factor.
+
+For demonstration, we will plot the top weights in factor 1 in fatty acid
+view and factor 2 in metagenomic assembly view
 
 ```{r}
-custom_plotter <- function(name) {
-  
+custom_plotter <- function(name, factor) {
   p <- plot_top_weights(model.trained,
-                        view = name,
-                        factors = "all",
-                        nfeatures = 10) +
-    labs(title = paste0("Top weights of the ", name, " assay"))
-  
+    view = name,
+    factors = factor,
+    nfeatures = 10
+  ) +
+    labs(title = paste0("Top weights of the ", name, " assay for factor ", factor))
+  p
 }
 
-plot_list <- lapply(c("FATTY ACIDS MG", "metagenomic_assembly"), custom_plotter)
+custom_plotter("FATTY ACIDS MG", factor = 1)
+custom_plotter("metagenomic_assembly", factor = 2)
+```
 
-wrap_plots(plot_list, nrow = 2) & theme(text = element_text(size = 8))
+### Plot weights per factor
+
+We can also plot top weights per view for a selection of factors.
+
+```{r, fig.width=18}
+plot_weights(model.trained,
+  view = 1,
+  factors = 1:3,
+  text_size = 4
+) +
+  labs(title = "Top 10 weights for the first three factors in fatty acid view")
+```
+Next, we can observer that some fatty acids, such as lignoceric acid is strongly
+negatively associated with factor 3. This acid, however, is positively associated
+with factor 2.
+
+```{r}
+plot_weights(model.trained,
+  view = 2,
+  factors = 1:3,
+  text_size = 4
+) +
+  labs(title = "Top 10 weights for the first three factors in  metagenomic view")
 ```
 
 ## Plot Factors
 
+### Multiple Factors
+
+We can plot multiple latent factors on a scatter plot. For example, the code
+below shows a separation of two clusters along factor 3, where in cluster below
+only Tiger and Jaguar treatments are present (0% and 2% concentration treatment,
+respectively) while all of the rest of treatment codes are present only in the
+above cluster.
+
+```{r}
+plot_factors(model.trained,
+  factors = c(2, 3),
+  color_by = "treatment_code"
+)
+```
+
 ### Single Factors
+
+It is also possible to plot single factors.
 
 ```{r, fig.width=15}
 plot_factor(model.trained,
-            groups = c("Tiger", "Neptune"),
-            factor = 1:3,
-            color_by = "Treatment code",
-            add_violin = TRUE,
-            violin_alpha = 0.25
-)
-
-
-```
-
-### Combinations of Factors
-
-```{r}
-plot_factors(model.trained, 
-  factors = 1:3,
-  color_by = "Treatment code"
+  factor = 3,
+  add_violin = TRUE,
+  violin_alpha = 0.25,
+  color_by = "treatment_code"
 )
 ```
 
-## Plot Feature Weights
-
-```{r}
-plot_weights(model.trained,
-  view = "view_0",
-  factor = 1,
-  nfeatures = 10,     
-  scale = TRUE,         
-  abs = FALSE            
-)
-```
-
-```{r}
-# Top weights
-plot_top_weights(model.trained,
-  view = "view_0",
-  factor = 1,
-  nfeatures = 10
-)
-```
+There does not seem to be any clustering of any treatment codes but the pattern
+is identical to the previous scatter plot. However, here we can observer that
+most samples are clustered around 0.
 
 ## Plot covariation patterns
 
-```{r}
+```{r, fig.width=10}
 # Heatmap
-plot_data_heatmap(model,
-  view = "view_0",         
-  factor = 1,             
+plot_data_heatmap(model.trained,
+  view = 1,
+  factor = 1,
   features = 20,
-  
   cluster_rows = TRUE, cluster_cols = FALSE,
-  show_rownames = TRUE, show_colnames = FALSE
+  show_rownames = TRUE, show_colnames = FALSE,
+  main = "Heatmap of top 20 fatty acids weight captured by factor 1"
 )
 ```
 
 ```{r}
 # Scatter plot
-
-
-plot_data_scatter(model,
-  view = "view_1",    
-  factor = 1,          
+plot_data_scatter(model.trained,
+  view = 1,
+  factor = 1,
   features = 5,
-  add_lm = TRUE,         
-  color_by = "Treatment code"
+  add_lm = TRUE,
 )
 ```
 
 ## Non-linear dimensionality reduction
 
-### Uniform Manifold Approximation and Projection for Dimension Reduction (UMAP)
+Finally, we can use trained MOFA model to cluster the samples by using
+non-linear methods, such as Uniform Manifold Approximation and Projection for 
+Dimension Reduction (UMAP) and t-Distributed Stochastic Neighbor Embedding (t-SNE).
+
+### UMAP
 
 ```{r}
 set.seed(1)
 model.trained <- run_umap(model.trained)
+
+plot_dimred(
+  model.trained,
+  method = "UMAP",
+  color_by = "treatment_code"
+) +
+  labs(title = "UMAP plot of MOFA model")
+```
+As before, we can observer two cluster, one of which contains only Tiger and
+Jaguar treatments.
+
+### t-SNE
+
+```{r}
+set.seed(1)
 model.trained <- run_tsne(model.trained)
 
 plot_dimred(
   model.trained,
-  method = c("UMAP", "TSNE"),
-  group = # trial?/treatment code,
-  color_by = "Treatment code"
-)
+  method = "TSNE",
+  color_by = "treatment_code"
+) +
+  labs(title = "UMAP plot of MOFA model")
 ```
-
-```{r}
-
-```
-
