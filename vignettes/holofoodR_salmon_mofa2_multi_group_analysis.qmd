@@ -56,7 +56,7 @@ salmon_mae[["FATTY ACIDS MG"]] <- transformAssay(
   assay.type = "counts",
   MARGIN = "samples",
   method = "log10",
-  pseudocount = 0.001 / 2
+  pseudocount = TRUE
 )
 
 # Transform microbiome with robust centered log-ratio method
@@ -71,12 +71,39 @@ assay(salmon_mae[[2]], "relabundance") <- NULL
 
 ## MOFA analysis
 
+For demonstration purposes, we will focus on finding what experiment (`FATTY
+ACIDS MG` or `metagenomic_assembly`) explains most variability between the two
+groups within trial A:
+
+1. With 0% concentration of fermented algae meal;
+2. With added fermented algae meal.
+
 ```{r}
 # Select only colData columns of interest
-colData(salmon_mae) <- colData(salmon_mae)[, names(colData(salmon_mae)) %in% c("animal", "Treatment code")]
+colData(salmon_mae) <- colData(salmon_mae)[, names(colData(salmon_mae)) %in% c("animal", "Treatment code", "Trial code")]
 
+# Filter MAE object to include only Trial A
+trial_a <- salmon_mae$`Trial code` == "SA"
+salmon_mae <- salmon_mae[, trial_a, ]
+
+# Change column names to more consistent
+names(colData(salmon_mae)) <- tolower(gsub(" ", "_", names(colData(salmon_mae))))
+```
+
+Trial code `Tiger` describes trials without added fermented algae meal (0%),
+and the other codes describe different concentrations.
+
+Next step is to create a column to be used a grouping variable for MOFA2.
+
+```{r}
+colData(salmon_mae)$added_meal <-
+  with(colData(salmon_mae), ifelse(treatment_code == "Tiger", FALSE, TRUE))
+```
+
+
+```{r}
 model <- create_mofa_from_MultiAssayExperiment(salmon_mae,
-                                               group = "Treatment code",
+                                               group = "added_meal",
                                                extract_metadata = TRUE)
 ```
 
@@ -84,7 +111,7 @@ model <- create_mofa_from_MultiAssayExperiment(salmon_mae,
 ```{r}
 # Set model's options
 model_opts <- get_default_model_options(model)
-model_opts$num_factors <- 4
+model_opts$num_factors <- 5
 
 train_opts <- get_default_training_options(model)
 
@@ -149,6 +176,15 @@ wrap_plots(plot_list, nrow = 2) +
   plot_annotation(title = "Variance Explained per factor and assay",
                   theme = theme(plot.title = element_text(hjust = 0.5)))
 ```
+
+```{r}
+plot_top_weights(model.trained,
+                        view = "FATTY ACIDS MG",
+                        factors = 1,
+                        nfeatures = 10) +
+    labs(title = paste0("Top weights of the ", "FATTY ACID MG", " assay"))
+```
+
 
 ```{r}
 custom_plotter <- function(name) {
@@ -254,5 +290,9 @@ plot_dimred(
   group = # trial?/treatment code,
   color_by = "Treatment code"
 )
+```
+
+```{r}
+
 ```
 
