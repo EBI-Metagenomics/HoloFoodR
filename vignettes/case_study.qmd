@@ -1,0 +1,326 @@
+---
+title: "ECCB Paper HoloFood Salmon - MOFA2 Analysis"
+date: "`r Sys.Date()`"
+package: HoloFoodR
+output:
+    BiocStyle::html_document:
+        fig_height: 7
+        fig_width: 10
+        toc: yes
+        toc_depth: 2
+        number_sections: true
+vignette: >
+    %\VignetteIndexEntry{mia}
+    %\VignetteEngine{knitr::rmarkdown}
+    %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+library(knitr)
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>",
+    cache = TRUE
+)
+```
+
+```{r setup}
+# List of packages that we need
+packages <- c(
+    "ggplot2", "knitr", "mia", "miaViz", "MOFA2",  "patchwork", "reticulate")
+
+# Get packages that are already installed installed
+packages_already_installed <- packages[ packages %in% installed.packages() ]
+
+# Get packages that need to be installed
+packages_need_to_install <- setdiff( packages, packages_already_installed )
+
+# Loads BiocManager into the session. Install it if it not already installed.
+if( !require("BiocManager") ){
+    install.packages("BiocManager")
+    library("BiocManager")
+}
+
+# If there are packages that need to be installed, installs them with BiocManager
+# Updates old packages.
+if( length(packages_need_to_install) > 0 ) {
+   install(packages_need_to_install, ask = FALSE)
+}
+
+# Load all packages into session. Stop if there are packages that were not
+# successfully loaded
+if( any(!sapply(packages, require, character.only = TRUE)) ){
+    stop("Error in loading packages into the session.")
+}
+```
+
+## Data loading and preparation
+
+```{r load_data}
+# path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
+# salmon_mae <- readRDS(path)
+mae <- readRDS("../inst/extdata/salmon_mae.RDS")
+
+# Fetch only experiments that we need
+mae <- mae[, , c("FATTY ACIDS MG", "metagenomic_assembly")]
+```
+
+```{r preprocess}
+# From metabolite data, remove organ-fatty acids row as it only contains a
+# string value "muscle"
+tse <- mae[[1]]
+tse <- tse[!(rowData(tse)[["marker.name"]] %in% c("Organ-fatty acids")), ]
+mae[[1]] <- tse
+
+# Transform matrices to numeric. There are some values that are "< 0.01".
+# If a number is < 0.01, assume it to be 0.
+assay <- assay(mae[[1]], "counts")
+assay[ assay == "<0.01" ] <- 0
+assay <- apply(assay, c(1, 2), function(x) as.numeric(gsub(",", ".", x)))
+
+# Reassign assay back to MAE
+assay(mae[[1]], "counts") <- assay
+
+# From metagenomics data, remove those rows that do not have taxonomy info
+mae[[2]] <- mae[[2]][ !is.na(rowData(mae[[2]])[["Kingdom"]]), ]
+# Agglomerate metagenomics data to Genus level and add it to altExp slot.
+rank <- "Genus"
+altExp(mae[[2]], rank) <- agglomerateByRank(mae[[2]], rank)
+```
+
+For demonstration purposes, we will focus on finding what experiment (`FATTY ACIDS MG` or `metagenomic_assembly`) explains most variability between the two treatment_groups within trial A:
+
+1.  With 0% concentration of fermented algae meal;
+2.  With added fermented algae meal.
+
+```{r preprocess2}
+# Filter MAE object to include only Trial A
+mae <- mae[ , colData(mae)[["Trial code"]] == "SA", ]
+
+# Next step is to create a column to be used as a treatment_grouping variable.
+colData(mae)[["treatment_group"]] <- as.factor(
+    ifelse(colData(mae)[["Treatment concentration"]] == 0, "control", "treatment"))
+```
+
+```{r transformation}
+# Transform fatty acids in mg with log10
+mae[[1]] <- transformAssay(
+    mae[[1]],
+    assay.type = "counts",
+    MARGIN = "samples",
+    method = "log10",
+    pseudocount = TRUE
+)
+
+# Transform microbiome with centered log-ratio method
+altExp(mae[[2]], rank) <- transformAssay(
+    altExp(mae[[2]], rank), method = "relabundance")
+altExp(mae[[2]], rank) <- transformAssay(
+    altExp(mae[[2]], rank), assay.type = "relabundance", method = "clr", pseudocount = TRUE)
+```
+
+## Data exploration
+
+```{r show_metadata}
+colData(mae) |>
+  head() |>
+  kable()
+```
+
+```{r show_metadata2}
+# Display columns of MAE object to select those of interest
+colData(salmon_mae) |> names()
+```
+
+```{r plot_abundance}
+plotAbundanceDensity(altExp(mae[[2]], rank), colour_by = "host.diet.treatment")
+```
+
+## MOFA analysis
+
+```{r mofa_fit}
+# For MOFA, replace original metagenomics data with agglomerated one, remove
+# additional assays and remove additional colData.
+mae_sub <- mae
+mae_sub[[2]] <- altExp(mae_sub[[2]], rank)
+assays(mae_sub[[1]]) <- assays(mae_sub[[1]])[ names(assays(mae_sub[[1]])) %in% c("log10") ]
+assays(mae_sub[[2]]) <- assays(mae_sub[[2]])[ names(assays(mae_sub[[2]])) %in% c("clr") ]
+colData(mae_sub) <- colData(mae_sub)[ , c("treatment_group"), drop = FALSE]
+
+# Create MOFA model
+model <- create_mofa_from_MultiAssayExperiment(
+    mae_sub,
+    extract_metadata = TRUE
+)
+
+# Set model's options
+model_opts <- get_default_model_options(model)
+model_opts$num_factors <- 5
+train_opts <- get_default_training_options(model)
+
+# Change convergence mode to slightly improve accuracy
+train_opts$convergence_mode <- "slow"
+
+# Prepare MOFA model
+model <- prepare_mofa(
+  object = model,
+  model_options = model_opts
+)
+
+# Train model
+model <- run_mofa(model, use_basilisk = TRUE)
+```
+
+## Pearson Correlation between Factors
+
+As sanity check, we expect factors to be uncorrelated.
+
+```{r check_ft}
+plot_factor_cor(
+  model,
+  method = "pearson"
+)
+```
+
+Overall, we do not observer highly correlated factors.
+
+## Factor Clustering
+
+It is possible to cluster samples within one or more factors. The latter allows integration of several sources of variation.
+
+However, this type of clustering does not take into account the importance of single factors.
+
+```{r cluster}
+# Cluster samples from all factors into 3 clusters
+clustered_samples <- cluster_samples(model, k = 3)
+```
+
+## Visualization
+
+### Variance Explained
+
+```{r cluster_visualization}
+plot_list <- plot_variance_explained(model,
+  x = "view", y = "factor",
+  plot_total = TRUE
+)
+
+wrap_plots(plot_list, nrow = 2) +
+  plot_annotation(
+    title = "Variance Explained per factor and assay",
+    theme = theme(plot.title = element_text(hjust = 0.5))
+  )
+```
+
+The first factor explains most of the variability within the fatty acid view object while the only factor that explains variability within metagenomic assembly view is factor 2.
+
+## Plot weights
+
+### Plot top weights
+
+It is possible to plot top weight per each view per each factor.
+
+For demonstration, we will plot the top weights in factor 1 in fatty acid view and factor 2 in metagenomic assembly view
+
+```{r weight_visualization}
+custom_plotter <- function(name, factor) {
+    p <- plot_top_weights(
+        model,
+        view = name,
+        factors = factor,
+        nfeatures = 10
+    ) +
+    labs(title = paste0("Top weights of the ", name, " assay for factor ", factor))
+    return(p)
+}
+
+custom_plotter("FATTY ACIDS MG", factor = 1)
+custom_plotter("metagenomic_assembly", factor = 2)
+```
+
+### Plot weights per factor
+
+We can also plot top weights per view for a selection of factors.
+
+```{r weight_visualization2, fig.width=15}
+plot_weights(
+    model,
+    view = 1,
+    factors = 1:3,
+    text_size = 4
+    ) +
+    labs(title = "Top 10 weights for the first three factors in fatty acid view")
+```
+
+Next, we can observer that some fatty acids, such as lignoceric acid is strongly negatively associated with factor 3. This acid, however, is positively associated with factor 2.
+
+```{r weight_visualization3, fig.width=15}
+plot_weights(
+    model,
+    view = 2,
+    factors = 1:3,
+    text_size = 4
+    ) +
+    labs(title = "Top 10 weights for the first three factors in  metagenomic view")
+```
+
+## Plot Factors
+
+### Multiple Factors
+
+We can plot multiple latent factors on a scatter plot.
+
+```{r factor_visualization}
+plot_factors(model, factors = c(1, 2, 3), color_by = "treatment_group")
+```
+
+There does not seem to be any clustering of any treatment codes but the pattern is identical to the previous scatter plot. However, here we can observer that most samples are clustered around 0.
+
+## Plot covariation patterns
+
+```{r, fig.width=10}
+# Heatmap
+plot_data_heatmap(
+    model,
+    view = 1,
+    factor = 1,
+    features = 20,
+    cluster_rows = TRUE, cluster_cols = FALSE,
+    show_rownames = TRUE, show_colnames = FALSE,
+    main = "Heatmap of top 20 fatty acids weight captured by factor 1"
+)
+```
+
+```{r}
+# Scatter plot
+plot_data_scatter(
+    model,
+    view = 1,
+    factor = 1,
+    features = 5,
+    add_lm = TRUE,
+)
+```
+
+## Non-linear dimensionality reduction
+
+Finally, we can use trained MOFA model to cluster the samples by using non-linear methods, such as Uniform Manifold Approximation and Projection for Dimension Reduction (UMAP) and t-Distributed Stochastic Neighbor Embedding (t-SNE).
+
+### UMAP
+
+```{r umap}
+set.seed(142)
+model <- run_umap(model)
+
+plot_dimred(
+  model,
+  method = "UMAP",
+  color_by = "treatment_group"
+) +
+  labs(title = "UMAP plot of MOFA model")
+```
+
+```{r session_info}
+sessionInfo()
+```
+
