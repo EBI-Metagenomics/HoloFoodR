@@ -64,7 +64,7 @@ salmon_mae[["FATTY ACIDS MG"]] <- transformAssay(
 
 # Transform microbiome with robust centered log-ratio method
 salmon_mae[["metagenomic_assembly"]] <- transformAssay(salmon_mae[["metagenomic_assembly"]], method = "relabundance")
-salmon_mae[["metagenomic_assembly"]] <- transformAssay(salmon_mae[["metagenomic_assembly"]], assay.type = "relabundance", method = "rclr", pseudocount = TRUE)
+salmon_mae[["metagenomic_assembly"]] <- transformAssay(salmon_mae[["metagenomic_assembly"]], assay.type = "relabundance", method = "clr", pseudocount = TRUE)
 
 # Remove assays that are not needed
 assay(salmon_mae[[1]], "counts") <- NULL
