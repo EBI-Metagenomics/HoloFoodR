@@ -54,7 +54,162 @@ if( any(!sapply(packages, require, character.only = TRUE)) ){
 }
 ```
 
-## Data loading and preparation
+## Import data
+
+### Retrieve HoloFood data
+
+```{r get_animals, eval=FALSE}
+# Get salmon samples
+salmons <- HoloFoodR::doQuery("animals", system = "salmon", use.cache = TRUE)
+
+# Get only salmon metagenomic and fatty acid data
+salmons <- salmons |>
+  filter(fatty_acids == TRUE & metagenomic_assembly == TRUE)
+```
+
+```{r get_animal_data, eval=FALSE}
+# Get salmon data
+salmon_data <- HoloFoodR::getData(
+  accession.type = "animals",
+  accession = salmons[["accession"]],
+  use.cache = TRUE
+)
+
+# Get salmon samples
+salmon_samples <- salmon_data[["samples"]]
+
+# Get sample IDs
+salmon_sample_ids <- unique(salmon_samples[["accession"]])
+```
+
+```{r get_samples, eval=FALSE}
+# Get salmon MAE experiments as MAE object
+mae <- HoloFoodR::getResult(
+  salmon_sample_ids,
+  use.cache = TRUE,
+  cache.dir = holofood_cache_dir
+)
+
+# Save salmon MAE
+saveRDS(object = salmon_mae, file = "../inst/extdata/salmon_mae_without_mgnify.RDS")
+
+# Show available salmon experiments
+experiments(mae)
+```
+
+### Fetch metagenomic data from MGnify
+
+HoloFood database does not include the data for metagenomic assemblies which
+can be retrieved from [MGnify portal](https://www.ebi.ac.uk/metagenomics).
+
+```{r get_metagenomic_samples, eval=FALSE}
+# Create MGnify object
+mg <- MgnifyClient(
+  useCache = TRUE,
+  cacheDir = mgnify_cache_dir
+  )
+
+# Select only metagenomic assembly samples types
+metagenomic_salmon_samples <- salmon_samples[
+    salmon_samples[["sample_type"]] == "metagenomic_assembly", ]
+
+# Search for sample IDs in MGnify database
+salmon_analysis_ids <- searchAnalysis(
+  mg_salmon,
+  type = "samples",
+  metagenomic_salmon_samples[["accession"]]
+)
+```
+
+```{r get_metagenomic, eval=FALSE}
+# Get metagenomic taxonomic data for salmon from MGnify
+tse <- MGnifyR::getResult(
+  x = mg,
+  accession = salmon_analysis_ids,
+  get.func = FALSE
+)
+
+# Save salmon_metagenomic_tse
+saveRDS <- saveRDS(object = tse, file = "../inst/extdata/salmon_metagenomic_tse.RDS")
+
+tse
+```
+
+Data fetched from MGnify has MGnify-specific identifiers. We have to first
+rename samples with HoloFood specific ID and then add the data to
+MultiAssayExperiment combining all the data.
+
+
+```{r add_metagenomic_data, eval=FALSE}
+.add_MGnify <- function(
+        mae, tse, holofood.id = "sample_biosample",
+        exp.name = "metagenomic_assembly", new.exp = "metagenomic",
+        replace = TRUE){
+    # Rename columns based on HoloFood ID
+    colnames(tse) <- colData(tse)[[holofood.id]]
+    
+    # Merge add MGnify metagenomic data to the existing metagenomic_assembly
+    # experiment. Get the experiment from HoloFood data.
+    tse2 <- mae[[experiment.name]]
+    
+    # Combine sample metadata
+    cd1 <- as.data.frame(colData(tse))
+    cd2 <- as.data.frame(colData(tse2))
+    cd <- merge(
+        cd1, cd2,
+        by.x = holofood.id,
+        by.y = "accession",
+        all.x = TRUE
+    )
+    rownames(cd) <- cd[[holofood.id]]
+    
+    # Now order colData to ensure that order is correct
+    cd <- cd[colnames(tse), ]
+    
+    # Add it to TreeSE
+    colData(tse) <- DataFrame(cd, check.names = FALSE)
+    
+    # Rename to match Holofood
+    colnames(tse) <- colData(tse)[[holofood.id]]
+    
+    # Now order the data based on TreeSE in MAE
+    # First take those columns that can be found
+    mae[[exp.name]] <- mae[[exp.name]][
+        , colnames(mae[[exp.name]]) %in% colnames(tse) ]
+    
+    # Then order
+    tse <- tse[, match(colnames(mae[[exp.name]]), colnames(tse))]
+    # And add to MAE in place of old experiment
+    if( replace ){
+        mae[[exp.name]] <- tse
+    } else{
+        # Get sample map
+        sample_map <- sampleMap(mae)
+        # Get samples that are matching with those one that are being added
+        add_sample_map <- sample_map[
+            match(colnames(tse), sample_map[["colname"]]), ]
+        # Rename the experiment
+        add_sample_map[["assay"]] <- new.exp
+        # Add to sample map'
+        sample_map <- rbind(sample_map, add_sample_map)
+        # Create MAE
+        tse <- ExperimentList(temp = tse)
+        names(tse) <- new.exp
+        
+        exp_list <- c(experiments(mae), tse)
+        mae <- MultiAssayExperiment(
+            exp_list, colData = colData(mae), sampleMap = sample_map)
+    }
+    return(mae)
+}
+
+mae <- .add_MGnify(mae, tse)
+
+# Save to merged MAE object to RDS
+saveRDS(object = mae, file = "../inst/extdata/salmon_mae.RDS")
+```
+
+## Data preprocess
 
 ```{r load_data}
 # path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
