@@ -15,7 +15,7 @@ test_that("getResult", {
     res <- getResult(samples)
     # The data must be MAE that have SEs inside
     expect_s4_class(res, "MultiAssayExperiment")
-    expect_s4_class(res[[1]], "SummarizedExperiment")
+    expect_s4_class(res[[1]], "TreeSummarizedExperiment")
 
     # This function fetches corresponding values from MAE (getResult) and list of
     # data.frames (getData)
@@ -95,7 +95,7 @@ test_that("getResult", {
     res <- getResult(samples)
     # The data must be MAE that have SEs inside
     expect_s4_class(res, "MultiAssayExperiment")
-    expect_s4_class(res[[1]], "SummarizedExperiment")
+    expect_s4_class(res[[1]], "TreeSummarizedExperiment")
     
     ref <- getMetaboLights(
         "https://www.ebi.ac.uk/metabolights/ws/studies/MTBLS4381")
