@@ -288,6 +288,14 @@ colData(salmon_mae) |> names()
 ```
 
 ```{r plot_abundance}
+colData(altExp(mae[[2]]))[["host.diet.treatment"]] <- colData(altExp(mae[[2]]))[["host.diet.treatment"]] |>
+  factor(levels = c(
+    "Jaguar: SA 2.0% seaweed",
+    "Cougar: SA 1.5% seaweed",
+    "Lion: SA 1.0% seaweed",
+    "Puma: SA 0.5% seaweed",
+    "Tiger: SA Control"
+  ))
 plotAbundanceDensity(altExp(mae[[2]], rank), colour_by = "host.diet.treatment")
 ```
 
