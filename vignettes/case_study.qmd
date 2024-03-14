@@ -150,7 +150,7 @@ MultiAssayExperiment combining all the data.
     
     # Merge add MGnify metagenomic data to the existing metagenomic_assembly
     # experiment. Get the experiment from HoloFood data.
-    tse2 <- mae[[experiment.name]]
+    tse2 <- mae[[exp.name]]
     
     # Combine sample metadata
     cd1 <- as.data.frame(colData(tse))
