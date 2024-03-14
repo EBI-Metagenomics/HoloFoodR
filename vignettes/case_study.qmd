@@ -86,8 +86,7 @@ salmon_sample_ids <- unique(salmon_samples[["accession"]])
 # Get salmon MAE experiments as MAE object
 mae <- HoloFoodR::getResult(
   salmon_sample_ids,
-  use.cache = TRUE,
-  cache.dir = holofood_cache_dir
+  use.cache = TRUE
 )
 
 # Save salmon MAE
@@ -105,8 +104,7 @@ can be retrieved from [MGnify portal](https://www.ebi.ac.uk/metagenomics).
 ```{r get_metagenomic_samples, eval=FALSE}
 # Create MGnify object
 mg <- MgnifyClient(
-  useCache = TRUE,
-  cacheDir = mgnify_cache_dir
+  useCache = TRUE
   )
 
 # Select only metagenomic assembly samples types
@@ -276,12 +274,6 @@ altExp(mae[[2]], rank) <- transformAssay(
 
 ## Data exploration
 
-```{r show_metadata}
-colData(mae) |>
-  head() |>
-  kable()
-```
-
 ```{r show_metadata2}
 # Display columns of MAE object to select those of interest
 colData(salmon_mae) |> names()
@@ -375,7 +367,7 @@ wrap_plots(plot_list, nrow = 2) +
   )
 ```
 
-The first factor explains most of the variability within the fatty acid view object while the only factor that explains variability within metagenomic assembly view is factor 2.
+The first factor explains most of the variability within the fatty acid view object, while the only factor that explains variability within metagenomic assembly view is factor 2.
 
 ## Plot weights
 
