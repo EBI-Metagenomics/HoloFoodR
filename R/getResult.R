@@ -5,10 +5,10 @@
 #' database. Compared to \code{getData}, this function is more convenient for
 #' fetching the samples data because it converts the data to
 #' \code{MultiAssayExperiment} where different omics are stored as
-#' \code{SummarizedExperiment} objects which are optimized for downstream
+#' \code{TreeSummarizedExperiment} objects which are optimized for downstream
 #' analytics. Columns of returned \code{MultiAssayExperiment} are individual
 #' animals. These columns are linked with individual samples that are stored in
-#' \code{SummarizedExperiment} objects.
+#' \code{TreeSummarizedExperiment} objects.
 #' 
 #' The HoloFood database lacks non-targeted metabolomic data but fetched from
 #' MetaboLights resource. The function \code{getResult} facilitates the
@@ -46,7 +46,7 @@
 #'   use.cache (Default: \code{FALSE})
 #'   
 #'   \item \strong{assay.type} \code{Character scalar} specifying the name of
-#'   assay in resulting \code{SummarizedExperiment} object.
+#'   assay in resulting \code{TreeSummarizedExperiment} object.
 #'   (Default: \code{"counts"}) 
 #'   
 #' }
@@ -64,7 +64,7 @@
 #'
 #' @seealso
 #' \code{\link[HoloFoodR:getData]{getData}}
-#' \code{\link[SummarizedExperiment:SummarizedExperiment-class]{SummarizedExperiment}}
+#' \code{\link[TreeSummarizedExperiment:TreeSummarizedExperiment-class]{TreeSummarizedExperiment}}
 #' \code{\link[MultiAssayExperiment:MultiAssayExperiment-class]{MultiAssayExperiment}}
 #' \code{\link[MGnifyR:getResult]{MGnifyR:getResult}}
 #'
@@ -198,7 +198,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
         rownames(temp) <- accessions
         temp <- DataFrame(temp, check.names = FALSE)
         # Create empty SE
-        se <- SummarizedExperiment(colData = temp)
+        se <- TreeSummarizedExperiment(colData = temp)
         return(se)
     })
     names(ses) <- type_names
@@ -266,8 +266,8 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     names(assays) <- assay.type
     feat_meta <- DataFrame(feat_meta, check.names = FALSE)
     sample_meta <- DataFrame(sample_meta, check.names = FALSE)
-    # Create SummarizedExperiment
-    se <- SummarizedExperiment(
+    # Create TreeSummarizedExperiment
+    se <- TreeSummarizedExperiment(
         assays = assays, rowData = feat_meta, colData = sample_meta)
     
     # The data still has sample names from MetaboLights and not from HoloFood
@@ -508,8 +508,8 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
 
 # This function cretaes a MAE object from list of tables.
 .construct_omics_data_from_markers <- function(res, metadata){
-    # Convert each table to SummarizedExperiment
-    res <- lapply(res, .convert_type_to_SummarizedExperiment, metadata)
+    # Convert each table to TreeSummarizedExperiment
+    res <- lapply(res, .convert_type_to_TreeSummarizedExperiment, metadata)
     # Create MultiAssayExperiment
     res <- ExperimentList(res)
     res <- MultiAssayExperiment(res)
@@ -520,7 +520,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
 # to SE.
 #' @importFrom stats reshape
 #' @importFrom S4Vectors SimpleList
-.convert_type_to_SummarizedExperiment <- function(
+.convert_type_to_TreeSummarizedExperiment <- function(
         type, metadata, assay.type = "counts", ...){
     # Check assay.type
     temp <- .check_input(assay.type, list("character scalar"))
@@ -581,10 +581,10 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     # Convert to DF
     col_data <- DataFrame(col_data, check.names = FALSE)
 
-    # Create SummarizedExperiment
+    # Create TreeSummarizedExperiment
     assays <- SimpleList(assay)
     names(assays) <- assay.type
-    se <- SummarizedExperiment(
+    se <- TreeSummarizedExperiment(
         assays = assays, rowData = row_data,
         colData = col_data
         )

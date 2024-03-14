@@ -29,7 +29,7 @@ metabolomic data from MetaboLights database. (Default: \code{TRUE})}
   use.cache (Default: \code{FALSE})
   
   \item \strong{assay.type} \code{Character scalar} specifying the name of
-  assay in resulting \code{SummarizedExperiment} object.
+  assay in resulting \code{TreeSummarizedExperiment} object.
   (Default: \code{"counts"}) 
   
 }}
@@ -45,10 +45,10 @@ With \code{getResult}, you can fetch data on samples from the HoloFood
 database. Compared to \code{getData}, this function is more convenient for
 fetching the samples data because it converts the data to
 \code{MultiAssayExperiment} where different omics are stored as
-\code{SummarizedExperiment} objects which are optimized for downstream
+\code{TreeSummarizedExperiment} objects which are optimized for downstream
 analytics. Columns of returned \code{MultiAssayExperiment} are individual
 animals. These columns are linked with individual samples that are stored in
-\code{SummarizedExperiment} objects.
+\code{TreeSummarizedExperiment} objects.
 
 The HoloFood database lacks non-targeted metabolomic data but fetched from
 MetaboLights resource. The function \code{getResult} facilitates the
@@ -76,7 +76,7 @@ mae
 }
 \seealso{
 \code{\link[HoloFoodR:getData]{getData}}
-\code{\link[SummarizedExperiment:SummarizedExperiment-class]{SummarizedExperiment}}
+\code{\link[TreeSummarizedExperiment:TreeSummarizedExperiment-class]{TreeSummarizedExperiment}}
 \code{\link[MultiAssayExperiment:MultiAssayExperiment-class]{MultiAssayExperiment}}
 \code{\link[MGnifyR:getResult]{MGnifyR:getResult}}
 }

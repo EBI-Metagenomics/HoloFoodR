@@ -7,7 +7,7 @@ With this tool, users can efficiently search and retrieve data from the EBI
 HoloFood resource.
 
 The retrieved data is available in `MultiAssayExperiment` /
-`SummarizedExperiment` format similarly to the data acquired with the
+`TreeSummarizedExperiment` format similarly to the data acquired with the
 `MGnifyR` package from the MGnify database. This compatibility ensures users
 can seamlessly combine and analyze datasets from both sources, leading to
 valuable insights into intricate biological systems.
