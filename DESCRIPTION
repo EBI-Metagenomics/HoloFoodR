@@ -18,7 +18,7 @@ License: Artistic-2.0 | file LICENSE
 Encoding: UTF-8
 Depends:
     R(>= 4.4.0),
-    SummarizedExperiment,
+    TreeSummarizedExperiment,
     MultiAssayExperiment
 Imports:
     dplyr,
@@ -29,8 +29,7 @@ Suggests:
     testthat,
     knitr,
     rmarkdown,
-    BiocStyle,
-    TreeSummarizedExperiment
+    BiocStyle
 URL: https://github.com/microbiome/HoloFoodR
 BugReports: https://github.com/microbiome/HoloFoodR/issues
 VignetteBuilder: knitr

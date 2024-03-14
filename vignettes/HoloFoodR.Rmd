@@ -130,13 +130,13 @@ mae
 ```
 
 `MAE` object stores individual omics as
-`r BiocStyle::Biocpkg("SummarizedExperiment")` (`SE`) objects.
+`r BiocStyle::Biocpkg("TreeSummarizedExperiment")` (`TreeSE`) objects.
 
 ```{r show_mae}
 mae[[1]]
 ```
 
-In `SE`, each column represents a sample and rows represent features.
+In `TreeSE`, each column represents a sample and rows represent features.
 
 ### Incorporate with MGnify data
 
@@ -175,8 +175,6 @@ mae_metagenomic <- MGnifyR::getResult(mg, analysis_ids)
 ```
 
 ```{r get_metagenomic_data2, include = FALSE}
-library(TreeSummarizedExperiment)
-
 path <- system.file("extdata", "mae_metagenomic.rds", package = "HoloFoodR")
 mae_metagenomic <- readRDS(path)
 ```
