@@ -77,7 +77,7 @@ metabolomic data from MetaboLights database. (Default: <code>TRUE</code>)</p></d
 <li><p><strong>clear.cache</strong> <code>Logical scalar</code> specifying whether to
   use.cache (Default: <code>FALSE</code>)</p></li>
 <li><p><strong>assay.type</strong> <code>Character scalar</code> specifying the name of
-  assay in resulting <code>SummarizedExperiment</code> object.
+  assay in resulting <code>TreeSummarizedExperiment</code> object.
   (Default: <code>"counts"</code>)</p></li>
 </ul></dd>
 
@@ -96,10 +96,10 @@ metabolomic data from MetaboLights database. (Default: <code>TRUE</code>)</p></d
 database. Compared to <code>getData</code>, this function is more convenient for
 fetching the samples data because it converts the data to
 <code>MultiAssayExperiment</code> where different omics are stored as
-<code>SummarizedExperiment</code> objects which are optimized for downstream
+<code>TreeSummarizedExperiment</code> objects which are optimized for downstream
 analytics. Columns of returned <code>MultiAssayExperiment</code> are individual
 animals. These columns are linked with individual samples that are stored in
-<code>SummarizedExperiment</code> objects.</p>
+<code>TreeSummarizedExperiment</code> objects.</p>
 <p>The HoloFood database lacks non-targeted metabolomic data but fetched from
 MetaboLights resource. The function <code>getResult</code> facilitates the
 automatic retrieval of metabolomic data and its integration with other
@@ -116,7 +116,7 @@ downstream analysis.</p>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="getData.html">getData</a></code>
-<code><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">SummarizedExperiment</a></code>
+<code><a href="https://rdrr.io/pkg/TreeSummarizedExperiment/man/TreeSummarizedExperiment-class.html" class="external-link">TreeSummarizedExperiment</a></code>
 <code><a href="http://waldronlab.io/MultiAssayExperiment/reference/MultiAssayExperiment-class.html" class="external-link">MultiAssayExperiment</a></code>
 <code>MGnifyR:getResult</code></p></div>
     </div>
@@ -137,14 +137,14 @@ downstream analysis.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> A MultiAssayExperiment object of 8 listed</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  experiments with user-defined names and respective classes.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Containing an ExperimentList class object of length 8:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] BIOGENIC AMINES: SummarizedExperiment with 7 rows and 2 columns</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [2] FATTY ACIDS: SummarizedExperiment with 19 rows and 2 columns</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [3] HISTOLOGY: SummarizedExperiment with 20 rows and 2 columns</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [4] INFLAMMATORY MARKERS: SummarizedExperiment with 14 rows and 2 columns</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [5] metagenomic_assembly: SummarizedExperiment with 0 rows and 2 columns</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [6] host_genomic: SummarizedExperiment with 0 rows and 2 columns</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] transcriptomic: SummarizedExperiment with 0 rows and 2 columns</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [8] metatranscriptomic: SummarizedExperiment with 0 rows and 1 columns</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] BIOGENIC AMINES: TreeSummarizedExperiment with 7 rows and 2 columns</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [2] FATTY ACIDS: TreeSummarizedExperiment with 19 rows and 2 columns</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [3] HISTOLOGY: TreeSummarizedExperiment with 20 rows and 2 columns</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [4] INFLAMMATORY MARKERS: TreeSummarizedExperiment with 14 rows and 2 columns</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [5] metagenomic_assembly: TreeSummarizedExperiment with 0 rows and 2 columns</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [6] host_genomic: TreeSummarizedExperiment with 0 rows and 2 columns</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] transcriptomic: TreeSummarizedExperiment with 0 rows and 2 columns</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [8] metatranscriptomic: TreeSummarizedExperiment with 0 rows and 1 columns</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Functionality:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  experiments() - obtain the ExperimentList instance</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  colData() - the primary/phenotype DataFrame</span>
