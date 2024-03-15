@@ -110,7 +110,7 @@
     },
     "GenomeInfoDb": {
       "Package": "GenomeInfoDb",
-      "Version": "1.39.8",
+      "Version": "1.39.9",
       "Source": "Bioconductor",
       "Repository": "Bioconductor 3.19",
       "Requirements": [
@@ -124,7 +124,7 @@
         "stats4",
         "utils"
       ],
-      "Hash": "2eaa776fd87ea28f8fe1aebaf707ae36"
+      "Hash": "3bb3fc4e639d9045bcc5351670dff1cb"
     },
     "GenomeInfoDbData": {
       "Package": "GenomeInfoDbData",
@@ -740,9 +740,10 @@
     },
     "zlibbioc": {
       "Package": "zlibbioc",
-      "Version": "1.49.0",
+      "Version": "1.49.3",
       "Source": "Bioconductor",
-      "Hash": "e732c8a5edb8289ec48dc9546cae4750"
+      "Repository": "Bioconductor 3.19",
+      "Hash": "6dd05467a4736905623634dc1f145da6"
     }
   }
 }
