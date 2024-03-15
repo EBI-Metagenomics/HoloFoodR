@@ -241,9 +241,6 @@ assay(mae[[1]], "counts") <- assay
 # From metagenomics data, remove those rows that do not have taxonomy info
 not_empty <- !apply(rowData(mae[[2]]), 1, function(x) all(is.na(x)))
 mae[[2]] <- mae[[2]][ not_empty, ]
-# Agglomerate metagenomics data to Genus level and add it to altExp slot.
-rank <- "Genus"
-altExp(mae[[2]], rank) <- agglomerateByRank(mae[[2]], rank)
 ```
 
 For demonstration purposes, we will focus on investigating two experiments (`FATTY ACIDS MG` and `metagenomic_assembly`) within the trial A that considered the addition
@@ -252,10 +249,6 @@ of fermented algae meal in the diet of salmons.
 ```{r preprocess2}
 # Filter MAE object to include only Trial A
 mae <- mae[ , colData(mae)[["Trial code"]] == "SA", ]
-
-# Next step is to create a column to be used as a treatment_grouping variable.
-# colData(mae)[["treatment_group"]] <- as.factor(
-#     ifelse(colData(mae)[["Treatment concentration"]] == 0, "control", "treatment"))
 ```
 
 ```{r transformation}
@@ -267,6 +260,10 @@ mae[[1]] <- transformAssay(
     method = "log10",
     pseudocount = TRUE
 )
+
+# Agglomerate metagenomics data to Genus level and add it to altExp slot
+rank <- "Genus"
+altExp(mae[[2]], rank) <- agglomerateByRank(mae[[2]], rank)
 
 # Transform microbiome with centered log-ratio method
 altExp(mae[[2]], rank) <- transformAssay(
@@ -294,15 +291,59 @@ colData(altExp(mae[[2]]))[["host.diet.treatment"]] <- colData(altExp(mae[[2]]))[
 plotAbundanceDensity(altExp(mae[[2]], rank), assay.type = "clr", colour_by = "host.diet.treatment")
 ```
 
+## Cross-correlation analysis
+
+```{r cross-correlation analysis}
+#| fig-width: 15
+#| fig-height: 15
+# For cross-correlation analysis and MOFA2, replace original metagenomics data 
+# with agglomerated one, remove additional assays and remove additional colData.
+mae_sub <- mae
+mae_sub[[2]] <- altExp(mae_sub[[2]], rank)
+
+# Filter genera by prevalence and add it to altExp slot
+altExp(mae_sub[[2]], "prev_genus") <- subsetByPrevalentFeatures(mae_sub[[2]], prevalence = 0.2, detection = 0.001)
+
+assays(mae_sub[[1]]) <- assays(mae_sub[[1]])[ names(assays(mae_sub[[1]])) %in% c("log10") ]
+assays(mae_sub[[2]]) <- assays(mae_sub[[2]])[ names(assays(mae_sub[[2]])) %in% c("clr") ]
+
+# Take those samples that can be found from both experiments
+mae_sub <- intersectColumns(mae_sub)
+
+# Perform cross-correlation analysis
+res <- testExperimentCrossCorrelation(
+    mae_sub, experiment1 = 1, experiment2 = 2,
+    altexp2 = "prev_genus",
+    method = "kendall",
+    assay.type1 = "log10", assay.type2 = "clr",
+    mode = "matrix"
+    )
+
+#res <- na.omit(res)
+
+library(ComplexHeatmap)
+
+# Create a heatmap and store it
+plot <- Heatmap(
+    res$cor,
+    # Print values to cells
+    cell_fun = function(j, i, x, y, width, height, fill) {
+        # If the p-value is under threshold
+        if( !is.na(res$p_adj[i, j]) & res$p_adj[i, j] < 0.05 ){
+            # Print "X"
+            grid.text(sprintf("%s", "X"), x, y, gp = gpar(fontsize = 10, col = "#1dff00"))
+        }
+    },
+    heatmap_legend_param = list(title = "", legend_height = unit(5, "cm"))
+)
+plot
+```
+
+
 ## MOFA analysis
 
 ```{r mofa_fit}
-# For MOFA, replace original metagenomics data with agglomerated one, remove
-# additional assays and remove additional colData.
-mae_sub <- mae
-mae_sub[[2]] <- altExp(mae_sub[[2]], rank)
-assays(mae_sub[[1]]) <- assays(mae_sub[[1]])[ names(assays(mae_sub[[1]])) %in% c("log10") ]
-assays(mae_sub[[2]]) <- assays(mae_sub[[2]])[ names(assays(mae_sub[[2]])) %in% c("clr") ]
+
 
 # Rename column names to make them more consistent
 names(colData(mae_sub)) <- tolower(gsub(" ", "_", names(colData(mae_sub))))
@@ -397,10 +438,10 @@ custom_plotter("metagenomic_assembly", factor = 2)
 ```
 
 An interesting example comes from an unknown fatty acid 16:4n-3, which exhibits
-the diametrically opposed effects  effects in factors 1 and 3 compared to factor 2. 
-Specifically, it has the largest effects
-in factors 2 and 3, in the former case the effect is positive, where in the latter
-case it is negative. Conversely, it has second most significant negative effect on factor 1.
+the diametrically opposed effects in factors 1 and 3 compared to factor 2. 
+Specifically, it has the largest effects in factors 2 and 3, in the former case 
+the effect is positive, whereas in the latter case it is negative. Conversely, 
+it has second most significant negative effect on factor 1.
 
 Similarly, these plots shows us that factors 2 and 3 mostly likely describe two
 different treatments, which have the opposite impacts on the concentrations
