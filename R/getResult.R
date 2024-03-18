@@ -96,7 +96,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     # Replace accession with query accession to harmonize
     sample_data <- .query_accession_to_accession(sample_data)
     # Create a MultiAssayExperiment from the data
-    omics_list <- .construct_MAE(sample_data)
+    omics_list <- .construct_MAE(sample_data, ...)
     mae <- omics_list[["mae"]]
     sample_metadata <- omics_list[["sample_metadata"]]
     study_metadata <- omics_list[["study_metadata"]]
@@ -166,7 +166,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     animal_data <- animal_data[ !names(
         animal_data) %in% c("sample_types", "samples")]
     # Construct MAE from animal data
-    mae_animal_list <- .construct_MAE(animal_data)
+    mae_animal_list <- .construct_MAE(animal_data, ...)
     mae_animal <- mae_animal_list[["mae"]]
     study_metadata2 <- mae_animal_list[["sample_metadata"]]
     study_metadata3 <- mae_animal_list[["study_metadata"]]
@@ -289,7 +289,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
 }
 
 # This function constructs MAE object from the sample data.
-.construct_MAE <- function(sample_data){
+.construct_MAE <- function(sample_data, ...){
     # Get only structured metadata table. It includes info about measurements.
     # Other tables include info for instance about animals.
     sample_tab <- sample_data[["structured_metadata"]]
@@ -318,15 +318,18 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     omic_types <- sample_tab[ omic_types ]
 
     # Create metadata table from metadata types
-    sample_metadata <- .construct_metadata_from_markers(sample_metadata_types)
-    study_metadata <- .construct_metadata_from_markers(study_metadata_types)
+    sample_metadata <- .construct_metadata_from_markers(
+        sample_metadata_types, ...)
+    study_metadata <- .construct_metadata_from_markers(
+        study_metadata_types, ...)
     # Add rest of the sample data to metadata
     sample_data <- sample_data[ !names(sample_data) %in% "structured_metadata" ]
     sample_metadata <- .add_sample_data_to_metadata(
         sample_data, sample_metadata)
     # Create SE objecst from individual omics. Add metadata to SEs,
     # Add omics to MAE.
-    omics <- .construct_omics_data_from_markers(omic_types, sample_metadata)
+    omics <- .construct_omics_data_from_markers(
+        omic_types, sample_metadata, ...)
 
     # Create a result list
     res <- list(
@@ -369,16 +372,16 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
 # This function creates a sample metadata from specific markers of structured
 # metadata.
 #' @importFrom dplyr bind_rows
-.construct_metadata_from_markers <- function(res){
+.construct_metadata_from_markers <- function(res, ...){
     # If there are results
     if( length(res) > 0 ){
         # Convert each sample metadata type to table where each row represents
         # single sample
-        res <- lapply(res, .convert_type_to_table)
+        res <- lapply(res, function(x) .convert_type_to_table(x, ...))
         # Combine data
         res <- bind_rows(res)
         # Convert to numeric those columns that can be converted
-        res <- .convert_cols_numeric(res)
+        res <- .convert_cols_numeric(res, ...)
     } else{
         res <- NULL
     }
@@ -389,7 +392,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
 # It converts it to suitable format for sample metadata.
 #' @importFrom stats reshape
 #' @importFrom dplyr full_join
-.convert_type_to_table <- function(type){
+.convert_type_to_table <- function(type, ...){
     # Get those columns that are in long format and wide
     long_info <- c("accession", "measurement", "marker.name")
     wide_info <- c("accession", colnames(type)[!colnames(type) %in% long_info])
@@ -450,7 +453,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     # Remove duplicates
     table <- table[ !duplicated(table), ]
     # Convert to numeric those columns that can be converted
-    table <- .convert_cols_numeric(table)
+    table <- .convert_cols_numeric(table, ...)
     return(table)
 }
 
@@ -507,9 +510,11 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
 }
 
 # This function cretaes a MAE object from list of tables.
-.construct_omics_data_from_markers <- function(res, metadata){
+.construct_omics_data_from_markers <- function(res, metadata, ...){
     # Convert each table to TreeSummarizedExperiment
-    res <- lapply(res, .convert_type_to_TreeSummarizedExperiment, metadata)
+    res <- lapply(res, function(x){
+        .convert_type_to_TreeSummarizedExperiment(x, metadata, ...)
+    })
     # Create MultiAssayExperiment
     res <- ExperimentList(res)
     res <- MultiAssayExperiment(res)
@@ -549,7 +554,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     colnames(assay) <- gsub(paste0(num_col, "."), "", colnames(assay))
 
     # Try to convert columns to numeric.
-    assay <- .convert_cols_numeric(assay)
+    assay <- .convert_cols_numeric(assay, ...)
     # Samples are in columns and features in rows
     assay <- t(assay)
     assay <- as.matrix(assay)
@@ -593,7 +598,10 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
 
 # This function gets data.frame as an input and it converts columns to numeric
 # if they can be converted.
-.convert_cols_numeric <- function(df){
+.convert_cols_numeric <- function(df, replace.lower.th = FALSE, ...){
+    # Check replace.lower.th
+    temp <- .check_input(replace.lower.th, list("logical scalar"))
+    #
     df <- as.data.frame(df, check.names = FALSE)
     # Skip those columns that are list
     is_list <- unlist(lapply(df, is.list))
@@ -606,7 +614,26 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
         temp <- gsub(",", ".", x)
         # Some values have percentage symbol. The unit already tells that it is
         # percentage.
-        temp <- gsub("%", "", x)
+        temp <- gsub("%", "", temp)
+        # If user has specified, replace those values that are under detection
+        # threshold to 0.
+        msg <- NULL
+        if( replace.lower.th ){
+            # Get those values that matches to give warning message
+            pattern <- "<\\s*\\d+"
+            matched_values <- grep(pattern, temp, value = TRUE)
+            matched_values <- unique(matched_values)
+            # Replace values with 0.
+            if( length(matched_values) > 0 ){
+                # Replace
+                temp <- gsub(pattern, 0, temp)
+                # Create message text
+                msg <- paste0(
+                    "The following values are replaced with 0: '",
+                    paste0(matched_values, collapse = "', '"), "'")
+            }
+            
+        }
         # Try to convert to numeric
         temp_num <- suppressWarnings( as.numeric(temp) )
         # Check if we lost info. If we did, then the column is not numeric. If
@@ -614,6 +641,10 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
         # succesful and the values are numeric.
         if( all(is.na(temp_num) == is.na(x)) ){
             x <- temp_num
+            # Give warning message about replacing lower threshold
+            if( !is.null(msg) ){
+                warning(msg, call. = FALSE)
+            }
         }
         return(x)
     })
