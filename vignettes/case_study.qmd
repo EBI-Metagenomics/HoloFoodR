@@ -345,8 +345,8 @@ Differential abundance analysis of fatty acids.
 # colData(mae)[["treatment_group"]] <- as.factor(
 #     ifelse(colData(mae)[["Treatment concentration"]] == 0, "control", "treatment"))
 
-# Add treatment concentration to fatty acid view
-merged_fatty_acid <- merge(x = colData(mae_sub[[1]]), y = colData(mae)[c("animal", "Treatment concentration")], all.x = TRUE, by = "animal")
+# Add treatment concentration and to fatty acid view
+merged_fatty_acid <- merge(x = colData(mae_sub[[1]]), y = colData(mae)[c("animal", "Treatment concentration", "Treatment code")], all.x = TRUE, by = "animal")
 rownames(merged_fatty_acid) <- merged_fatty_acid$accession
 colData(mae_sub[[1]]) <- merged_fatty_acid
 
@@ -394,7 +394,55 @@ plot
 p_values |> kable(digits = 10)
 ```
 
+## Kruskall-Wallist test
 
+
+```{r }
+p_values <- c()
+
+# Rename column names to make them more consistent
+names(colData(mae_sub[[1]])) <- tolower(gsub(" ", "_", names(colData(mae_sub[[1]]))))
+
+# Melt the data
+df <- meltAssay(mae_sub[[1]], assay.type = "log10", add_col_data = "treatment_code")
+```
+
+```{r kruskall_wallis}
+assay_name <- "log10"
+treatment_code <- "treatment_code"
+
+for (name in rownames(mae_sub[[1]])) {
+  temp <- df[df$FeatureID == name, ]
+  formula <- as.formula(paste0(assay_name, "~", treatment_code))
+  p_values <- c(p_values, kruskal.test(formula, temp)$p.value)
+}
+
+# Adjusts p-values
+p_values <- p.adjust(p_values, method = "fdr")
+
+# Create data.frame from p-values data
+p_values <- data.frame(fatty_acid = rownames(mae_sub[[1]]), p_value = p_values)
+
+# Order data by p-value in ascending oder
+p_values <- p_values[order(p_values$p_value), ]
+
+p_values
+```
+
+```{r dunn_test}
+df$treatment_code <- as.factor(df$treatment_code)
+assay_name <- "log10"
+# for (name in rownames(mae_sub[[1]])) {
+#   temp <- df[df$FeatureID == name, ]
+#   formula <- as.formula(paste0(assay_name, "~", treatment_code))
+#   dunnTest(x = formula, data = temp,
+#            method = "holm")
+#   #p_values <- c(p_values, kruskal.test(formula, temp)$p.value)
+# }
+temp <- df[df$FeatureID == "n-3/n-6", ]
+dunnTest_res <- dunnTest(log10~treatment_code, data = temp, table = TRUE, method="holm")$res
+dunnTest_res
+```
 
 ## MOFA analysis
 
