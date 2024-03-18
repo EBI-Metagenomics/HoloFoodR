@@ -450,12 +450,17 @@ dunnTest_res
 # Rename column names to make them more consistent
 names(colData(mae_sub)) <- tolower(gsub(" ", "_", names(colData(mae_sub))))
 
+# Add treatment group categories (Tiger Control vs. others)
+colData(mae_sub)["treatment_group"] <- ifelse(colData(mae_sub)[["treatment_concentration"]] == 0,
+                           "control", "treatment")
+
 # Select only the column we require
-colData(mae_sub) <- colData(mae_sub)[ , c("treatment_code"), drop = FALSE]
+colData(mae_sub) <- colData(mae_sub)[ , c("treatment_group"), drop = FALSE]
 
 # Create MOFA model
 model <- create_mofa_from_MultiAssayExperiment(
     mae_sub,
+    group = "treatment_group",
     extract_metadata = TRUE
 )
 
@@ -593,7 +598,7 @@ appears in factor 3.
 We can plot multiple latent factors on a scatter plot.
 
 ```{r factor_visualization}
-plot_factors(model, factors = c(1, 2, 3), color_by = "treatment_code")
+plot_factors(model, factors = c(1, 2, 3), color_by = "treatment_group")
 ```
 
 It can be noticed that scatter plots between factors 1 and 2, and factors 2 and 3,
