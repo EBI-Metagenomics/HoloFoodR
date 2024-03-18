@@ -341,7 +341,7 @@ plot
 
 Differential abundance analysis of fatty acids.
 
-```{r}
+```{r wilcox_test}
 # colData(mae)[["treatment_group"]] <- as.factor(
 #     ifelse(colData(mae)[["Treatment concentration"]] == 0, "control", "treatment"))
 
@@ -360,6 +360,38 @@ colData(mae_sub[[1]])[["treatment_group"]] <- as.factor(
 
 # Melt the data
 df <- meltAssay(mae_sub[[1]], assay.type = "log10", add_col_data = "treatment_group")
+
+p_values <- c()
+assay_name <- "log10"
+treatment_group <- "treatment_group"
+
+for (name in rownames(mae_sub[[1]])) {
+  temp <- df[df$FeatureID == name, ]
+  formula <- as.formula(paste0(assay_name, "~", treatment_group))
+  p_values <- c(p_values, wilcox.test(formula, temp)$p.value)
+}
+
+# Adjusts p-values
+p_values <- p.adjust(p_values, method = "fdr")
+
+# Create data.frame from p-values data
+p_values <- data.frame(fatty_acid = rownames(mae_sub[[1]]), p_value = p_values)
+
+# Order data by p-value in ascending oder
+p_values <- p_values[order(p_values$p_value), ]
+
+# Create a plot, store it, and print it
+plot <- ggplot(p_values, aes(x = p_value)) +
+    geom_histogram(bins = 30, color="darkred", fill="lightblue") +
+    labs(x = "P-value", y = paste0("Number of fatty acids")) +
+    geom_vline(xintercept = 0.05, color = "red")
+    # geom_text(aes(0.05, 1, label = 0.05, angle = 90))  +
+    # theme(text = element_text(size = 8))
+plot
+```
+
+```{r}
+p_values |> kable(digits = 10)
 ```
 
 
