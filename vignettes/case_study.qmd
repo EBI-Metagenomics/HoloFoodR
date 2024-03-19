@@ -541,6 +541,12 @@ plot_factor(model,
 ```
 
 
+## Plot data scatter
+
+```{r}
+plot_data_scatter(model, factor = 1, features = 5,
+                  color_by = "mass_category")
+```
 
 ## Plot weights
 
