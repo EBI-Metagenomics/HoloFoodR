@@ -525,6 +525,10 @@ The first factor explains most of the variability within the fatty acid view obj
 
 ## Plot factor
 
+We can now plot single factors. For demonstration purposes, we will focus on
+the first factor and add the salmon mass as color variable where the separating
+mass is the median of mass.
+
 ```{r}
 plot_factor(model,
   factors = 1,
@@ -540,6 +544,9 @@ plot_factor(model,
   )
 ```
 
+We can observer, the the Tiger (control), and Jaguar (2% algae concentration)
+have very similar patters with factor values that are concentrated in the lower
+part of the violin plots for "heavy" salmons.
 
 ## Plot data scatter
 
