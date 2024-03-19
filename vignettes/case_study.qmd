@@ -591,7 +591,6 @@ plot_factor(model,
   factors = 1,
   color_by = "host.gutted.mass",
   group_by = "treatment_code",
-  add_violin = TRUE
 )
 ```
 
