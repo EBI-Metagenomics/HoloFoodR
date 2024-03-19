@@ -450,12 +450,17 @@ assay_name <- "log10"
 # Rename column names to make them more consistent
 names(colData(mae_sub)) <- tolower(gsub(" ", "_", names(colData(mae_sub))))
 
+# Add salmon host mass to colData
 merged_coldata <- merge(x = colData(mae_sub), y = colData(mae_sub[[2]])[c("animal", "host.gutted.mass")], all.x = TRUE, by = "animal")
 rownames(merged_coldata) <- merged_coldata$animal
 colData(mae_sub) <- merged_coldata
 
+# Add control vs treatment groups
+colData(mae_sub)["treatment_group"] <- ifelse(
+  colData(mae_sub)[, "treatment_concentration"] == 0, "control", "treatment")
+
 # Select only the column we require
-colData(mae_sub) <- colData(mae_sub)[ , c("treatment_code", "host.gutted.mass"), drop = FALSE]
+colData(mae_sub) <- colData(mae_sub)[ , c("treatment_code", treatment_group, "host.gutted.mass"), drop = FALSE]
 
 # Create MOFA model
 model <- create_mofa_from_MultiAssayExperiment(
