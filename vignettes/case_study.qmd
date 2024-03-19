@@ -460,7 +460,6 @@ colData(mae_sub) <- colData(mae_sub)[ , c("treatment_code", "host.gutted.mass"),
 # Create MOFA model
 model <- create_mofa_from_MultiAssayExperiment(
     mae_sub,
-    group = "treatment_group",
     extract_metadata = TRUE
 )
 
@@ -609,7 +608,7 @@ appears in factor 3.
 We can plot multiple latent factors on a scatter plot.
 
 ```{r factor_visualization}
-plot_factors(model, factors = c(1, 2, 3), color_by = "treatment_group")
+plot_factors(model, factors = c(1, 2, 3), color_by = "treatment_code")
 ```
 
 It can be noticed that scatter plots between factors 1 and 2, and factors 2 and 3,
