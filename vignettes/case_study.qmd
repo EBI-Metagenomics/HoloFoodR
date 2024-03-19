@@ -558,8 +558,6 @@ genera have the highest positive or negative impact on the selected factors.
 
 It is possible to plot top weight per each view per each factor.
 
-For demonstration, we will plot the top weights in factor 1 in fatty acid view and factor 2 in metagenomic assembly view
-
 ```{r weight_visualization}
 custom_plotter <- function(name, factor) {
     p <- plot_top_weights(
@@ -577,6 +575,26 @@ custom_plotter("FATTY ACIDS MG", factor = 2)
 custom_plotter("FATTY ACIDS MG", factor = 3)
 custom_plotter("metagenomic_assembly", factor = 2)
 ```
+If you focus on the first plot, which depicts the top factor weights of the
+factor 1 of the fatty acid view,  you will notice that all fatty acids have
+negative weights on factor 1. By taking into consideration what we observed on
+the factor plot above, we can say that all these acids have lower concentrations
+in most of heavy salmons within control (Tiger) and maximum concentration
+treatments (Jaguar).
+
+A better view can be offered if we color samples by their individual masses
+instead of relying on median. Almost all "heavy" salmons have low concentrations
+of the acids seen above.
+
+```{r factor plot by mass}
+plot_factor(model,
+  factors = 1,
+  color_by = "host.gutted.mass",
+  group_by = "treatment_code",
+  add_violin = TRUE
+)
+```
+
 
 An interesting example comes from an unknown fatty acid 16:4n-3, which exhibits
 the diametrically opposed effects in factors 1 and 3 compared to factor 2. 
