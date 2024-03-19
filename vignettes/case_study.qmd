@@ -548,13 +548,6 @@ We can observer, the the Tiger (control), and Jaguar (2% algae concentration)
 have very similar patters with factor values that are concentrated in the lower
 part of the violin plots for "heavy" salmons.
 
-## Plot data scatter
-
-```{r}
-plot_data_scatter(model, factor = 1, features = 5,
-                  color_by = "mass_category")
-```
-
 ## Plot weights
 
 The next step is to have a deeper look inside the observations we found above.
