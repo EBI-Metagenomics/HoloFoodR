@@ -455,12 +455,17 @@ merged_coldata <- merge(x = colData(mae_sub), y = colData(mae_sub[[2]])[c("anima
 rownames(merged_coldata) <- merged_coldata$animal
 colData(mae_sub) <- merged_coldata
 
+# Add mass categories
+mass_median <- median(colData(mae_sub)[, "host.gutted.mass"])
+colData(mae_sub)["mass_category"] <- ifelse(
+  colData(mae_sub)[, "host.gutted.mass"] > mass_median, "heavy", "light")
+
 # Add control vs treatment groups
 colData(mae_sub)["treatment_group"] <- ifelse(
   colData(mae_sub)[, "treatment_concentration"] == 0, "control", "treatment")
 
 # Select only the column we require
-colData(mae_sub) <- colData(mae_sub)[ , c("treatment_code", treatment_group, "host.gutted.mass"), drop = FALSE]
+colData(mae_sub) <- colData(mae_sub)[ , c("treatment_code", treatment_group, "host.gutted.mass", "mass_category"), drop = FALSE]
 
 # Create MOFA model
 model <- create_mofa_from_MultiAssayExperiment(
@@ -522,11 +527,19 @@ The first factor explains most of the variability within the fatty acid view obj
 
 ```{r}
 plot_factor(model,
-            factors = 1,
-            color_by = "host.gutted.mass",
-            group_by = "treatment_code",
-            dot_alpha = 0.8)
+  factors = 1,
+  color_by = "mass_category",
+  group_by = "treatment_code",
+  add_violin = TRUE
+) +
+  labs(fill = "Salmon mass") +
+  scale_fill_hue(
+    labels = c(
+      paste(">", mass_median, "g"), paste("<= ", mass_median, "g")
+    )
+  )
 ```
+
 
 
 ## Plot weights
