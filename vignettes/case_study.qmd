@@ -345,7 +345,7 @@ Differential abundance analysis of fatty acids.
 # colData(mae)[["treatment_group"]] <- as.factor(
 #     ifelse(colData(mae)[["Treatment concentration"]] == 0, "control", "treatment"))
 
-# Add treatment concentration and to fatty acid view
+# Add treatment concentration and treatment code to fatty acid view
 merged_fatty_acid <- merge(x = colData(mae_sub[[1]]), y = colData(mae)[c("animal", "Treatment concentration", "Treatment code")], all.x = TRUE, by = "animal")
 rownames(merged_fatty_acid) <- merged_fatty_acid$accession
 colData(mae_sub[[1]]) <- merged_fatty_acid
@@ -439,9 +439,9 @@ assay_name <- "log10"
 #            method = "holm")
 #   #p_values <- c(p_values, kruskal.test(formula, temp)$p.value)
 # }
-temp <- df[df$FeatureID == "n-3/n-6", ]
-dunnTest_res <- dunnTest(log10~treatment_code, data = temp, table = TRUE, method="holm")$res
-dunnTest_res
+# temp <- df[df$FeatureID == "n-3/n-6", ]
+# dunnTest_res <- dunnTest(log10~treatment_code, data = temp, table = TRUE, method="holm")$res
+# dunnTest_res
 ```
 
 ## MOFA analysis
@@ -450,12 +450,12 @@ dunnTest_res
 # Rename column names to make them more consistent
 names(colData(mae_sub)) <- tolower(gsub(" ", "_", names(colData(mae_sub))))
 
-# Add treatment group categories (Tiger Control vs. others)
-colData(mae_sub)["treatment_group"] <- ifelse(colData(mae_sub)[["treatment_concentration"]] == 0,
-                           "control", "treatment")
+merged_coldata <- merge(x = colData(mae_sub), y = colData(mae_sub[[2]])[c("animal", "host.gutted.mass")], all.x = TRUE, by = "animal")
+rownames(merged_coldata) <- merged_coldata$animal
+colData(mae_sub) <- merged_coldata
 
 # Select only the column we require
-colData(mae_sub) <- colData(mae_sub)[ , c("treatment_group"), drop = FALSE]
+colData(mae_sub) <- colData(mae_sub)[ , c("treatment_code", "host.gutted.mass"), drop = FALSE]
 
 # Create MOFA model
 model <- create_mofa_from_MultiAssayExperiment(
@@ -513,6 +513,17 @@ wrap_plots(plot_list, nrow = 2) +
 ```
 
 The first factor explains most of the variability within the fatty acid view object, while the only factor that explains variability within metagenomic assembly view is factor 2.
+
+## Plot factor
+
+```{r}
+plot_factor(model,
+            factors = 1,
+            color_by = "host.gutted.mass",
+            group_by = "treatment_code",
+            dot_alpha = 0.8)
+```
+
 
 ## Plot weights
 
