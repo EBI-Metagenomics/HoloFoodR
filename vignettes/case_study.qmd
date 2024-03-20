@@ -426,21 +426,6 @@ p_values <- p_values[order(p_values$p_value), ]
 p_values
 ```
 
-```{r dunn_test}
-df$treatment_code <- as.factor(df$treatment_code)
-assay_name <- "log10"
-# for (name in rownames(mae_sub[[1]])) {
-#   temp <- df[df$FeatureID == name, ]
-#   formula <- as.formula(paste0(assay_name, "~", treatment_code))
-#   dunnTest(x = formula, data = temp,
-#            method = "holm")
-#   #p_values <- c(p_values, kruskal.test(formula, temp)$p.value)
-# }
-# temp <- df[df$FeatureID == "n-3/n-6", ]
-# dunnTest_res <- dunnTest(log10~treatment_code, data = temp, table = TRUE, method="holm")$res
-# dunnTest_res
-```
-
 ## MOFA analysis
 
 ```{r mofa_fit}
