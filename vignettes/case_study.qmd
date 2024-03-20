@@ -548,7 +548,7 @@ custom_plotter <- function(name, factor) {
         model,
         view = name,
         factors = factor,
-        nfeatures = 8
+        nfeatures = 10
     ) +
     labs(title = paste0("Top weights of the ", name, " assay for factor ", factor))
     return(p)
