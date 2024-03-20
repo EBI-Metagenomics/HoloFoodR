@@ -513,7 +513,7 @@ mass is the median of mass.
 
 ```{r plot_factor}
 plot_factor(model,
-  factors = 1,
+  factors = 1:2,
   color_by = "mass_category",
   group_by = "treatment_code",
   add_violin = TRUE
@@ -525,6 +525,8 @@ plot_factor(model,
     )
   )
 ```
+
+
 
 We can observer, the the Tiger (control), and Jaguar (2% algae concentration)
 have very similar patters with factor values that are concentrated in the lower
