@@ -1,6 +1,6 @@
 Package: HoloFoodR
 Type: Package
-Version: 0.1.5
+Version: 0.99.0
 Authors@R:
     c(person(given = "Tuomas", family = "Borman", role = c("aut", "cre"),
              email = "tuomas.v.borman@utu.fi",
@@ -24,7 +24,9 @@ Imports:
     dplyr,
     httr2,
     jsonlite,
-    S4Vectors
+    S4Vectors,
+    stats,
+    utils
 Suggests:
     testthat,
     knitr,
