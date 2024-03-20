@@ -605,7 +605,6 @@ Similarly, these plots shows us that factors 2 and 3 mostly likely describe two
 different treatments, which have the opposite impacts on the concentrations
 of fatty acids.
 
-
 ### Plot weights per factor
 
 We can also plot top weights per view for a selection of factors to have a better
@@ -703,8 +702,8 @@ scatter plots of factors.
 
 ## Conclusions
 
-The present case study has demonstrated how easy and fast it is to quickly
-download large dataset and transform the data into a MultiAssayExperiment which
+The present case study has demonstrated how easy and fast it is to
+download large dataset and transform the data into a MultiAssayExperiment, which
 in turn gives the researchers access to an extensive plethora of downstream
 tools, such mia and MOFA2 that can be used to pre-process and visualize the
 multi-omics data.
