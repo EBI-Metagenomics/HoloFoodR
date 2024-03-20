@@ -103,12 +103,12 @@ BiocManager::install("HoloFoodR")
 ### GitHub
 
 ```
-remotes::install_github("microbiome/HoloFoodR")
+remotes::install_github("EBI-Metagenomics/HoloFoodR")
 ```
 
 ## Basic usage
 For more detailed instructions read the associated function help,
-[function reference page](https://microbiome.github.io/HoloFoodR/) and
+[function reference page](https://EBI-Metagenomics.github.io/HoloFoodR/) and
 vignette (`vignette("HoloFoodR")`)
 
 ```

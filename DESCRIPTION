@@ -30,7 +30,7 @@ Suggests:
     knitr,
     rmarkdown,
     BiocStyle
-URL: https://github.com/microbiome/HoloFoodR
-BugReports: https://github.com/microbiome/HoloFoodR/issues
+URL: https://github.com/EBI-Metagenomics/HoloFoodR
+BugReports: https://github.com/EBI-Metagenomics/HoloFoodR/issues
 VignetteBuilder: knitr
 RoxygenNote: 7.3.0
