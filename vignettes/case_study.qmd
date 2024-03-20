@@ -342,9 +342,6 @@ plot
 Differential abundance analysis of fatty acids.
 
 ```{r wilcox_test}
-# colData(mae)[["treatment_group"]] <- as.factor(
-#     ifelse(colData(mae)[["Treatment concentration"]] == 0, "control", "treatment"))
-
 # Add treatment concentration and treatment code to fatty acid view
 merged_fatty_acid <- merge(x = colData(mae_sub[[1]]), y = colData(mae)[c("animal", "Treatment concentration", "Treatment code")], all.x = TRUE, by = "animal")
 rownames(merged_fatty_acid) <- merged_fatty_acid$accession
@@ -396,8 +393,8 @@ p_values |> kable(digits = 10)
 
 ## Kruskall-Wallist test
 
-
-```{r }
+```{r kruskall_wallis}
+# Vector to hold p-values
 p_values <- c()
 
 # Rename column names to make them more consistent
@@ -405,19 +402,19 @@ names(colData(mae_sub[[1]])) <- tolower(gsub(" ", "_", names(colData(mae_sub[[1]
 
 # Melt the data
 df <- meltAssay(mae_sub[[1]], assay.type = "log10", add_col_data = "treatment_code")
-```
 
-```{r kruskall_wallis}
+# Set assay and response vairable
 assay_name <- "log10"
 treatment_code <- "treatment_code"
 
+# Perform Kruskall-Wallis test for each fatty acid
 for (name in rownames(mae_sub[[1]])) {
   temp <- df[df$FeatureID == name, ]
   formula <- as.formula(paste0(assay_name, "~", treatment_code))
   p_values <- c(p_values, kruskal.test(formula, temp)$p.value)
 }
 
-# Adjusts p-values
+# Adjusts p-values with false discovery rate method
 p_values <- p.adjust(p_values, method = "fdr")
 
 # Create data.frame from p-values data
@@ -491,7 +488,7 @@ model <- prepare_mofa(
 model <- run_mofa(model, use_basilisk = TRUE)
 ```
 
-## Pearson Correlation between Factors
+## Pearson correlation between factors
 
 For sanity check, we expect factors to be uncorrelated.
 
@@ -529,7 +526,7 @@ We can now plot single factors. For demonstration purposes, we will focus on
 the first factor and add the salmon mass as color variable where the separating
 mass is the median of mass.
 
-```{r}
+```{r plot_factor}
 plot_factor(model,
   factors = 1,
   color_by = "mass_category",
@@ -558,7 +555,7 @@ genera have the highest positive or negative impact on the selected factors.
 
 It is possible to plot top weight per each view per each factor.
 
-```{r weight_visualization}
+```{r top_weight_visualization}
 custom_plotter <- function(name, factor) {
     p <- plot_top_weights(
         model,
@@ -586,14 +583,13 @@ A better view can be offered if we color samples by their individual masses
 instead of relying on median. Almost all "heavy" salmons have low concentrations
 of the acids seen above.
 
-```{r factor plot by mass}
+```{r plot_factor_by_mass}
 plot_factor(model,
   factors = 1,
   color_by = "host.gutted.mass",
   group_by = "treatment_code",
 )
 ```
-
 
 An interesting example comes from an unknown fatty acid 16:4n-3, which exhibits
 the diametrically opposed effects in factors 1 and 3 compared to factor 2. 
@@ -668,7 +664,7 @@ Uniform Manifold Approximation and Projection for Dimension Reduction.
 ## Plot covariation patterns
 
 ```{r, fig.width=10}
-# Heatmap
+# Heatmap of relationships between factor and top features
 plot_data_heatmap(
     model,
     view = 1,
