@@ -478,12 +478,16 @@ model <- run_mofa(model, use_basilisk = TRUE)
 For sanity check, we expect factors to be uncorrelated.
 
 ```{r check_ft}
+#| fig-width: 10
 plot_factor_cor(
   model,
-  method = "pearson"
+  method = "pearson",
+  cl.ratio = 0.2,
+  tl.srt = 0,
+  title = "Pearson correlation between factors",
+  mar=c(0, 0, 2, 0)
 )
 ```
-
 Overall, we do not observe highly correlated factors which is the 
 
 ## Visualization
