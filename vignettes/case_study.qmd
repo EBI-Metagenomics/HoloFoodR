@@ -27,7 +27,7 @@ knitr::opts_chunk$set(
 ```{r setup}
 # List of packages that we need
 packages <- c(
-    "ggplot2", "knitr", "mia", "dplyr", "miaViz", "MOFA2",  "patchwork", "reticulate", "MGnifyR"
+    "ggplot2", "knitr", "mia", "dplyr", "miaViz", "MOFA2",  "patchwork", "reticulate", "MGnifyR", "reshape2"
     )
 
 # Get packages that are already installed installed
@@ -490,20 +490,74 @@ Overall, we do not observe highly correlated factors which is the
 
 ### Variance explained
 
-```{r cluster_visualization}
-plot_list <- plot_variance_explained(model,
-  x = "view", y = "factor",
-  plot_total = TRUE
+```{r get_variance}
+# Get variance explained
+var_explained <- get_variance_explained(model)
+
+# Get total variance explained
+var_explained_total <- as.data.frame(
+  var_explained$r2_total$group1
 )
 
-wrap_plots(plot_list, nrow = 2) +
-  plot_annotation(
-    title = "Variance explained per factor and experiment",
-    theme = theme(plot.title = element_text(hjust = 0.5))
+# Get variance by factor
+var_explained_factor <- as.data.frame(var_explained$r2_per_factor$group1)
+
+# Change column names and add view names for clarity
+colnames(var_explained_total) <- "var_explained"
+var_explained_total["view"] <- rownames(var_explained_total)
+
+colnames(var_explained_factor) <- c("fatty_acids", "metagenomic_assembly")
+var_explained_factor["factor"] <- rownames(var_explained_factor)
+
+# Melt dataframe for plotting
+var_explained_factor_melt <- melt(
+  var_explained_factor,
+  id.vars = "factor",
+  measure.vars = c("fatty_acids", "metagenomic_assembly"))
+```
+
+```{r plot_var_explained_by_view}
+ggplot(
+  data = var_explained_total,
+  aes(x = view, y = var_explained, fill = view)
+) +
+  geom_bar(stat = "identity") +
+  labs(title = "Variance explained by view", x = "View", y = "Variance explained") +
+  scale_x_discrete(labels = c("Fatty acids", "Metagenomics")) + # Custom x-axis ticks
+  scale_y_continuous(label = c(0, 20, 40, 60, "80%")) + # Custom y-axis ticks
+  theme_minimal() +
+  theme(
+    plot.title.position = "plot", # Align title position with plot
+    legend.position = "none"
   )
 ```
 
-The first factor explains most of the variability within the fatty acid view object, while the only factor that explains variability within metagenomic assembly view is factor 2.
+Most of the total variance (85%) is explained by the fatty acid view. We can have
+a more granular view and look at variance explained by factor and by view.
+
+```{r plot_variance_explained_by_factor_view}
+# Plot
+ggplot(
+  data = var_explained_factor_melt, aes(x = factor, y = value, fill = variable)
+) +
+  geom_bar(position = "stack", stat = "identity") +
+  labs(
+    title = "Variance explained by factor by view",
+    x = "", y = "Variance explained",
+    fill = "View",
+  ) +
+  scale_x_discrete(labels = c(paste("Factor", 1:5))) + # Custom x-axis ticks
+  scale_y_continuous(label = c(0, 20, 40, "60%")) + # Custom y-axis ticks
+  scale_fill_discrete(labels = c("Fatty acids", "Metagenomics")) +
+  theme_minimal() +
+  theme(
+    plot.title.position = "plot" # Align title position with plot
+  )
+```
+
+The first factor explains variability with fatty acid view, while the only factor that explains variability within metagenomic assembly view is factor 2. Moreover,
+within factor 2 metagenomic assembly view explains slightly more variability than
+fatty acids (16% and 13% respectively).
 
 ## Plot factor
 
@@ -525,8 +579,6 @@ plot_factor(model,
     )
   )
 ```
-
-
 
 We can observer, the the Tiger (control), and Jaguar (2% algae concentration)
 have very similar patters with factor values that are concentrated in the lower
