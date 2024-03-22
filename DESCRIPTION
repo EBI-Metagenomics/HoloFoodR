@@ -17,7 +17,7 @@ biocViews: PackageTypeData, ExperimentData
 License: Artistic-2.0 | file LICENSE
 Encoding: UTF-8
 Depends:
-    R(>= 4.4.0),
+    R(>= 4.3.0),
     SummarizedExperiment,
     MultiAssayExperiment
 Imports:
