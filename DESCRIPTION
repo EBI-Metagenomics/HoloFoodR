@@ -1,6 +1,6 @@
 Package: HoloFoodR
 Type: Package
-Version: 0.99.0
+Version: 0.99.1
 Authors@R:
     c(person(given = "Tuomas", family = "Borman", role = c("aut", "cre"),
              email = "tuomas.v.borman@utu.fi",
@@ -13,7 +13,7 @@ Description:
     Utility package to facilitate integration and analysis of EBI HoloFood data
     in R. This package streamlines access to the resource, allowing for direct
     loading of data into formats optimized for downstream analytics.
-biocViews: PackageTypeData, ExperimentData
+biocViews: Software, Infrastructure, DataImport, MicrobiomeData
 License: Artistic-2.0 | file LICENSE
 Encoding: UTF-8
 Depends:
