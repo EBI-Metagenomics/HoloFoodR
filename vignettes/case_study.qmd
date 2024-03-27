@@ -249,6 +249,7 @@ of fermented algae meal in the diet of salmons.
 ```{r preprocess2}
 # Filter MAE object to include only Trial A
 mae <- mae[ , colData(mae)[["Trial code"]] == "SA", ]
+mae
 ```
 
 ```{r transformation}
@@ -485,7 +486,7 @@ plot_factor_cor(
   cl.ratio = 0.2,
   tl.srt = 0,
   title = "Pearson correlation between factors",
-  mar=c(0, 0, 2, 0)
+  mar=c(0, 0, 2, 0),
 )
 ```
 Overall, we do not observe highly correlated factors which is the 
@@ -657,7 +658,11 @@ plot_weights(
     factors = 1:3,
     text_size = 4,
     ) +
-    labs(title = "Top 10 weights for the first three factors in fatty acid view")
+    labs(title = "Top 10 weights for the first three factors in fatty acid view") +
+  theme(plot.title = element_text(size = 25),
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15)
+  )
 ```
 
 These graphs provide us with more high-level overview of the impacts of
@@ -718,6 +723,7 @@ plot_data_heatmap(
     main = "Heatmap of top 20 fatty acids weight captured by factor 1"
 )
 ```
+
 
 ## Non-linear dimensionality reduction
 
