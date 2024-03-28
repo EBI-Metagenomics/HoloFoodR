@@ -1,0 +1,39 @@
+---
+title: "maaslin"
+format: html
+---
+
+```{r}
+library(Maaslin2)
+# Prepare data
+
+# Fetch trial B
+# In case_study, the filtering is performed to fetch only SA
+# Important to run the cells before this filtering
+# Before proceeding in this notebook
+mae <- mae[ , colData(mae)[["Trial code"]] == "SB", ]
+
+
+# Agglomerate metagenomics data to Genus level and add it to altExp slot
+rank <- "Genus"
+altExp(mae[[2]], rank) <- agglomerateByRank(mae[[2]], rank)
+
+# Save count data as dataframe
+input_data <- altExp(mae[[2]]) |> assay("counts") |>
+  as.data.frame()
+
+# Save metadata as dataframe
+input_metadata <- colData(mae[[2]]) |> as.data.frame()
+```
+
+```{r}
+fit_data = Maaslin2(input_data     = input_data, 
+                    input_metadata = input_metadata, 
+                    min_prevalence = 0,
+                    normalization  = "TMM",
+                    analysis_method = "LM",
+                    output         = "output", 
+                    fixed_effects  = c("host.length", "host.gutted.mass")
+                    )
+```
+
