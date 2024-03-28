@@ -4,6 +4,9 @@ format: html
 ---
 
 ```{r}
+# Source code from external script
+sys.source("funcs.R", envir = knitr::knit_global())
+
 # Read MAE object
 mae <- readRDS("../inst/extdata/salmon_mae.RDS")
 
@@ -88,29 +91,10 @@ colData(mae_sub)["treatment_group"] <- ifelse(
 
 # Select only the column we require
 colData(mae_sub) <- colData(mae_sub)[ , c("treatment_code", treatment_group, "host.gutted.mass", "mass_category"), drop = FALSE]
+```
 
-# Create MOFA model
-model <- create_mofa_from_MultiAssayExperiment(
-    mae_sub,
-    extract_metadata = TRUE
-)
-
-# Set model's options
-model_opts <- get_default_model_options(model)
-model_opts$num_factors <- 7
-train_opts <- get_default_training_options(model)
-
-# Change convergence mode to slightly improve accuracy
-train_opts$convergence_mode <- "slow"
-
-# Prepare MOFA model
-model <- prepare_mofa(
-  object = model,
-  model_options = model_opts
-)
-
-# Train model
-model <- run_mofa(model, use_basilisk = TRUE)
+```{r}
+model <- train_mofa(mae_sub, num_factors = 6, convergence_mode = "medium")
 ```
 
 ```{r}
