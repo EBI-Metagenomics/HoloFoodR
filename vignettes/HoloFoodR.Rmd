@@ -43,7 +43,7 @@ integration of data and enhancing accessibility.
 `BiocManager`.
 
 ```{r install, eval=FALSE}
-BiocManager::install(HoloFoodR)
+BiocManager::install("HoloFoodR")
 ```
 
 ## Load the package
@@ -83,7 +83,8 @@ filters.
 ```{r search_animals}
 animals <- doQuery("animals", max.hits = 100)
 animals <- animals[ animals[["histological"]], ]
-head(animals)
+
+colnames(animals) |> head()
 ```
 
 `doQuery()` returns a `data.frame` including information on type of data being
@@ -106,15 +107,16 @@ information on animals including samples that have been drawn from them.
 ```{r get_samples1}
 samples <- animal_data[["samples"]]
 
-head(samples)
+colnames(samples) |> head()
 ```
+
+The elements of the `list` are `data.frames`. For example, "samples" table
+contains information on samples drawn from animals that were specified in input.
 
 Now we can collect sample IDs.
 
 ```{r get_samples2}
 sample_ids <- unique(samples[["accession"]])
-
-head(sample_ids)
 ```
 
 ### Get data on samples
@@ -220,7 +222,7 @@ metabolomics data can be accessed. To retrieve this data, you can utilize the
 getMetaboLights() function or preferably getResult(). Below, we retrieve all the
 metabolomic data associated with HoloFood.
 
-```{r get_metabolomics}
+```{r get_metabolomics, eval=FALSE}
 # Get untargeted metabolomic samples
 samples <- doQuery("samples", sample_type = "metabolomic")
 # Get the data
