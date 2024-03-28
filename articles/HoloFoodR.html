@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">HoloFoodR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.4</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -94,7 +94,7 @@ of data and enhancing accessibility.</p>
 <p><code>HoloFoodR</code> is hosted on Bioconductor, and can be
 installed using via <code>BiocManager</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="va">HoloFoodR</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"HoloFoodR"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="load-the-package">Load the package<a class="anchor" aria-label="anchor" href="#load-the-package"></a>
@@ -208,28 +208,10 @@ query filters.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">animals</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/doQuery.html">doQuery</a></span><span class="op">(</span><span class="st">"animals"</span>, max.hits <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
 <span><span class="va">animals</span> <span class="op">&lt;-</span> <span class="va">animals</span><span class="op">[</span> <span class="va">animals</span><span class="op">[[</span><span class="st">"histological"</span><span class="op">]</span><span class="op">]</span>, <span class="op">]</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">animals</span><span class="op">)</span></span>
-<span><span class="co">#&gt;         accession  system                                   canonical_url</span></span>
-<span><span class="co">#&gt; 2  SAMEA112904734 chicken https://www.ebi.ac.uk/biosamples/SAMEA112904734</span></span>
-<span><span class="co">#&gt; 3  SAMEA112904735 chicken https://www.ebi.ac.uk/biosamples/SAMEA112904735</span></span>
-<span><span class="co">#&gt; 5  SAMEA112904737 chicken https://www.ebi.ac.uk/biosamples/SAMEA112904737</span></span>
-<span><span class="co">#&gt; 9  SAMEA112904741 chicken https://www.ebi.ac.uk/biosamples/SAMEA112904741</span></span>
-<span><span class="co">#&gt; 14 SAMEA112904746 chicken https://www.ebi.ac.uk/biosamples/SAMEA112904746</span></span>
-<span><span class="co">#&gt; 16 SAMEA112904748 chicken https://www.ebi.ac.uk/biosamples/SAMEA112904748</span></span>
-<span><span class="co">#&gt;    histological host_genomic inflammatory_markers metabolomic</span></span>
-<span><span class="co">#&gt; 2          TRUE         TRUE                 TRUE       FALSE</span></span>
-<span><span class="co">#&gt; 3          TRUE         TRUE                 TRUE       FALSE</span></span>
-<span><span class="co">#&gt; 5          TRUE         TRUE                 TRUE       FALSE</span></span>
-<span><span class="co">#&gt; 9          TRUE        FALSE                 TRUE       FALSE</span></span>
-<span><span class="co">#&gt; 14         TRUE         TRUE                 TRUE       FALSE</span></span>
-<span><span class="co">#&gt; 16         TRUE         TRUE                 TRUE       FALSE</span></span>
-<span><span class="co">#&gt;    metabolomic_targeted metagenomic_assembly metatranscriptomic transcriptomic</span></span>
-<span><span class="co">#&gt; 2                  TRUE                 TRUE               TRUE           TRUE</span></span>
-<span><span class="co">#&gt; 3                  TRUE                 TRUE              FALSE           TRUE</span></span>
-<span><span class="co">#&gt; 5                  TRUE                 TRUE               TRUE           TRUE</span></span>
-<span><span class="co">#&gt; 9                  TRUE                FALSE              FALSE          FALSE</span></span>
-<span><span class="co">#&gt; 14                 TRUE                 TRUE               TRUE           TRUE</span></span>
-<span><span class="co">#&gt; 16                 TRUE                 TRUE               TRUE           TRUE</span></span></code></pre></div>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">animals</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "accession"            "system"               "canonical_url"       </span></span>
+<span><span class="co">#&gt; [4] "histological"         "host_genomic"         "inflammatory_markers"</span></span></code></pre></div>
 <p><code><a href="../reference/doQuery.html">doQuery()</a></code> returns a <code>data.frame</code> including
 information on type of data being searched.</p>
 </div>
@@ -249,42 +231,15 @@ from them.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">samples</span> <span class="op">&lt;-</span> <span class="va">animal_data</span><span class="op">[[</span><span class="st">"samples"</span><span class="op">]</span><span class="op">]</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">samples</span><span class="op">)</span></span>
-<span><span class="co">#&gt;        accession                           title          sample_type</span></span>
-<span><span class="co">#&gt; 1  SAMEA10130025                      CB11.15C1a metagenomic_assembly</span></span>
-<span><span class="co">#&gt; 2 SAMEA112905569            CB11.15A3a_Histology         histological</span></span>
-<span><span class="co">#&gt; 3 SAMEA112905780            CB11.15D3a_Histology         histological</span></span>
-<span><span class="co">#&gt; 4 SAMEA112906114                   CB11.15C3a_TM metabolomic_targeted</span></span>
-<span><span class="co">#&gt; 5 SAMEA112906592                   CB11.15F3a_TM metabolomic_targeted</span></span>
-<span><span class="co">#&gt; 6 SAMEA112907067 CB11.15A4a_Inflammatory markers inflammatory_markers</span></span>
-<span><span class="co">#&gt;           animal                                        canonical_url</span></span>
-<span><span class="co">#&gt; 1 SAMEA112904734 https://www.ebi.ac.uk/ena/browser/view/SAMEA10130025</span></span>
-<span><span class="co">#&gt; 2 SAMEA112904734      https://www.ebi.ac.uk/biosamples/SAMEA112905569</span></span>
-<span><span class="co">#&gt; 3 SAMEA112904734      https://www.ebi.ac.uk/biosamples/SAMEA112905780</span></span>
-<span><span class="co">#&gt; 4 SAMEA112904734      https://www.ebi.ac.uk/biosamples/SAMEA112906114</span></span>
-<span><span class="co">#&gt; 5 SAMEA112904734      https://www.ebi.ac.uk/biosamples/SAMEA112906592</span></span>
-<span><span class="co">#&gt; 6 SAMEA112904734      https://www.ebi.ac.uk/biosamples/SAMEA112907067</span></span>
-<span><span class="co">#&gt;                                                  metagenomics_url</span></span>
-<span><span class="co">#&gt; 1 https://www.ebi.ac.uk/metagenomics/api/v1/samples/SAMEA10130025</span></span>
-<span><span class="co">#&gt; 2                                                            &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 3                                                            &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 4                                                            &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 5                                                            &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 6                                                            &lt;NA&gt;</span></span>
-<span><span class="co">#&gt;   metabolomics_url query_accession</span></span>
-<span><span class="co">#&gt; 1               NA  SAMEA112904734</span></span>
-<span><span class="co">#&gt; 2               NA  SAMEA112904734</span></span>
-<span><span class="co">#&gt; 3               NA  SAMEA112904734</span></span>
-<span><span class="co">#&gt; 4               NA  SAMEA112904734</span></span>
-<span><span class="co">#&gt; 5               NA  SAMEA112904734</span></span>
-<span><span class="co">#&gt; 6               NA  SAMEA112904734</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">samples</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "accession"        "title"            "sample_type"      "animal"          </span></span>
+<span><span class="co">#&gt; [5] "canonical_url"    "metagenomics_url"</span></span></code></pre></div>
+<p>The elements of the <code>list</code> are <code>data.frames</code>.
+For example, “samples” table contains information on samples drawn from
+animals that were specified in input.</p>
 <p>Now we can collect sample IDs.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sample_ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">samples</span><span class="op">[[</span><span class="st">"accession"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">sample_ids</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "SAMEA10130025"  "SAMEA112905569" "SAMEA112905780" "SAMEA112906114"</span></span>
-<span><span class="co">#&gt; [5] "SAMEA112906592" "SAMEA112907067"</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">sample_ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">samples</span><span class="op">[[</span><span class="st">"accession"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="get-data-on-samples">Get data on samples<a class="anchor" aria-label="anchor" href="#get-data-on-samples"></a>
@@ -432,8 +387,7 @@ HoloFood.</p>
 <span><span class="va">metabolomic</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getMetaboLights.html">getMetaboLights</a></span><span class="op">(</span><span class="va">samples</span><span class="op">[[</span><span class="st">"metabolomics_url"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Show names of data.frames</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">metabolomic</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "assay"      "assay_meta" "study_meta"</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">metabolomic</span><span class="op">)</span></span></code></pre></div>
 <p>The result is a list that includes three data.frames:</p>
 <pre><code>- study metadata
 - assay metadata
@@ -469,9 +423,9 @@ HoloFood.</p>
 <span><span class="co">#&gt; [8] base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt;  [1] HoloFoodR_0.99.2                MultiAssayExperiment_1.29.1    </span></span>
+<span><span class="co">#&gt;  [1] HoloFoodR_0.99.4                MultiAssayExperiment_1.29.1    </span></span>
 <span><span class="co">#&gt;  [3] TreeSummarizedExperiment_2.11.0 Biostrings_2.71.5              </span></span>
-<span><span class="co">#&gt;  [5] XVector_0.43.1                  SingleCellExperiment_1.25.0    </span></span>
+<span><span class="co">#&gt;  [5] XVector_0.43.1                  SingleCellExperiment_1.25.1    </span></span>
 <span><span class="co">#&gt;  [7] SummarizedExperiment_1.33.3     Biobase_2.63.0                 </span></span>
 <span><span class="co">#&gt;  [9] GenomicRanges_1.55.4            GenomeInfoDb_1.39.9            </span></span>
 <span><span class="co">#&gt; [11] IRanges_2.37.1                  S4Vectors_0.41.5               </span></span>
