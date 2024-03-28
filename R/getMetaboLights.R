@@ -23,12 +23,12 @@
 #'
 #' @examples
 #' 
-#' \dontrun{
+#' # This example is not run, because the server fails to respond sometimes.
+#' 
 #' url <- "https://www.ebi.ac.uk/metabolights/ws/studies/MTBLS4381"
-#' res <- getMetaboLights(url)
-#' names(res)
-#' head(res[["feat_meta"]])
-#' }
+#' #res <- getMetaboLights(url)
+#' #names(res)
+#' #head(res[["feat_meta"]])
 #' 
 #' @seealso
 #' \code{\link[HoloFoodR:getResult]{getResult}}
