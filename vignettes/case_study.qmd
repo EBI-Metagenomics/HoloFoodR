@@ -462,12 +462,13 @@ model_opts$num_factors <- 5
 train_opts <- get_default_training_options(model)
 
 # Change convergence mode to slightly improve accuracy
-train_opts$convergence_mode <- "slow"
+train_opts$convergence_mode <- "medium"
 
 # Prepare MOFA model
 model <- prepare_mofa(
   object = model,
-  model_options = model_opts
+  model_options = model_opts,
+  training_options = train_opts
 )
 
 # Train model
