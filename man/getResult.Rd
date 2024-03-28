@@ -4,14 +4,14 @@
 \alias{getResult}
 \title{Get data on samples from HoloFood database}
 \usage{
-getResult(accession, get.metabolomic = TRUE, ...)
+getResult(accession, get.metabolomic = FALSE, ...)
 }
 \arguments{
 \item{accession}{\code{Character vector} specifying the
 accession IDs of type samples.}
 
 \item{get.metabolomic}{\code{Logical scalar} specifying whether to retrieve
-metabolomic data from MetaboLights database. (Default: \code{TRUE})}
+metabolomic data from MetaboLights database. (Default: \code{FALSE})}
 
 \item{...}{optional arguments:
 \itemize{

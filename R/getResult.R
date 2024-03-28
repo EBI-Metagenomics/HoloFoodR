@@ -28,7 +28,7 @@
 #' accession IDs of type samples.
 #' 
 #' @param get.metabolomic \code{Logical scalar} specifying whether to retrieve
-#' metabolomic data from MetaboLights database. (Default: \code{TRUE})
+#' metabolomic data from MetaboLights database. (Default: \code{FALSE})
 #'
 #' @param ... optional arguments:
 #' \itemize{
@@ -73,7 +73,7 @@ NULL
 
 #' @rdname getResult
 #' @export
-getResult <- function(accession, get.metabolomic = TRUE, ...){
+getResult <- function(accession, get.metabolomic = FALSE, ...){
     # Check accession
     temp <- .check_input(accession, list("character vector"))
     # Check get.metabolomic

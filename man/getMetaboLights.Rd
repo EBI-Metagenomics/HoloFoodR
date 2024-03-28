@@ -34,10 +34,12 @@ assay metadata, and assay.
 }
 \examples{
 
+\dontrun{
 url <- "https://www.ebi.ac.uk/metabolights/ws/studies/MTBLS4381"
 res <- getMetaboLights(url)
 names(res)
 head(res[["feat_meta"]])
+}
 
 }
 \seealso{
