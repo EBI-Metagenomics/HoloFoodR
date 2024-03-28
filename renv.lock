@@ -128,16 +128,16 @@
     },
     "GenomeInfoDbData": {
       "Package": "GenomeInfoDbData",
-      "Version": "1.2.11",
+      "Version": "1.2.12",
       "Source": "Bioconductor",
       "Requirements": [
         "R"
       ],
-      "Hash": "10f32956181d1d46bd8402c93ac193e8"
+      "Hash": "c3c792a7b7f2677be56e8632c5b7543d"
     },
     "GenomicRanges": {
       "Package": "GenomicRanges",
-      "Version": "1.55.3",
+      "Version": "1.55.4",
       "Source": "Bioconductor",
       "Repository": "Bioconductor 3.19",
       "Requirements": [
@@ -152,7 +152,7 @@
         "stats4",
         "utils"
       ],
-      "Hash": "5ab9b4c3fce1ccac9053dba174cc1bdc"
+      "Hash": "f0957f9dcf1bdf2d301d82e5bea6e7ca"
     },
     "IRanges": {
       "Package": "IRanges",
@@ -249,7 +249,7 @@
     },
     "S4Vectors": {
       "Package": "S4Vectors",
-      "Version": "0.41.4",
+      "Version": "0.41.5",
       "Source": "Bioconductor",
       "Repository": "Bioconductor 3.19",
       "Requirements": [
@@ -260,7 +260,7 @@
         "stats4",
         "utils"
       ],
-      "Hash": "59eef8fb01df6ba9080e421ca1e09736"
+      "Hash": "9912dc4d5ed3e8d92d15573b57e9a6c8"
     },
     "SparseArray": {
       "Package": "SparseArray",
