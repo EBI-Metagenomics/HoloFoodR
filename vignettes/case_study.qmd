@@ -569,22 +569,22 @@ fatty acids (16% and 13% respectively).
 ## Plot factor
 
 We can now plot single factors. For demonstration purposes, we will focus on
-the first factor and add the salmon mass as color variable where the separating
-mass is the median of mass.
+the second factor and color the samples by treatment group (Control vs. Treatment).
 
 ```{r plot_factor}
 plot_factor(model,
-  factors = 1:2,
-  color_by = "mass_category",
-  group_by = "treatment_code",
+  factors = 2,
+  color_by = "treatment_group",
+  # group_by = "treatment_group",
   add_violin = TRUE
 ) +
-  labs(fill = "Salmon mass") +
+  labs(fill = "Treatment group") +
   scale_fill_hue(
     labels = c(
-      paste(">", mass_median, "g"), paste("<= ", mass_median, "g")
+      "Control", "Treatment"
     )
-  )
+  ) +
+  labs(y = "Factor 2")
 ```
 
 We can observer, the the Tiger (control), and Jaguar (2% algae concentration)
