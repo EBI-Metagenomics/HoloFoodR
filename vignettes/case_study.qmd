@@ -529,7 +529,7 @@ ggplot(
   aes(x = view, y = var_explained, fill = view)
 ) +
   geom_bar(stat = "identity") +
-  labs(title = "Variance explained by view", x = "View", y = "Variance explained") +
+  labs(title = "Variance explained by profile", x = "Profile", y = "Variance explained") +
   scale_x_discrete(labels = c("Fatty acids", "Metagenomics")) + # Custom x-axis ticks
   scale_y_continuous(label = c(0, 20, 40, 60, "80%")) + # Custom y-axis ticks
   theme_minimal() +
@@ -575,7 +575,7 @@ the second factor and color the samples by treatment group (Control vs. Treatmen
 plot_factor(model,
   factors = 2,
   color_by = "treatment_group",
-  # group_by = "treatment_group",
+  group_by = "treatment_group",
   add_violin = TRUE
 ) +
   labs(fill = "Treatment group") +
