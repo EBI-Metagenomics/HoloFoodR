@@ -600,7 +600,7 @@ genera have the highest positive or negative impact on the selected factors.
 
 It is possible to plot top weight per each view per each factor.
 
-```{r top_weight_visualization}
+```{r top_weight_visualization, fig.width=8}
 custom_plotter <- function(name, factor) {
     p <- plot_top_weights(
         model,
