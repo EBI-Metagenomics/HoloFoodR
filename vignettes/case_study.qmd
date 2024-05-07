@@ -549,9 +549,9 @@ ggplot(
 ) +
   geom_bar(position = "stack", stat = "identity") +
   labs(
-    title = "Variance explained by factor by view",
+    title = "Variance explained by factor by profile",
     x = "", y = "Variance explained",
-    fill = "View",
+    fill = "Profile",
   ) +
   scale_x_discrete(labels = c(paste("Factor", 1:5))) + # Custom x-axis ticks
   scale_y_continuous(label = c(0, 20, 40, "60%")) + # Custom y-axis ticks
