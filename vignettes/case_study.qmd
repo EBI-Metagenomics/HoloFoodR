@@ -747,6 +747,24 @@ plot_dimred(
 As noted, above we also observe the same two clusters, first seen in the 
 scatter plots of factors.
 
+```{r}
+library(IntegratedLearner)
+
+# Create feature dataframe for IntegratedLearner
+metabolomics_df <- mae_sub[[1]] |> assay("log10") |> as.data.frame()
+metagenomics_df <- mae_sub[[2]] |> assay("clr") |> as.data.frame()
+
+mae_sub[, , "FATTY ACIDS MG"]
+
+# Replace "sample" names to animal accession numbers
+names(metabolomics_df) <- colData(mae[[1]])[, "animal"]
+names(metagenomics_df) <- colData(mae[[2]])[, "animal"]
+
+metabolomics_df <- metabolomics_df[, order(names(metabolomics_df))]
+metagenomics_df <- metagenomics_df[, order(names(metagenomics_df))]
+```
+
+
 ## Conclusions
 
 The present case study has demonstrated how easy and fast it is to
