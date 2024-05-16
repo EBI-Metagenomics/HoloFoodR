@@ -754,14 +754,78 @@ library(IntegratedLearner)
 metabolomics_df <- mae_sub[[1]] |> assay("log10") |> as.data.frame()
 metagenomics_df <- mae_sub[[2]] |> assay("clr") |> as.data.frame()
 
-mae_sub[, , "FATTY ACIDS MG"]
-
 # Replace "sample" names to animal accession numbers
 names(metabolomics_df) <- colData(mae[[1]])[, "animal"]
 names(metagenomics_df) <- colData(mae[[2]])[, "animal"]
 
-metabolomics_df <- metabolomics_df[, order(names(metabolomics_df))]
-metagenomics_df <- metagenomics_df[, order(names(metagenomics_df))]
+# Join feature tables together
+feature_table <- rbind(metagenomics_df, metabolomics_df)
+
+# Sanity check: are columns from colData the same as rownames of feature table
+all(colnames(metagenomics_df) == rownames(colData(mae_sub))) # TRUE
+all(colnames(metabolomics_df) == rownames(colData(mae_sub))) # TRUE
+
+# Y column for sample_metadata
+mae_coldata <- colData(mae_sub)
+Y <- as.numeric(factor(mae_coldata$mass_category))
+
+# Create sample_metadata dataframe for IntegratedLearner
+sample_metadata <- data.frame(
+  subjectID = colnames(metabolomics_df),
+  Y = Y
+)
+rownames(sample_metadata) <- colnames(metabolomics_df)
+
+# Create feature metadata dataframe for metagenomics
+feature_metadata_metagenomics <- data.frame(
+  featureID = rownames(metagenomics_df),
+  featureType = "species"
+)
+rownames(feature_metadata_metagenomics) <- feature_metadata_metagenomics$featureID
+
+# Create feature metadata dataframe for metabolomics
+feature_metadata_metabolomics <- data.frame(
+  featureID = rownames(metabolomics_df),
+  featureType = "metabolites"
+)
+rownames(feature_metadata_metabolomics) <- feature_metadata_metabolomics$featureID
+
+# Create feature_metadata dataframe for IntegratedLearner
+feature_metadata <- rbind(feature_metadata_metagenomics, feature_metadata_metabolomics)
+```
+
+```{r}
+# Mass category distribution (1: heavy, 2: light)
+table(sample_metadata$Y)
+```
+
+```{r}
+# Sanity check
+all(rownames(feature_table) == rownames(feature_metadata)) # TRUE
+all(colnames(feature_table) == rownames(sample_metadata)) # TRUE
+
+```
+
+
+```{r}
+set.seed(42)
+# Split dataframes into train and validation dataframes
+feature_table_sample <- sample(
+  c(TRUE, FALSE), ncol(feature_table), replace = TRUE, prob = c(0.8, 0.2))
+feature_table_train <- feature_table[, feature_table_sample]
+feature_table_valid <- feature_table[, !feature_table_sample]
+
+# feature_metadata dataframe can remain as-is
+feature_metadata_valid <- data.frame(feature_metadata)
+
+# sample_metadata
+sample_metadata_train <- sample_metadata[colnames(feature_table_train), ]
+sample_metadata_valid <- sample_metadata[colnames(feature_table_valid), ]
+
+# Sanity check
+all(rownames(sample_metadata_train) == colnames(feature_table_train)) # TRUE
+all(rownames(sample_metadata_valid) == colnames(feature_table_valid)) # TRUE
+
 ```
 
 
