@@ -4,7 +4,7 @@ FROM bioconductor/bioconductor_docker:RELEASE_3_19
 RUN apt-get install -y python3 python3-setuptools python3-dev python3-pip
 
 # Istall CRAN packages
-RUN R -e 'install.packages(c("GGally", "ggplot2", "knitr", "patchwork", "randomForest", "reticulate", "reshape", "shadowtext"))'
+RUN R -e 'install.packages(c("bartMachine", "GGally", "ggplot2", "knitr", "patchwork", "randomForest", "reticulate", "reshape", "shadowtext"))'
 
 # Install Bioconductor packages
 RUN R -e 'BiocManager::install(c("basilisk", "biomformat", "ComplexHeatmap", "MGnifyR", "mia", "miaViz", "MOFA2"))'
