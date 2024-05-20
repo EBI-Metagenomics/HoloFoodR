@@ -27,7 +27,7 @@ knitr::opts_chunk$set(
 ```{r setup}
 # List of packages that we need
 packages <- c(
-    "ggplot2", "knitr", "mia", "dplyr", "miaViz", "MOFA2",  "patchwork", "reticulate", "MGnifyR", "reshape2"
+    "ggplot2", "knitr", "mia", "dplyr", "miaViz", "MOFA2",  "patchwork", "reticulate", "MGnifyR", "reshape2", "GGally"
     )
 
 # Get packages that are already installed installed
@@ -836,7 +836,9 @@ all(rownames(sample_metadata_valid) == colnames(feature_table_valid)) # TRUE
 ```
 
 ```{r}
-fit <- IntegratedLearner(feature_table = feature_table_train,
+
+# Random forest fit
+rf_fit <- IntegratedLearner(feature_table = feature_table_train,
                                sample_metadata = sample_metadata_train,
                                feature_metadata = feature_metadata_train,
                                feature_table_valid = feature_table_valid,
@@ -846,11 +848,24 @@ fit <- IntegratedLearner(feature_table = feature_table_train,
                                meta_learner = "SL.nnls.auc",
                                verbose = TRUE,
                                family = binomial())
+
+bart_fit <- IntegratedLearner(feature_table = feature_table_train,
+                               sample_metadata = sample_metadata_train,
+                               feature_metadata = feature_metadata_train,
+                               folds = 17,
+                               base_learner = "SL.BART",
+                               meta_learner = "SL.nnls.auc",
+                               verbose = TRUE,
+                               family = gaussian())
 ```
 
 ```{r}
 # Visualization
 plot.obj <- IntegratedLearner:::plot.learner(fit)
+```
+
+```{r}
+
 ```
 
 
