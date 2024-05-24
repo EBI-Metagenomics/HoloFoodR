@@ -275,10 +275,32 @@ altExp(mae[[2]], rank) <- transformAssay(
 
 ## Data exploration
 
+### Data preparation
+
+```{r}
+# For cross-correlation analysis and MOFA2, replace original metagenomics data 
+# with agglomerated one, remove additional assays and remove additional colData.
+mae_sub <- mae
+mae_sub[[2]] <- altExp(mae_sub[[2]], rank)
+
+# Filter genera by prevalence and add it to altExp slot
+altExp(mae_sub[[2]], "prev_genus") <- subsetByPrevalentFeatures(mae_sub[[2]], prevalence = 0.2, detection = 0.001)
+
+# Extract only transformed assays
+assays(mae_sub[[1]]) <- assays(mae_sub[[1]])[ names(assays(mae_sub[[1]])) %in% c("log10") ]
+assays(mae_sub[[2]]) <- assays(mae_sub[[2]])[ names(assays(mae_sub[[2]])) %in% c("clr") ]
+
+# Take those samples that can be found from both experiments
+mae_sub <- intersectColumns(mae_sub)
+```
+
+
 ```{r show_metadata2}
 # Display columns of MAE object to select those of interest
 colData(mae) |> names()
 ```
+
+### Abundance plot
 
 ```{r plot_abundance}
 colData(altExp(mae[[2]]))[["host.diet.treatment"]] <- colData(altExp(mae[[2]]))[["host.diet.treatment"]] |>
@@ -292,24 +314,97 @@ colData(altExp(mae[[2]]))[["host.diet.treatment"]] <- colData(altExp(mae[[2]]))[
 plotAbundanceDensity(altExp(mae[[2]], rank), assay.type = "clr", colour_by = "host.diet.treatment")
 ```
 
+### UpSet plot
+
+```{r omic_intersection}
+library(UpSetR)
+fa_animals <- mae_sub[["FATTY ACIDS MG"]] |>
+  colData() |>
+  as.data.frame() |>
+  select("animal")
+species_animal <- mae_sub[["metagenomic_assembly"]] |>
+  colData() |>
+  as.data.frame() |>
+  select("animal")
+
+# All animals have metagenomic and metabolomic samples
+intersect(fa_animals, species_animal) |> nrow() # 179
+```
+
+```{r}
+#| fig-width: 12
+#| fig-height: 10
+mae[[2]] |> assay()
+
+# Show most prevalent features
+head(getPrevalence(mae[[2]], rank = "Genus", detection = 1/100, sort = TRUE,
+                   assay.type = "counts", as_relative = TRUE))
+
+# Get most prevalent genera
+most_prevalent_genera <- getPrevalentFeatures(altExp(mae[[2]]), detection = 0, prevalence = 50/100)
+most_prevalent_genera <- most_prevalent_genera[grepl("^Genus:", most_prevalent_genera)]
+
+# Filter microbe tse by most prevalent genera
+sub_tse <- altExp(mae[[2]])[most_prevalent_genera, ]
+
+# Substitute values in microbe assay to prepare it for UpSet plot
+# 1 means that a species
+assay(sub_tse)[assay(sub_tse) >= 1] <- 1
+
+# Prepare matrix for upset
+upset_matrix <- t(assay(sub_tse))
+
+# Delete Genus from rownames of matrix
+colnames(upset_matrix) <- gsub("Genus:", "", colnames(upset_matrix))
+
+# Change microbe matrix colnames from sample accession numbers
+# to animal accession numbers
+m <- make_comb_mat(upset_matrix,
+              top_n_sets = 5
+              )
+
+# Combination size
+cs <- comb_size(m)
+
+upset_plot <- UpSet(m,
+                    top_annotation = HeatmapAnnotation(
+                      "Species Intersections" = anno_barplot(cs,
+                                                             ylim = c(0, max(cs) * 1.1),
+                                                             border = FALSE,
+                                                             gp = gpar(fill = "black"),
+                                                             height = unit(4, "cm")
+                    ),
+        annotation_name_side = "left",
+        annotation_name_rot = 90),
+        column_title = "Intersections of 5 most prevalent genera"
+                    )
+
+# Prevent cut-offs
+upset_plot <- draw(upset_plot, padding = unit(c(20, 20, 20, 20), "mm"))
+
+# Column order
+co = column_order(upset_plot)
+
+# Add itnersection numbers to bar plot
+decorate_annotation("Species Intersections", {
+    grid.text(cs[co], x = seq_along(cs), y = unit(cs[co], "native") + unit(2, "pt"),
+        default.units = "native", just = c("left", "bottom"),
+        gp = gpar(fontsize = 6, col = "#404040"), rot = 0)
+})
+```
+
+
+```{r}
+genera = c("Ammopiptanthus", "Medicago", "Salinimicrobium", "Photobacterium", "Mycoplasma")
+treatment_grops <- colData(mae_sub)[, "Treatment code"] |> unique()
+```
+
+
 ## Cross-correlation analysis
 
 ```{r cross-correlation analysis}
 #| fig-width: 15
 #| fig-height: 15
-# For cross-correlation analysis and MOFA2, replace original metagenomics data 
-# with agglomerated one, remove additional assays and remove additional colData.
-mae_sub <- mae
-mae_sub[[2]] <- altExp(mae_sub[[2]], rank)
-
-# Filter genera by prevalence and add it to altExp slot
-altExp(mae_sub[[2]], "prev_genus") <- subsetByPrevalentFeatures(mae_sub[[2]], prevalence = 0.2, detection = 0.001)
-
-assays(mae_sub[[1]]) <- assays(mae_sub[[1]])[ names(assays(mae_sub[[1]])) %in% c("log10") ]
-assays(mae_sub[[2]]) <- assays(mae_sub[[2]])[ names(assays(mae_sub[[2]])) %in% c("clr") ]
-
-# Take those samples that can be found from both experiments
-mae_sub <- intersectColumns(mae_sub)
 
 # Perform cross-correlation analysis
 res <- testExperimentCrossCorrelation(
@@ -839,9 +934,9 @@ feature_table_sample <- sample(
 feature_table_train <- feature_table[, feature_table_sample]
 feature_table_valid <- feature_table[, !feature_table_sample]
 
-# feature_metadata dataframe can remain as-is
-feature_metadata_train <- data.frame(feature_metadata)
-feature_metadata_valid <- data.frame(feature_metadata)
+# feature_metadata (probably not required)
+# feature_metadata_train <- data.frame(feature_metadata)
+# feature_metadata_valid <- data.frame(feature_metadata)
 
 # sample_metadata
 sample_metadata_train <- sample_metadata[colnames(feature_table_train), ]
@@ -856,7 +951,7 @@ all(rownames(sample_metadata_valid) == colnames(feature_table_valid)) # TRUE
 # Random forest fit
 rf_fit <- IntegratedLearner(feature_table = feature_table_train,
                                sample_metadata = sample_metadata_train,
-                               feature_metadata = feature_metadata_train,
+                               feature_metadata = feature_metadata,
                                feature_table_valid = feature_table_valid,
                                sample_metadata_valid = sample_metadata_valid,
                                folds = 10,
@@ -867,9 +962,12 @@ rf_fit <- IntegratedLearner(feature_table = feature_table_train,
 ```
 
 ```{r}
-# Visualization
+# Visualization of AUC curves to predict heavy vs. light mass categories
 plot.obj <- IntegratedLearner:::plot.learner(rf_fit)
 ```
+
+When using stacked approach or metabolites, the area-under-curve is very high: 0.98.
+
 #### Trial time points
 
 There are two trial time points: 0 and 60 days.
@@ -905,7 +1003,7 @@ all(rownames(sample_metadata_valid) == colnames(feature_table_valid)) # TRUE
 # Random forest fit
 rf_fit <- IntegratedLearner:::IntegratedLearner(feature_table = feature_table_train,
                                sample_metadata = sample_metadata_train,
-                               feature_metadata = feature_metadata_train,
+                               feature_metadata = feature_metadata,
                                feature_table_valid = feature_table_valid,
                                sample_metadata_valid = sample_metadata_valid,
                                folds = 10,
@@ -915,11 +1013,72 @@ rf_fit <- IntegratedLearner:::IntegratedLearner(feature_table = feature_table_tr
                                family = binomial())
 ```
 
-
 ```{r}
-# Visualization
+# Visualization (trial time points)
 plot.obj <- IntegratedLearner:::plot.learner(rf_fit)
 ```
+
+Trial time points can also be predicted with high accuracy.
+
+#### Treatment group
+
+Finally, we can test whether predictions of treatment vs. control can be made.
+
+After encoding, control is 0, and treatment is 1.
+
+```{r}
+# Y column for sample_metadata
+Y <- as.numeric(factor(mae_coldata$treatment_group))
+
+# Change all 1s to 0 and all 2s to 1
+Y <- ifelse(Y == 1, 0, ifelse(Y == 2, 1, Y))
+
+# Create sample_metadata dataframe for IntegratedLearner
+sample_metadata <- data.frame(
+  Y = Y,
+  subjectID = colnames(metabolomics_df)
+)
+rownames(sample_metadata) <- colnames(metabolomics_df)
+
+# Split sample_metadata into train and validation dataframes
+# feature_table and feature_metadata remain the same
+sample_metadata_train <- sample_metadata[colnames(feature_table_train), ]
+sample_metadata_valid <- sample_metadata[colnames(feature_table_valid), ]
+
+# Sanity check
+all(rownames(sample_metadata_train) == colnames(feature_table_train)) # TRUE
+all(rownames(sample_metadata_valid) == colnames(feature_table_valid)) # TRUE
+```
+
+```{r}
+# Random forest fit for treatment vs. control
+rf_fit <- IntegratedLearner:::IntegratedLearner(feature_table = feature_table_train,
+                               sample_metadata = sample_metadata_train,
+                               feature_metadata = feature_metadata,
+                               feature_table_valid = feature_table_valid,
+                               sample_metadata_valid = sample_metadata_valid,
+                               folds = 10,
+                               base_learner = "SL.randomForest",
+                               meta_learner = "SL.nnls.auc",
+                               verbose = TRUE,
+                               family = binomial())
+```
+
+```{r}
+# Visualization (treatment vs. control)
+plot.obj <- IntegratedLearner:::plot.learner(rf_fit)
+```
+
+Predictions for training data of random forest algorithm.
+
+```{r}
+rf_fit$yhat.train
+```
+
+
+
+Similarly, metabolites seem to be promising in predicting treatment versus control
+groups.
 
 ### Bart machine algorithm
 
@@ -934,11 +1093,11 @@ variable is continuous: `host.gutted.mass`.
 # Create sample_metadata dataframe for IntegratedLearner
 Y <- mae_coldata$host.gutted.mass
 
-sample_metadata <- data.frame(
+sample_metadata_gutted_weight <- data.frame(
   Y = Y,
   subjectID = colnames(metabolomics_df)
 )
-rownames(sample_metadata) <- colnames(metabolomics_df)
+rownames(sample_metadata_gutted_weight) <- colnames(metabolomics_df)
 ```
 
 
@@ -947,9 +1106,9 @@ rownames(sample_metadata) <- colnames(metabolomics_df)
 # so we need to unload it from namespace
 unloadNamespace("MOFA2")
 
-# bartMachine algorithm
+# bartMachine algorithm to predict host.gutted.weight
 bart_fit <- IntegratedLearner(feature_table = feature_table,
-                              sample_metadata = sample_metadata,
+                              sample_metadata = sample_metadata_gutted_weight,
                               feature_metadata = feature_metadata,
                               folds = 17,
                               base_learner = "SL.BART",
@@ -992,9 +1151,12 @@ post_samples <-bart_weighted.post.samples[sample(nrow(bart_weighted.post.samples
 temp <- caterplot(t(post_samples),
           horizontal = FALSE, add = FALSE)
 points(bart_dataY[temp])
-title(main ="", xlab = "Observations", ylab = "Gestational age (in months)",
+title(main ="", xlab = "Observations", ylab = "Host gutted mass (in gramms)",
        line = NA, outer = FALSE)
 ```
+
+We can observe in the figure above that heavy and light salmons are clearly
+separated, and credible intervals are similar to each other.
 
 ```{r}
 ### Find most important features ###
@@ -1098,6 +1260,107 @@ plot_grid(p5,
              labels = c("Top 20 features of microbiome and metabolites layers"),
              label_size = 8, vjust = 0.1)+
   theme(plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"))
+```
+
+
+## XGBoost algorithm
+
+We can also test another algorithm, namely XGboos as an alternative to
+Random Forest.
+
+### Host gutted weight
+
+First, we will use try to predicted host gutted weight.
+
+```{r}
+# sample_metadata
+sample_metadata_gutted_weight_train <- sample_metadata_gutted_weight[colnames(feature_table_train), ]
+sample_metadata_gutted_weight_valid <- sample_metadata_gutted_weight[colnames(feature_table_valid), ]
+
+# Sanity check
+all(rownames(sample_metadata_gutted_weight_train) == colnames(feature_table_train)) # TRUE
+all(rownames(sample_metadata_gutted_weight_valid) == colnames(feature_table_valid)) # TRUE
+
+# Run xgboost algorithm (with linear model meta-learner)
+xgboost <- IntegratedLearner(
+  feature_table = feature_table_train,
+  sample_metadata = sample_metadata_gutted_weight_train,
+  feature_metadata = feature_metadata,
+  feature_table_valid = feature_table_valid,
+  sample_metadata_valid = sample_metadata_gutted_weight_valid,
+  folds = 10,
+  base_learner = "SL.xgboost",
+  meta_learner = "SL.lm", # Use linear model as meta-learner instead of non-negative
+  # least squares
+  verbose = TRUE,
+  family = gaussian()
+)
+```
+```{r}
+# Visualize xgboos algorithm AUC curves
+plot.obj  <- IntegratedLearner:::plot.learner(xgboost)
+```
+
+
+```{r}
+#' Test which algorithm outputs the highest R^2 metrics for Concatenated model
+#' using gutted.host.weight response variable
+#' @param algorithm base_learner algorithm
+# Function to test algorithms (with linear model meta-learner)
+test_model <- function(algorithm) {
+  model <- IntegratedLearner(
+  feature_table = feature_table_train,
+  sample_metadata = sample_metadata_gutted_weight_train,
+  feature_metadata = feature_metadata,
+  feature_table_valid = feature_table_valid,
+  sample_metadata_valid = sample_metadata_gutted_weight_valid,
+  folds = 10,
+  base_learner = algorithm,
+  meta_learner = "SL.lm", # Use linear model as meta-learner instead of non-negative
+  # least squares
+  verbose = TRUE,
+  family = gaussian()
+  )
+  
+  return (model$R2.test[["stacked"]])
+}
+
+# Results
+results <- list()
+algorithms <- c(
+  "SL.bartMachine",
+  "SL.glmnet",
+  "SL.svm" # Support Vector Machines
+)
+
+for (algorithm in algorithms) {
+  r_squared <- test_model(algorithm)
+  results[[algorithm]] <- r_squared
+}
+
+print(results)
+```
+
+`glmnet` algorithm has the highest AUC with stacked approach.
+
+
+### Other algorithms
+
+```{r}
+# Run xgboost algorithm
+# (fails with errors) # see code here https://rdrr.io/cran/SuperLearner/src/R/SuperLearner.R
+xgboost <- IntegratedLearner(
+  feature_table = feature_table_train,
+  sample_metadata = sample_metadata_gutted_weight_train,
+  feature_metadata = feature_metadata,
+  feature_table_valid = feature_table_valid,
+  sample_metadata_valid = sample_metadata_gutted_weight_valid,
+  folds = 5,
+  base_learner = "SL.xgboost",
+  meta_learner = "SL.nnls.auc",
+  verbose = TRUE,
+  family = gaussian()
+)
 ```
 
 
