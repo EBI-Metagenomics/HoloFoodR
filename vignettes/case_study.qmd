@@ -27,7 +27,10 @@ knitr::opts_chunk$set(
 ```{r setup}
 # List of packages that we need
 packages <- c(
-    "ggplot2", "knitr", "mia", "dplyr", "miaViz", "MOFA2",  "patchwork", "reticulate", "MGnifyR", "reshape2", "GGally"
+    "ggplot2", "knitr", "mia", "dplyr", "miaViz", "MOFA2",  "patchwork", "reticulate",
+    "MGnifyR", "reshape2", "GGally", "IntegratedLearner", "SuperLearner",
+    "bartMachine", "mcmcplots", "tidyverse", "UpSetR", "shadowtext", "ComplexHeatmap",
+    "stringr", "cowplot"
     )
 
 # Get packages that are already installed installed
@@ -56,6 +59,25 @@ if( length(pkgs_not_loaded) > 0 ){
     stop("Error in loading the following packages into the session: '", paste0(pkgs_not_loaded, collapse = "', '"), "'")
 }
 ```
+
+```{r}
+# Provide Java with RAM
+options(java.parameters = "-Xmx8g")
+
+# Import packages
+# library(IntegratedLearner)
+# library(SuperLearner)
+# library(bartMachine)
+# library(stringr)
+# library(cowplot)
+# library(mcmcplots)
+# library(tidyverse)
+# library(ComplexHeatmap)
+# library(UpSetR)
+# library(shadowtext)
+```
+
+
 
 ## Import data
 
@@ -273,6 +295,7 @@ altExp(mae[[2]], rank) <- transformAssay(
     altExp(mae[[2]], rank), assay.type = "relabundance", method = "clr", pseudocount = TRUE)
 ```
 
+
 ## Data exploration
 
 ### Data preparation
@@ -289,6 +312,23 @@ altExp(mae_sub[[2]], "prev_genus") <- subsetByPrevalentFeatures(mae_sub[[2]], pr
 # Extract only transformed assays
 assays(mae_sub[[1]]) <- assays(mae_sub[[1]])[ names(assays(mae_sub[[1]])) %in% c("log10") ]
 assays(mae_sub[[2]]) <- assays(mae_sub[[2]])[ names(assays(mae_sub[[2]])) %in% c("clr") ]
+
+# Rename column names to make them more consistent
+names(colData(mae_sub)) <- tolower(gsub(" ", "_", names(colData(mae_sub))))
+
+# Add salmon host mass to colData
+merged_coldata <- merge(x = colData(mae_sub), y = colData(mae_sub[[2]])[c("animal", "host.gutted.mass")], all.x = TRUE, by = "animal")
+rownames(merged_coldata) <- merged_coldata$animal
+colData(mae_sub) <- merged_coldata
+
+# Add mass categories
+mass_median <- median(colData(mae_sub)[, "host.gutted.mass"])
+colData(mae_sub)["mass_category"] <- ifelse(
+  colData(mae_sub)[, "host.gutted.mass"] > mass_median, "heavy", "light")
+
+# Add control vs treatment groups
+colData(mae_sub)["treatment_group"] <- ifelse(
+  colData(mae_sub)[, "treatment_concentration"] == 0, "control", "treatment")
 
 # Take those samples that can be found from both experiments
 mae_sub <- intersectColumns(mae_sub)
@@ -317,7 +357,7 @@ plotAbundanceDensity(altExp(mae[[2]], rank), assay.type = "clr", colour_by = "ho
 ### UpSet plot
 
 ```{r omic_intersection}
-library(UpSetR)
+
 fa_animals <- mae_sub[["FATTY ACIDS MG"]] |>
   colData() |>
   as.data.frame() |>
@@ -359,6 +399,9 @@ colnames(upset_matrix) <- gsub("Genus:", "", colnames(upset_matrix))
 
 # Change microbe matrix colnames from sample accession numbers
 # to animal accession numbers
+rownames(upset_matrix) <- rownames(colData(mae_sub))
+
+
 m <- make_comb_mat(upset_matrix,
               top_n_sets = 5
               )
@@ -395,10 +438,142 @@ decorate_annotation("Species Intersections", {
 
 
 ```{r}
+# Add treatment groups to matrix
+treatment_groups <- colData(mae_sub)[, "treatment_code"]
+treatment_groups <- factor(treatment_groups)
+# Encode
+# 1: Cougar
+# 2: Jaguar
+# 3: Lion
+# 4: Puma
+# 5: Tiger # Control
+numeric_treatment_groups <- as.numeric(treatment_groups)
+
+# Encode treatment
+numeric_treatment_groups[numeric_treatment_groups < 5] <- 1
+
+# Encode control
+numeric_treatment_groups[numeric_treatment_groups == 5] <- 0
+
+upset_matrix <- cbind(upset_matrix, numeric_treatment_groups)
+
 genera = c("Ammopiptanthus", "Medicago", "Salinimicrobium", "Photobacterium", "Mycoplasma")
-treatment_grops <- colData(mae_sub)[, "Treatment code"] |> unique()
+
+# Create combination matrices for each group
+m_list = tapply(seq_len(nrow(upset_matrix)), numeric_treatment_groups, function(ind) {
+    m = make_comb_mat(upset_matrix[ind, genera, drop = FALSE])
+    m[comb_degree(m) > 0]
+})
+
+# Normalize matrices
+m_list <- normalize_comb_mat(m_list)
 ```
 
+
+```{r}
+max_set_size = max(sapply(m_list, set_size))
+max_comb_size = max(sapply(m_list, comb_size))
+```
+
+```{r}
+#| fig-width: 10
+#| fig-height: 10
+# Control vs. treatment (control: 0, treatment: 1)
+ht_list = NULL
+for(i in seq_along(m_list)) {
+    ht_list = ht_list %v%
+        UpSet(m_list[[i]], row_title = paste0("", names(m_list)[i]),
+            set_order = NULL, comb_order = NULL,
+            top_annotation = upset_top_annotation(m_list[[i]], ylim = c(0, max_comb_size)),
+            right_annotation = upset_right_annotation(m_list[[i]], ylim = c(0, max_set_size)))
+}
+ht_list
+```
+
+```{r}
+#| fig-width: 10
+#| fig-height: 10
+# Same but with relative fractions
+max_set_size = max(sapply(m_list, set_size))
+rel_comb_size = sapply(m_list, function(m) {
+    s = comb_size(m)
+    # because the combination matrix is generated under "distinct" mode
+    # the sum of `s` is the size of the full set
+    s/sum(s)
+})
+
+ht_list = NULL
+for(i in seq_along(m_list)) {
+    ht_list = ht_list %v%
+        UpSet(m_list[[i]], row_title = paste0("", names(m_list)[i]),
+            set_order = NULL, comb_order = NULL,
+            top_annotation = HeatmapAnnotation(
+                "Relative\nfraction" = anno_barplot(
+                    rel_comb_size[, i],
+                    ylim = c(0, 0.5),
+                    gp = gpar(fill = "black"),
+                    border = FALSE,
+                    height = unit(2, "cm"),
+                ), 
+                annotation_name_side = "left",
+                annotation_name_rot = 0),
+            right_annotation = upset_right_annotation(m_list[[i]], 
+                ylim = c(0, max_set_size))
+        )
+}
+ht_list
+```
+
+# t-test by group
+
+1. t-test on weight between 0-day salmons
+2. t-test on weight between 60-day salmons
+
+Our hypotheses are as follows:
+
+1. $H_0$: there is no difference between salmon weights
+2. $H_1$: there is a difference between salmon weights
+
+```{r}
+library(car)
+# Add trial.timepoint data
+mae_coldata$animal <- rownames(mae_coldata)
+time_merged_coldata <- merge(x = mae_coldata, y = colData(mae_sub[[2]])[c("animal", "trial.timepoint")], all.x = TRUE, by = "animal")
+
+# Add treatment_group to coldata
+# time_merged_coldata$treatment_group <- (
+#   ifelse(
+#     time_merged_coldata$Treatment.concentration == 0,
+#     "control",
+#     "treatment")
+#   )
+
+# Set rownames
+rownames(time_merged_coldata) <- time_merged_coldata$animal
+
+# Add host.gutted.mass
+time_merged_coldata <- merge(time_merged_coldata, colData(mae_sub), by = 0)
+
+# Split dataframe into 0- and 60-day groups
+day0 <- time_merged_coldata[time_merged_coldata$trial.timepoint == 0, ]
+day60 <- time_merged_coldata[time_merged_coldata$trial.timepoint == 60, ]
+
+# Levene's test for equal variances
+leveneTest(host.gutted.mass ~ treatment_group, data = day0) # Equal
+leveneTest(host.gutted.mass ~ treatment_group, data = day60) # Equal
+
+# Split into two groups
+day0_treatment <- day0[day0$treatment_group == "treatment", ]
+day0_control <- day0[day0$treatment_group == "control", ]
+day60_treatment <- day60[day60$treatment_group == "treatment", ]
+day60_control <- day60[day60$treatment_group == "control", ]
+
+# t-test
+t.test(day0_treatment$host.gutted.mass, day0_control$host.gutted.mass, var.equal = TRUE) # Do not reject $H_0$
+t.test(day60_treatment$host.gutted.mass, day60_control$host.gutted.mass, var.equal = TRUE) # Do not reject $H_0$
+```
+
+The addition of treatment does not change the weight of salmons.
 
 ## Cross-correlation analysis
 
@@ -414,9 +589,6 @@ res <- testExperimentCrossCorrelation(
     assay.type1 = "log10", assay.type2 = "clr",
     mode = "matrix"
     )
-
-library(ComplexHeatmap)
-library(shadowtext)
 
 # Create a heatmap and store it
 plot <- Heatmap(
@@ -526,23 +698,6 @@ p_values
 ## MOFA analysis
 
 ```{r mofa_fit}
-# Rename column names to make them more consistent
-names(colData(mae_sub)) <- tolower(gsub(" ", "_", names(colData(mae_sub))))
-
-# Add salmon host mass to colData
-merged_coldata <- merge(x = colData(mae_sub), y = colData(mae_sub[[2]])[c("animal", "host.gutted.mass")], all.x = TRUE, by = "animal")
-rownames(merged_coldata) <- merged_coldata$animal
-colData(mae_sub) <- merged_coldata
-
-# Add mass categories
-mass_median <- median(colData(mae_sub)[, "host.gutted.mass"])
-colData(mae_sub)["mass_category"] <- ifelse(
-  colData(mae_sub)[, "host.gutted.mass"] > mass_median, "heavy", "light")
-
-# Add control vs treatment groups
-colData(mae_sub)["treatment_group"] <- ifelse(
-  colData(mae_sub)[, "treatment_concentration"] == 0, "control", "treatment")
-
 # Select only the column we require
 colData(mae_sub) <- colData(mae_sub)[ , c("treatment_code", treatment_group, "host.gutted.mass", "mass_category"), drop = FALSE]
 
@@ -847,15 +1002,6 @@ scatter plots of factors.
 ### Data preparation
 
 ```{r}
-options(java.parameters = "-Xmx8g")
-library(IntegratedLearner)
-library(SuperLearner)
-library(bartMachine)
-library(stringr)
-library(cowplot)
-library(mcmcplots)
-library(tidyverse)
-
 # Get colData
 mae_coldata <- colData(mae_sub)
 
@@ -873,10 +1019,6 @@ feature_table <- rbind(metagenomics_df, metabolomics_df)
 # Sanity check: are columns from colData the same as rownames of feature table
 all(colnames(metagenomics_df) == rownames(colData(mae_sub))) # TRUE
 all(colnames(metabolomics_df) == rownames(colData(mae_sub))) # TRUE
-
-# Add trial.timepoint for longitudinal machine learning
-mae_coldata$animal <- rownames(mae_coldata)
-time_merged_coldata <- merge(x = mae_coldata, y = colData(mae_sub[[2]])[c("animal", "trial.timepoint")], all.x = TRUE, by = "animal")
 ```
 
 ```{r}
