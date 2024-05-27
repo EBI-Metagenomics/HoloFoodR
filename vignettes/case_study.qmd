@@ -309,6 +309,18 @@ mae_sub[[2]] <- altExp(mae_sub[[2]], rank)
 # Filter genera by prevalence and add it to altExp slot
 altExp(mae_sub[[2]], "prev_genus") <- subsetByPrevalentFeatures(mae_sub[[2]], prevalence = 0.2, detection = 0.001)
 
+# Add Treatment concentration to alternative experiment
+# Note that host.diet.treatment.concentration variable is different,
+# and it is 0 for control and all other treatments except for maximum
+# concentration (2, Jaguar treatment code)
+mae_coldata_animal <- colData(mae)[, c("animal", "Treatment concentration")]
+colData(altExp(mae_sub[[2]], "prev_genus")) <- merge(colData(altExp(mae_sub[[2]], "prev_genus")), mae_coldata_animal, by = "animal")
+
+# Add control vs treatment groups
+colData(altExp(mae_sub[[2]], "prev_genus"))["Treatment concentration"] <- ifelse(
+  colData(altExp(mae_sub[[2]], "prev_genus") )[, "Treatment concentration"] == 0, "control", "treatment")
+
+
 # Extract only transformed assays
 assays(mae_sub[[1]]) <- assays(mae_sub[[1]])[ names(assays(mae_sub[[1]])) %in% c("log10") ]
 assays(mae_sub[[2]]) <- assays(mae_sub[[2]])[ names(assays(mae_sub[[2]])) %in% c("clr") ]
@@ -574,6 +586,64 @@ t.test(day60_treatment$host.gutted.mass, day60_control$host.gutted.mass, var.equ
 ```
 
 The addition of treatment does not change the weight of salmons.
+
+## ALDEx2
+
+We can perform the differential abundance analysis with ALDEx2 that uses
+Dirichlet-multinomial model.
+
+```{r}
+library(ALDEx2)
+
+# We are using TreeSummarizedExperiment object agglomerated by rank
+# and subset with prevalence of 0.2
+aldex_data <- altExp(mae_sub[[2]], "prev_genus")
+
+# Generate Monte Carlo samples of the Dirichlet distribution
+set.seed(42)
+# x <- aldex.clr(assay(aldex_data), aldex_data$`Treatment concentration`) # No significantly differentially abundant species
+x <- aldex.clr(assay(aldex_data), aldex_data$host.diet.treatment.concentration)
+
+# Compute expected values
+x_tt <- aldex.ttest(x, paired.test = FALSE, verbose = FALSE)
+
+# Compute effect size
+x_effect <- aldex.effect(x, CI = TRUE, verbose = FALSE)
+
+# Combine all outputs 
+aldex_out <- data.frame(x_tt, x_effect)
+```
+
+```{r}
+# ALDEx2 data visualization
+
+# MA plot
+par(mfrow = c(1, 2))
+
+aldex.plot(aldex_out,
+           type = "MA",
+           test = "welch",
+           xlab = "Log-ratio abundance",
+           ylab = "Difference",
+           cutoff = 0.05)
+
+# MW plot for dispersion vs log-ratio abundance
+aldex.plot(aldex_out,
+           type = "MW",
+           test = "welch",
+           xlab = "Dispersion",
+           ylab = "Log-ratio abundance",
+           cutoff = 0.05)
+```
+
+```{r}
+aldex_out |>
+  rownames_to_column(var = "Genus") |>
+  filter(wi.eBH <= 0.05)  |>
+  dplyr::select(Genus, we.eBH, wi.eBH, effect, overlap) |>
+  knitr::kable()
+```
+
 
 ## Cross-correlation analysis
 
