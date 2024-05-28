@@ -171,11 +171,11 @@ MultiAssayExperiment combining all the data.
         replace = TRUE){
     # Rename columns based on HoloFood ID
     colnames(tse) <- colData(tse)[[holofood.id]]
-    
+
     # Merge add MGnify metagenomic data to the existing metagenomic_assembly
     # experiment. Get the experiment from HoloFood data.
     tse2 <- mae[[exp.name]]
-    
+
     # Combine sample metadata
     cd1 <- as.data.frame(colData(tse))
     cd2 <- as.data.frame(colData(tse2))
@@ -186,21 +186,21 @@ MultiAssayExperiment combining all the data.
         all.x = TRUE
     )
     rownames(cd) <- cd[[holofood.id]]
-    
+
     # Now order colData to ensure that order is correct
     cd <- cd[colnames(tse), ]
-    
+
     # Add it to TreeSE
     colData(tse) <- DataFrame(cd, check.names = FALSE)
-    
+
     # Rename to match Holofood
     colnames(tse) <- colData(tse)[[holofood.id]]
-    
+
     # Now order the data based on TreeSE in MAE
     # First take those columns that can be found
     mae[[exp.name]] <- mae[[exp.name]][
         , colnames(mae[[exp.name]]) %in% colnames(tse) ]
-    
+
     # Then order
     tse <- tse[, match(colnames(mae[[exp.name]]), colnames(tse))]
     # And add to MAE in place of old experiment
@@ -219,7 +219,7 @@ MultiAssayExperiment combining all the data.
         # Create MAE
         tse <- ExperimentList(temp = tse)
         names(tse) <- new.exp
-        
+
         exp_list <- c(experiments(mae), tse)
         mae <- MultiAssayExperiment(
             exp_list, colData = colData(mae), sampleMap = sample_map)
@@ -301,7 +301,7 @@ altExp(mae[[2]], rank) <- transformAssay(
 ### Data preparation
 
 ```{r}
-# For cross-correlation analysis and MOFA2, replace original metagenomics data 
+# For cross-correlation analysis and MOFA2, replace original metagenomics data
 # with agglomerated one, remove additional assays and remove additional colData.
 mae_sub <- mae
 mae_sub[[2]] <- altExp(mae_sub[[2]], rank)
@@ -376,7 +376,7 @@ plotAbundanceDensity(altExp(mae[[2]], rank), assay.type = "clr", colour_by = "ho
 #   colData() |>
 #   as.data.frame() |>
 #   select("animal")
-# 
+#
 # # All animals have metagenomic and metabolomic samples
 # intersect(fa_animals, species_animal) |> nrow() # 179
 ```
@@ -524,10 +524,10 @@ for(i in seq_along(m_list)) {
                     gp = gpar(fill = "black"),
                     border = FALSE,
                     height = unit(2, "cm"),
-                ), 
+                ),
                 annotation_name_side = "left",
                 annotation_name_rot = 0),
-            right_annotation = upset_right_annotation(m_list[[i]], 
+            right_annotation = upset_right_annotation(m_list[[i]],
                 ylim = c(0, max_set_size))
         )
 }
@@ -560,9 +560,9 @@ time_merged_coldata <- merge(x = mae_coldata, y = colData(mae_sub[[2]])[c("anima
 
 # Set rownames
 rownames(time_merged_coldata) <- time_merged_coldata$animal
-
-# Add host.gutted.mass
-time_merged_coldata <- merge(time_merged_coldata, colData(mae_sub), by = 0)
+#
+# # Add host.gutted.mass
+# time_merged_coldata <- merge(time_merged_coldata, colData(mae_sub), by = 0)
 
 # Split dataframe into 0- and 60-day groups
 day0 <- time_merged_coldata[time_merged_coldata$trial.timepoint == 0, ]
@@ -610,7 +610,7 @@ x_tt <- aldex.ttest(x, paired.test = FALSE, verbose = FALSE)
 # Compute effect size
 x_effect <- aldex.effect(x, CI = TRUE, verbose = FALSE)
 
-# Combine all outputs 
+# Combine all outputs
 aldex_out <- data.frame(x_tt, x_effect)
 ```
 
@@ -829,7 +829,7 @@ plot_factor_cor(
   mar=c(0, 0, 2, 0),
 )
 ```
-Overall, we do not observe highly correlated factors which is the 
+Overall, we do not observe highly correlated factors which is the
 
 ## Visualization
 
@@ -976,9 +976,9 @@ plot_factor(model,
 ```
 
 An interesting example comes from an unknown fatty acid 16:4n-3, which exhibits
-the diametrically opposed effects in factors 1 and 3 compared to factor 2. 
-Specifically, it has the largest effects in factors 2 and 3, in the former case 
-the effect is positive, whereas in the latter case it is negative. Conversely, 
+the diametrically opposed effects in factors 1 and 3 compared to factor 2.
+Specifically, it has the largest effects in factors 2 and 3, in the former case
+the effect is positive, whereas in the latter case it is negative. Conversely,
 it has second most significant negative effect on factor 1.
 
 Similarly, these plots shows us that factors 2 and 3 mostly likely describe two
@@ -1082,7 +1082,7 @@ plot_dimred(
 ) +
   labs(title = "UMAP plot of MOFA model")
 ```
-As noted, above we also observe the same two clusters, first seen in the 
+As noted, above we also observe the same two clusters, first seen in the
 scatter plots of factors.
 
 ## IntegratedLearner
@@ -1108,6 +1108,20 @@ feature_table <- rbind(metagenomics_df, metabolomics_df)
 all(colnames(metagenomics_df) == rownames(colData(mae_sub))) # TRUE
 all(colnames(metabolomics_df) == rownames(colData(mae_sub))) # TRUE
 ```
+
+We also need to retain only features with non-zero variance
+
+```{r feature-table-remove-zero-variance}
+library(caret)
+# Transpose feature table for subsequent filtering
+feature_table_t <- as.data.frame(t(feature_table))
+
+# Filter out out near-zero-variance features
+nzv <- nearZeroVar(feature_table_t)
+features_filtered <- feature_table_t[, -nzv]
+features_table <- as.data.frame(t(features_filtered))
+```
+
 
 ```{r}
 # Y column for sample_metadata
@@ -1203,7 +1217,6 @@ When using stacked approach or metabolites, the area-under-curve is very high: 0
 There are two trial time points: 0 and 60 days.
 
 After encoding 1 is 60 days, and 0 is 0 days.
-
 
 ```{r}
 # Y column for sample_metadata
@@ -1306,9 +1319,180 @@ rf_fit$yhat.train
 ```
 
 
-
 Similarly, metabolites seem to be promising in predicting treatment versus control
-groups.
+groups and are comparable to an algorthimg from early fusion famility with
+stacked architecture (see https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8921642/).
+
+## Intermediate fusion
+
+We can also approach this data with an intermediate fusion algorithm. In this
+section, we will:
+
+1. Apply intermediate fusion to predict treatment versus control
+2. Combine the predictions from intermediate fusion with those from intermediate fusion
+early fusion with Random Forest we performed before
+3. Compare the performance of the intermediate fusion approach to early fusions with an AUC plot
+4. Visualize the top 20 features of the metabolomic and metagenomic layers
+by using logarithmic fold change (LFC)
+
+Clearly, the predictions of treatment or control are of no interest in this case.
+However, one can be interested in which features of each layer are the most important in order to distinguish control from treatment.
+
+Code adapted from Chapter 15 of [Orchestrating Microbiome Analysis book](https://microbiome.github.io/OMA/docs/devel/pages/IntegratedLearner.html).
+
+```{r intermediate_fusion}
+##############################
+# Prepare data for multiview #
+##############################
+
+# Separate omics layers
+feature_metadata$featureType <- as.factor(feature_metadata$featureType)
+name_layers <- levels(feature_metadata$featureType)
+
+# Define a list
+dataList <- vector("list", length = length(name_layers))
+names(dataList) <- name_layers
+table(feature_metadata$featureType)
+
+# Select metabolites and species indices
+metabolites_ind <- which(feature_metadata$featureType == "metabolites")
+species_ind <- which(feature_metadata$featureType == "species")
+
+# Split metabolites and species into two separate list elements
+dataList[[1]] <- t(feature_table[metabolites_ind, ])
+dataList[[2]] <- t(feature_table[species_ind, ])
+
+# Extract y and X's
+dataList <- lapply(dataList, as.matrix)
+dataList <- lapply(dataList, scale)
+
+# Remove missing values in columns of metabolomic matrix
+dataList$metabolites <- dataList$metabolites[, !colSums(is.na(dataList$metabolites))]
+
+# Set response variable Y to control vs. treatment
+# Control: 0
+# Treatment: 1
+Y <- numeric_treatment_groups
+
+########################
+# Run cross-validation #
+########################
+
+set.seed(1234)
+library(multiview)
+library(glmnet)
+
+cvfit <- cv.multiview(dataList, Y, family = binomial(), alpha = 0.5)
+DD <- as.data.frame(as.matrix(coef_ordered(cvfit, s="lambda.min", alpha = 0.5)))
+DD$standardized_coef <- as.numeric(DD$standardized_coef)
+DD$coef <- as.numeric(DD$coef)
+```
+
+### Visualization
+
+We will now compare the prediction performance of intermediate fusion with that of
+early fusion.
+
+```{r}
+intermediate_pred <- stats:::predict(cvfit, newx = dataList, s = "lambda.min", alpha = 0.5, type = "response")
+
+# Select only salmon IDs that are present in both predictions
+row_names_select <- rownames(rf_fit$X_train_layers$metabolites)
+intermediate_pred <- intermediate_pred[row_names_select, , drop = FALSE]
+
+# Combine early fusion and intermediate fusion predictions
+yhat.train <- cbind(rf_fit$yhat.train, coop_pred)
+
+# Set column name to distinguish predictions algorithms
+colnames(yhat.train) <- c(colnames(rf_fit$yhat.train), "intermediate fusion")
+
+# Fetch only rows that are present in prediction's dataframe
+Y <- colData(mae_sub)[row_names_select, ]
+# Encode treatment and control for predictions
+Y <- Y[, "treatment_group"]
+Y <- ifelse(Y == "control", 0, 1)
+
+# Extract ROC plot data
+list.ROC <- vector("list", length = ncol(yhat.train))
+names(list.ROC) <- colnames(yhat.train)
+
+library(ROCR)
+for (k in 1:length(list.ROC)){
+  preds <- yhat.train[ ,k]
+  pred <- prediction(preds, Y)
+  AUC <- round(performance(pred, "auc")@y.values[[1]], 2)
+  perf <- performance(pred, "sens", "spec")
+  list.ROC[[k]] <- data.frame(sensitivity = slot(perf, "y.values")[[1]],
+                            specificity = 1 - slot(perf, "x.values")[[1]],
+                            AUC = AUC,
+                            layer = names(list.ROC)[k])
+}
+
+
+# Combine ROC lists into a dataframe
+ROC_table <- do.call("rbind", list.ROC)
+```
+
+
+```{r intermediate_fusion_visualization}
+# Prepare data for plotting
+plot_data <- ROC_table
+plot_data$displayItem <- paste(plot_data$layer, " AUC = ", plot_data$AUC, sep="")
+plot_data$displayItem <- factor(plot_data$displayItem,
+                                    levels = unique(plot_data$displayItem))
+
+# ROC curves
+p <- ggplot(plot_data,
+            aes(x = specificity,
+            y = sensitivity,
+            group = displayItem)) +
+  geom_line(aes(x = specificity,y = sensitivity,color = displayItem)) +
+  theme(legend.position = "bottom",
+        legend.background=element_blank(),
+        legend.box.background=element_rect(colour = "black")) +
+  theme_bw() +
+  xlab("False Positive Rate") +
+  ylab("True Positive Rate") +
+  theme(legend.position = "right", legend.direction = "vertical") +
+  labs(color = '')
+
+# Print
+print(p)
+```
+
+Intermediate fusion is as efficient as the stacked early fusion of a single
+metabolomic layer in distinguishing between control and treatment. However,
+now we can visualize the most important features for this differentiation.
+
+```{r intermediate_fusion_top20_features}
+#| fig-width: 8
+#| fig-height: 10
+# Only plot top 20 features
+DD <- DD %>%
+  group_by(view) %>%
+  top_n(n = 20, wt = abs(standardized_coef))
+
+# Visualization
+library(forcats)
+
+p <- DD %>%
+  mutate(view_col = fct_reorder(view_col, standardized_coef)) %>%
+  ggplot(aes(x = view_col, y = standardized_coef, fill = view, width = 0.75)) +
+  geom_bar(stat = "identity", show.legend = FALSE, width = 1) +
+  coord_flip() +
+  facet_wrap(~ view, scales = 'free_y', nrow = 2) +
+  ylab('Standardized LFC') +
+  xlab('') +
+  ggtitle('IBD-associated multi-omics features') +
+  theme_bw() + theme(strip.background  = element_blank(),
+                     panel.grid.major = element_line(colour = "grey80"),
+                     panel.border = element_blank(),
+                     axis.ticks = element_line(size = 0),
+                     panel.grid.minor.y = element_blank(),
+                     panel.grid.major.y = element_blank())
+p
+```
+
 
 ### Bart machine algorithm
 
@@ -1551,7 +1735,7 @@ test_model <- function(algorithm) {
   verbose = TRUE,
   family = gaussian()
   )
-  
+
   return (model$R2.test[["stacked"]])
 }
 
