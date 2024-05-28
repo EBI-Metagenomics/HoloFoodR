@@ -320,7 +320,6 @@ colData(altExp(mae_sub[[2]], "prev_genus")) <- merge(colData(altExp(mae_sub[[2]]
 colData(altExp(mae_sub[[2]], "prev_genus"))["Treatment concentration"] <- ifelse(
   colData(altExp(mae_sub[[2]], "prev_genus") )[, "Treatment concentration"] == 0, "control", "treatment")
 
-
 # Extract only transformed assays
 assays(mae_sub[[1]]) <- assays(mae_sub[[1]])[ names(assays(mae_sub[[1]])) %in% c("log10") ]
 assays(mae_sub[[2]]) <- assays(mae_sub[[2]])[ names(assays(mae_sub[[2]])) %in% c("clr") ]
@@ -369,18 +368,17 @@ plotAbundanceDensity(altExp(mae[[2]], rank), assay.type = "clr", colour_by = "ho
 ### UpSet plot
 
 ```{r omic_intersection}
-
-fa_animals <- mae_sub[["FATTY ACIDS MG"]] |>
-  colData() |>
-  as.data.frame() |>
-  select("animal")
-species_animal <- mae_sub[["metagenomic_assembly"]] |>
-  colData() |>
-  as.data.frame() |>
-  select("animal")
-
-# All animals have metagenomic and metabolomic samples
-intersect(fa_animals, species_animal) |> nrow() # 179
+# fa_animals <- mae_sub[["FATTY ACIDS MG"]] |>
+#   colData() |>
+#   as.data.frame() |>
+#   select(animal)
+# species_animal <- mae_sub[["metagenomic_assembly"]] |>
+#   colData() |>
+#   as.data.frame() |>
+#   select("animal")
+# 
+# # All animals have metagenomic and metabolomic samples
+# intersect(fa_animals, species_animal) |> nrow() # 179
 ```
 
 ```{r}
@@ -592,7 +590,9 @@ The addition of treatment does not change the weight of salmons.
 We can perform the differential abundance analysis with ALDEx2 that uses
 Dirichlet-multinomial model.
 
-```{r}
+### Metagenomics
+
+```{r aldex2_metagenomics}
 library(ALDEx2)
 
 # We are using TreeSummarizedExperiment object agglomerated by rank
@@ -614,7 +614,7 @@ x_effect <- aldex.effect(x, CI = TRUE, verbose = FALSE)
 aldex_out <- data.frame(x_tt, x_effect)
 ```
 
-```{r}
+```{r aldex2_metagenomics_viz}
 # ALDEx2 data visualization
 
 # MA plot
@@ -623,6 +623,7 @@ par(mfrow = c(1, 2))
 aldex.plot(aldex_out,
            type = "MA",
            test = "welch",
+           main = "MA plot",
            xlab = "Log-ratio abundance",
            ylab = "Difference",
            cutoff = 0.05)
@@ -631,12 +632,20 @@ aldex.plot(aldex_out,
 aldex.plot(aldex_out,
            type = "MW",
            test = "welch",
+           main = "Effect plot",
            xlab = "Dispersion",
            ylab = "Log-ratio abundance",
            cutoff = 0.05)
+
+# Volcano plot
+aldex.plot(aldex_out,
+           type = "volcano",
+           test = "welch",
+           main = "Volcano plot",
+           cutoff = 0.05)
 ```
 
-```{r}
+```{r aldex2_metagenomics_summary}
 aldex_out |>
   rownames_to_column(var = "Genus") |>
   filter(wi.eBH <= 0.05)  |>
@@ -730,7 +739,7 @@ plot
 p_values |> kable(digits = 10)
 ```
 
-## Kruskall-Wallist test
+## Kruskall-Wallis test
 
 ```{r kruskall_wallis}
 # Vector to hold p-values
@@ -764,6 +773,15 @@ p_values <- p_values[order(p_values$p_value), ]
 
 p_values
 ```
+
+
+```{r}
+library(FSA)
+# Perform dunnTest for fatty acid differential abundance by treatment_code
+dunnTest(log10 ~ treatment_code, data = df)
+```
+Interestingly, Tiger (control) and Jaguar (highest treatment concentration)
+are not differentially abundant.
 
 ## MOFA analysis
 
