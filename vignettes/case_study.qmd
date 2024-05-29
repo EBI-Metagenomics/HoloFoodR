@@ -314,7 +314,7 @@ colData(altExp(mae_sub[[2]], "prev_genus"))["Treatment concentration"] <- ifelse
 
 # Extract only transformed assays
 assays(mae_sub[[1]]) <- assays(mae_sub[[1]])[ names(assays(mae_sub[[1]])) %in% c("log10") ]
-assays(mae_sub[[2]]) <- assays(mae_sub[[2]])[ names(assays(mae_sub[[2]])) %in% c("clr") ]
+# assays(mae_sub[[2]]) <- assays(mae_sub[[2]])[ names(assays(mae_sub[[2]])) %in% c("clr") ] # We might need relabundance data
 
 # Rename column names to make them more consistent
 names(colData(mae_sub)) <- tolower(gsub(" ", "_", names(colData(mae_sub))))
@@ -529,26 +529,26 @@ ht_list
 ```{r}
 # Prepare metabolomic assay for UpSet plot
 # metabolomic_assay <- assay(mae[[1]])
-# 
+#
 # # Filter all "sum" fatty acids
 # to_exclude <- grep("^Sum", rownames(metabolomic_assay))
 # metabolomic_assay <- metabolomic_assay[-to_exclude, ]
-# 
+#
 # # Order fatty acids by concentration
 # max_conc_ind <- rowSums(metabolomic_assay) |> order(decreasing = TRUE)
 # metabolomic_assay <- metabolomic_assay[max_conc_ind, ]
-# # # 
+# # #
 # metabolomic_assay[metabolomic_assay > 0] <- 1
-# # 
+# #
 # upset_matrix <- t(metabolomic_assay)
-# 
+#
 # # Change metabolomic matrix colnames from sample accession numbers
 # # to animal accession numbers
 # rownames(upset_matrix) <- rownames(colData(mae_sub))
-# 
+#
 # # Make combination matrix
 # m <- make_comb_mat(upset_matrix[, 1:31])
-# 
+#
 # UpSet(m)
 ```
 
@@ -757,6 +757,84 @@ plot
 p_values |> kable(digits = 10)
 ```
 
+
+## PCoA with beta-diversity
+
+We can perform PCoA analysis based on Bray-Curtis index and visualize the
+results with explained variances on axis.
+
+```{r}
+library(scater)
+library(patchwork)
+
+# Add treatment group (treatment or control) to metagenomic table
+tse <- mae_sub[[2]]
+colData(tse) <- merge(colData(tse), colData(mae_sub)[, c("animal", "treatment_group")], by = "animal")
+
+tse_pcoa <- runMDS(tse,
+                   FUN = vegan::vegdist,
+                   methods = "bray",
+                   assay.type = "relabundance",
+                   name = "MDS_bray")
+
+p <- plotReducedDim(tse_pcoa, "MDS_bray",
+                    colour_by = "treatment_group")
+
+# Calculate explained variance
+e <- attr(reducedDim(tse_pcoa, "MDS_bray"), "eig")
+rel_eig <- e / sum(e[e > 0])
+
+# Add explained variance for each axis
+p <- p + labs(x = paste("PCoA 1 (", round(100 * rel_eig[[1]], 1),
+                        "%", ")", sep = ""),
+              y = paste("PCoA 2 (", round(100 * rel_eig[[2]], 1),
+                        "%", ")", sep = ""))
+
+p
+```
+
+It seems that control and treatment groups are not dissimilar.
+
+We can also apply different methods on the same data and visualize the
+results.
+
+```{r}
+# Run NMDS on relabundance assay with Bray-Curtis distances
+tse_pcoa <- runNMDS(tse_pcoa,
+               FUN = vegan::vegdist,
+               method = "bray",
+               assay.type = "relabundance",
+               name = "NMDS_bray")
+
+# Run MDS on clr assay with Aitchison distances
+tse_pcoa <- runMDS(tse_pcoa,
+              FUN = vegan::vegdist,
+              method = "euclidean",
+              assay.type = "clr",
+              name = "MDS_aitchison")
+
+# Run NMDS on clr assay with Euclidean distances
+tse_pcoa <- runNMDS(tse_pcoa,
+               FUN = vegan::vegdist,
+               method = "euclidean",
+               assay.type = "clr",
+               name = "NMDS_aitchison")
+
+
+
+plots <- lapply(c("MDS_bray", "MDS_aitchison",
+                  "NMDS_bray", "NMDS_aitchison"),
+                plotReducedDim,
+                object = tse_pcoa,
+                colour_by = "treatment_group")
+
+# Generate multi-panel plot
+wrap_plots(plots) +
+  plot_layout(guides = "collect")
+```
+All four methods demonstrate that features from control and treatment are
+not dissimilar.
+
 ## Kruskall-Wallis test
 
 ```{r kruskall_wallis}
@@ -800,6 +878,7 @@ dunnTest(log10 ~ treatment_code, data = df)
 ```
 Interestingly, Tiger (control) and Jaguar (highest treatment concentration)
 are not differentially abundant.
+
 
 ## MOFA analysis
 
