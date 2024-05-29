@@ -63,21 +63,7 @@ if( length(pkgs_not_loaded) > 0 ){
 ```{r}
 # Provide Java with RAM
 options(java.parameters = "-Xmx8g")
-
-# Import packages
-# library(IntegratedLearner)
-# library(SuperLearner)
-# library(bartMachine)
-# library(stringr)
-# library(cowplot)
-# library(mcmcplots)
-# library(tidyverse)
-# library(ComplexHeatmap)
-# library(UpSetR)
-# library(shadowtext)
 ```
-
-
 
 ## Import data
 
@@ -236,8 +222,9 @@ saveRDS(object = mae, file = "../inst/extdata/salmon_mae.RDS")
 ## Data preprocess
 
 ```{r load_data}
-# path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
-# salmon_mae <- readRDS(path)
+path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
+#salmon_mae <- readRDS(path)
+# mae <- readRDS(path)
 mae <- readRDS("../inst/extdata/salmon_mae.RDS")
 
 # Fetch only experiments that we need
@@ -251,7 +238,7 @@ tse <- mae[[1]]
 tse <- tse[!(rowData(tse)[["marker.name"]] %in% c("Organ-fatty acids")), ]
 mae[[1]] <- tse
 
-# Transform matrices to numeric. There are some values that are "< 0.01".
+# Transform matrices to numeric. Some values are "< 0.01".
 # If a number is < 0.01, assume it to be 0.
 assay <- assay(mae[[1]], "counts")
 assay[ assay == "<0.01" ] <- 0
@@ -265,8 +252,8 @@ not_empty <- !apply(rowData(mae[[2]]), 1, function(x) all(is.na(x)))
 mae[[2]] <- mae[[2]][ not_empty, ]
 ```
 
-For demonstration purposes, we will focus on investigating two experiments (`FATTY ACIDS MG` and `metagenomic_assembly`) within the trial A that considered the addition
-of fermented algae meal in the diet of salmons.
+For demonstration purposes, we will focus on investigating two experiments (`FATTY ACIDS MG` and `metagenomic_assembly`) within the trial A performed by the HoloFood consortium. This trial the health effects of
+fermented seaweed added to the diet of salmons
 
 ```{r preprocess2}
 # Filter MAE object to include only Trial A
@@ -283,6 +270,11 @@ mae[[1]] <- transformAssay(
     method = "log10",
     pseudocount = TRUE
 )
+
+meltAssay(mae[[2]],
+          add_row_data = TRUE,
+          add_col_data = TRUE,
+          assay.type = "counts")
 
 # Agglomerate metagenomics data to Genus level and add it to altExp slot
 rank <- "Genus"
@@ -398,7 +390,7 @@ most_prevalent_genera <- most_prevalent_genera[grepl("^Genus:", most_prevalent_g
 sub_tse <- altExp(mae[[2]])[most_prevalent_genera, ]
 
 # Substitute values in microbe assay to prepare it for UpSet plot
-# 1 means that a species
+# 1 means that a species is present in host
 assay(sub_tse)[assay(sub_tse) >= 1] <- 1
 
 # Prepare matrix for upset
@@ -534,7 +526,33 @@ for(i in seq_along(m_list)) {
 ht_list
 ```
 
-# t-test by group
+```{r}
+# Prepare metabolomic assay for UpSet plot
+# metabolomic_assay <- assay(mae[[1]])
+# 
+# # Filter all "sum" fatty acids
+# to_exclude <- grep("^Sum", rownames(metabolomic_assay))
+# metabolomic_assay <- metabolomic_assay[-to_exclude, ]
+# 
+# # Order fatty acids by concentration
+# max_conc_ind <- rowSums(metabolomic_assay) |> order(decreasing = TRUE)
+# metabolomic_assay <- metabolomic_assay[max_conc_ind, ]
+# # # 
+# metabolomic_assay[metabolomic_assay > 0] <- 1
+# # 
+# upset_matrix <- t(metabolomic_assay)
+# 
+# # Change metabolomic matrix colnames from sample accession numbers
+# # to animal accession numbers
+# rownames(upset_matrix) <- rownames(colData(mae_sub))
+# 
+# # Make combination matrix
+# m <- make_comb_mat(upset_matrix[, 1:31])
+# 
+# UpSet(m)
+```
+
+## t-test by group
 
 1. t-test on weight between 0-day salmons
 2. t-test on weight between 60-day salmons
