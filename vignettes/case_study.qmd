@@ -309,7 +309,7 @@ mae_coldata_animal <- colData(mae)[, c("animal", "Treatment concentration")]
 colData(altExp(mae_sub[[2]], "prev_genus")) <- merge(colData(altExp(mae_sub[[2]], "prev_genus")), mae_coldata_animal, by = "animal")
 
 # Add control vs treatment groups
-colData(altExp(mae_sub[[2]], "prev_genus"))["Treatment concentration"] <- ifelse(
+colData(altExp(mae_sub[[2]], "prev_genus"))["treatment_group"] <- ifelse(
   colData(altExp(mae_sub[[2]], "prev_genus") )[, "Treatment concentration"] == 0, "control", "treatment")
 
 # Extract only transformed assays
@@ -354,7 +354,8 @@ colData(altExp(mae[[2]]))[["host.diet.treatment"]] <- colData(altExp(mae[[2]]))[
     "Puma: SA 0.5% seaweed",
     "Tiger: SA Control"
   ))
-plotAbundanceDensity(altExp(mae[[2]], rank), assay.type = "clr", colour_by = "host.diet.treatment")
+
+plotAbundanceDensity(altExp(mae[[2]], rank), assay.type = "clr", colour_by = "host.diet.treatment.concentration")
 ```
 
 ### UpSet plot
@@ -619,7 +620,8 @@ aldex_data <- altExp(mae_sub[[2]], "prev_genus")
 
 # Generate Monte Carlo samples of the Dirichlet distribution
 set.seed(42)
-# x <- aldex.clr(assay(aldex_data), aldex_data$`Treatment concentration`) # No significantly differentially abundant species
+# x <- aldex.clr(assay(aldex_data), aldex_data$treatment_group) # No significantly 
+# differentially abundant species (but might be interesting to look at anyway)
 x <- aldex.clr(assay(aldex_data), aldex_data$host.diet.treatment.concentration)
 
 # Compute expected values
