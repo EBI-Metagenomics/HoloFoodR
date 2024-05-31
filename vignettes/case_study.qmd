@@ -482,7 +482,11 @@ max_comb_size = max(sapply(m_list, comb_size))
 #| fig-width: 10
 #| fig-height: 10
 # Control vs. treatment (control: 0, treatment: 1)
+
+# Add row labels
+names(m_list) <- c("Control", "Treatment")
 ht_list = NULL
+
 for(i in seq_along(m_list)) {
     ht_list = ht_list %v%
         UpSet(m_list[[i]], row_title = paste0("", names(m_list)[i]),
@@ -490,7 +494,11 @@ for(i in seq_along(m_list)) {
             top_annotation = upset_top_annotation(m_list[[i]], ylim = c(0, max_comb_size)),
             right_annotation = upset_right_annotation(m_list[[i]], ylim = c(0, max_set_size)))
 }
-ht_list
+
+# Draw UpSet plot
+draw(ht_list,
+     column_title = "UpSet plots of genera intersections by treatment group",
+     padding = unit(c(2, 2, 2, 2), "cm"))
 ```
 
 ```{r}
@@ -524,7 +532,9 @@ for(i in seq_along(m_list)) {
                 ylim = c(0, max_set_size))
         )
 }
-ht_list
+
+# Draw UpSet plot
+draw(ht_list, column_title = "UpSet relative fraction plots\n of genera intersections by treatment group")
 ```
 
 ```{r}
@@ -888,9 +898,9 @@ are not differentially abundant.
 # Select only the column we require
 colData(mae_sub) <- colData(mae_sub)[ , c("treatment_code", treatment_group, "host.gutted.mass", "mass_category"), drop = FALSE]
 
-# Create MOFA model
 model <- create_mofa_from_MultiAssayExperiment(
     mae_sub,
+    group = "treatment_group",
     extract_metadata = TRUE
 )
 
@@ -991,7 +1001,7 @@ ggplot(
     fill = "Profile",
   ) +
   scale_x_discrete(labels = c(paste("Factor", 1:5))) + # Custom x-axis ticks
-  scale_y_continuous(label = c(0, 20, 40, "60%")) + # Custom y-axis ticks
+  ylim(0, 65) +
   scale_fill_discrete(labels = c("Fatty acids", "Metagenomics")) +
   theme_minimal() +
   theme(
@@ -1023,6 +1033,11 @@ plot_factor(model,
   ) +
   labs(y = "Factor 2")
 ```
+
+```{r}
+plot_variance_explained(model, x = "group")
+```
+
 
 We can observer, the the Tiger (control), and Jaguar (2% algae concentration)
 have very similar patters with factor values that are concentrated in the lower
