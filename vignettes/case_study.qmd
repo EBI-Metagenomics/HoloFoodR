@@ -30,7 +30,7 @@ packages <- c(
     "ggplot2", "knitr", "mia", "dplyr", "miaViz", "MOFA2",  "patchwork", "reticulate",
     "MGnifyR", "reshape2", "GGally", "IntegratedLearner", "SuperLearner",
     "bartMachine", "mcmcplots", "tidyverse", "UpSetR", "shadowtext", "ComplexHeatmap",
-    "stringr", "cowplot"
+    "stringr", "cowplot", "caret"
     )
 
 # Get packages that are already installed installed
@@ -900,7 +900,6 @@ colData(mae_sub) <- colData(mae_sub)[ , c("treatment_code", treatment_group, "ho
 
 model <- create_mofa_from_MultiAssayExperiment(
     mae_sub,
-    group = "treatment_group",
     extract_metadata = TRUE
 )
 
@@ -1199,6 +1198,127 @@ plot_dimred(
 As noted, above we also observe the same two clusters, first seen in the
 scatter plots of factors.
 
+
+### MOFA2 model by group
+
+We can also find sources of variability that drive each group and find out
+which sources are shared or different between the groups.
+
+```{r mofa_group}
+# Remove near-zero-variances from metagenomic assembly assay
+nzv <- nearZeroVar(t(assay(mae_sub[[2]])))
+no_var <- t(assay(mae_sub[[2]])[-nzv, ])
+no_var <- t(no_var)
+mae_sub_no_var <- mae_sub
+mae_sub_no_var <- mae_sub[rownames(no_var), ,]
+mae_sub_no_var[[1]] <- mae_sub[[1]]
+
+# Transform mass category to factor
+colData(mae_sub_no_var)$mass_category <- as.factor(colData(mae_sub_no_var)$mass_category)
+
+model <- create_mofa_from_MultiAssayExperiment(
+    mae_sub_no_var,
+    group = "treatment_group",
+    extract_metadata = TRUE
+)
+
+# Set model's options
+model_opts <- get_default_model_options(model)
+model_opts$num_factors <- 5
+train_opts <- get_default_training_options(model)
+
+# Change convergence mode to slightly improve accuracy
+train_opts$convergence_mode <- "medium"
+
+# Prepare MOFA model
+model <- prepare_mofa(
+  object = model,
+  model_options = model_opts,
+  training_options = train_opts
+)
+
+# Train model
+model <- run_mofa(model, use_basilisk = TRUE)
+```
+
+
+```{r}
+#| fig-width: 10
+plot_variance_explained(model, x = "group", y = "view")
+```
+
+```{r}
+colors <- c(
+  "heavy" = "grey70",
+  "light" = "#CD3278"
+)
+
+plot_factor(model,
+            factor = 1,
+            color_by = "mass_category", 
+            scale = TRUE, 
+            add_violin = TRUE, color_violin = TRUE, 
+            dodge = TRUE, dot_size = 1, legend = TRUE
+) + scale_color_manual(values=colors) + scale_fill_manual(values=colors)
+
+
+plot_factor(model,
+  factor = 1,
+  color_by = "mass_category", 
+  dot_size = 1.5,
+  scale = TRUE, legend = FALSE
+) + scale_color_manual(values=colors) + scale_fill_manual(values=colors)
+```
+
+We can now plot weights of factor 1 to determine the most important
+species that impact factor 1.
+
+```{r}
+plot_weights(model,
+  view = "metagenomic_assembly",
+  factor = 1,
+  nfeatures = 10,
+  scale = T
+)
+```
+
+_Mycoplasma_ genus stands out, and it has high positive weight, which
+suggests that it is an abundant species in salmons with positive Factor 1
+values. Most high positive numbers are located in treatment group and are salmons
+from the light mass category.
+
+
+```{r}
+plot_top_weights(model, 
+  view = "metagenomic_assembly",
+  factor = 1, 
+  nfeatures = 10,
+  scale = T, 
+  abs = T
+)
+```
+
+Strangely, family _Mycoplsmataceae_ has very low weight.
+
+```{r}
+species <- c("Genus:Mycoplasma")
+
+for (i in species) {
+  
+  p <- plot_factor(model,
+    factor = 1,
+    dot_size = 2.5,
+    color_by = i
+  ) + scale_colour_gradientn(colours = terrain.colors(10)) # change color scale
+  
+  print(p)
+  
+}
+```
+
+Three samples have high abundances of _Mycoplasma_ as well as one sample in
+control.
+
 ## IntegratedLearner
 
 ### Data preparation
@@ -1226,7 +1346,6 @@ all(colnames(metabolomics_df) == rownames(colData(mae_sub))) # TRUE
 We also need to retain only features with non-zero variance
 
 ```{r feature-table-remove-zero-variance}
-library(caret)
 # Transpose feature table for subsequent filtering
 feature_table_t <- as.data.frame(t(feature_table))
 
