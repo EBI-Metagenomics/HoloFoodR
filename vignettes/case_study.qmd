@@ -74,8 +74,8 @@ options(java.parameters = "-Xmx8g")
 salmons <- HoloFoodR::doQuery("animals", system = "salmon", use.cache = TRUE)
 
 # Get only salmon metagenomic and fatty acid data
-salmons <- salmons |>
-  filter(fatty_acids == TRUE & metagenomic_assembly == TRUE)
+# salmons <- salmons |>
+#   filter(fatty_acids == TRUE & metagenomic_assembly == TRUE)
 ```
 
 ```{r get_animal_data, eval=FALSE}
@@ -101,7 +101,7 @@ mae <- HoloFoodR::getResult(
 )
 
 # Save salmon MAE
-saveRDS(object = salmon_mae, file = "../inst/extdata/salmon_mae_without_mgnify.RDS")
+saveRDS(object = mae, file = "../inst/extdata/salmon_mae_without_mgnify.RDS")
 
 # Show available salmon experiments
 experiments(mae)
@@ -430,7 +430,7 @@ upset_plot <- draw(upset_plot, padding = unit(c(20, 20, 20, 20), "mm"))
 # Column order
 co = column_order(upset_plot)
 
-# Add itnersection numbers to bar plot
+# Add intersection numbers to bar plot
 decorate_annotation("Species Intersections", {
     grid.text(cs[co], x = seq_along(cs), y = unit(cs[co], "native") + unit(2, "pt"),
         default.units = "native", just = c("left", "bottom"),
