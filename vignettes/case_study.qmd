@@ -278,7 +278,7 @@ meltAssay(mae[[2]],
 
 # Agglomerate metagenomics data to Genus level and add it to altExp slot
 rank <- "Genus"
-altExp(mae[[2]], rank) <- agglomerateByRank(mae[[2]], rank)
+altExp(mae[[2]], rank) <- agglomerateByRank(mae[[2]], rank, na.rm = TRUE)
 
 # Transform microbiome with centered log-ratio method
 altExp(mae[[2]], rank) <- transformAssay(
@@ -385,7 +385,6 @@ head(getPrevalence(mae[[2]], rank = "Genus", detection = 1/100, sort = TRUE,
 
 # Get most prevalent genera
 most_prevalent_genera <- getPrevalentFeatures(altExp(mae[[2]]), detection = 0, prevalence = 50/100)
-most_prevalent_genera <- most_prevalent_genera[grepl("^Genus:", most_prevalent_genera)]
 
 # Filter microbe tse by most prevalent genera
 sub_tse <- altExp(mae[[2]])[most_prevalent_genera, ]
