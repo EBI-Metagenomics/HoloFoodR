@@ -30,7 +30,7 @@ packages <- c(
     "ggplot2", "knitr", "mia", "dplyr", "miaViz", "MOFA2",  "patchwork", "reticulate",
     "MGnifyR", "reshape2", "GGally", "IntegratedLearner", "SuperLearner",
     "bartMachine", "mcmcplots", "tidyverse", "UpSetR", "shadowtext", "ComplexHeatmap",
-    "stringr", "cowplot", "caret"
+    "stringr", "cowplot", "caret", "scater"
     )
 
 # Get packages that are already installed installed
@@ -69,14 +69,19 @@ options(java.parameters = "-Xmx8g")
 
 ### Retrieve HoloFood data
 
+Firstly, we have to query the HoloFood database to retrieve the salmon accession
+numbers.
+
 ```{r get_animals, eval=FALSE}
 # Get salmon samples
 salmons <- HoloFoodR::doQuery("animals", system = "salmon", use.cache = TRUE)
 
 # Get only salmon metagenomic and fatty acid data
-# salmons <- salmons |>
-#   filter(fatty_acids == TRUE & metagenomic_assembly == TRUE)
+salmons <- salmons |>
+  filter(fatty_acids == TRUE & metagenomic_assembly == TRUE)
 ```
+
+Next, we can retrieve the data associated with each salmon.
 
 ```{r get_animal_data, eval=FALSE}
 # Get salmon data
@@ -91,7 +96,14 @@ salmon_samples <- salmon_data[["samples"]]
 
 # Get sample IDs
 salmon_sample_ids <- unique(salmon_samples[["accession"]])
+
+# Show salmon data
+head(salmon_data[[2]])
 ```
+
+Finally, we can retrieve the data from each sample of each sample (for instance,
+metagenomic, metabolomic, transcriptomic, etc.) and store the result in a
+MultiAssayExperiment object.
 
 ```{r get_samples, eval=FALSE}
 # Get salmon MAE experiments as MAE object
@@ -109,19 +121,20 @@ experiments(mae)
 
 ### Fetch metagenomic data from MGnify
 
-HoloFood database does not include the data for metagenomic assemblies which
-can be retrieved from [MGnify portal](https://www.ebi.ac.uk/metagenomics).
+HoloFood database does not include the data for metagenomic assemblies, which
+can be retrieved from the [MGnify portal](https://www.ebi.ac.uk/metagenomics).
 
 ```{r get_metagenomic_samples, eval=FALSE}
 # Create MGnify object
 mg <- MgnifyClient(
   useCache = TRUE,
   cacheDir = ".MGnifyR_cache"
-  )
+)
 
 # Select only metagenomic assembly samples types
 metagenomic_salmon_samples <- salmon_samples[
-    salmon_samples[["sample_type"]] == "metagenomic_assembly", ]
+  salmon_samples[["sample_type"]] == "metagenomic_assembly",
+]
 
 # Search for sample IDs in MGnify database
 salmon_analysis_ids <- searchAnalysis(
@@ -142,7 +155,7 @@ tse <- MGnifyR::getResult(
 # Save salmon_metagenomic_tse
 saveRDS <- saveRDS(object = tse, file = "../inst/extdata/salmon_metagenomic_tse.RDS")
 
-tse
+tse <- readRDS("../inst/extdata/salmon_metagenomic_tse.RDS")
 ```
 
 Data fetched from MGnify has MGnify-specific identifiers. We have to first
@@ -221,6 +234,8 @@ saveRDS(object = mae, file = "../inst/extdata/salmon_mae.RDS")
 
 ## Data preprocess
 
+Now we can pre-process data and prepared it for subsequent analyses.
+
 ```{r load_data}
 path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
 #salmon_mae <- readRDS(path)
@@ -238,8 +253,8 @@ tse <- mae[[1]]
 tse <- tse[!(rowData(tse)[["marker.name"]] %in% c("Organ-fatty acids")), ]
 mae[[1]] <- tse
 
-# Transform matrices to numeric. Some values are "< 0.01".
-# If a number is < 0.01, assume it to be 0.
+# Transform matrices to numeric. Some values are "< 0.01"
+# If a number is < 0.01, assume it to be 0
 assay <- assay(mae[[1]], "counts")
 assay[ assay == "<0.01" ] <- 0
 assay <- apply(assay, c(1, 2), function(x) as.numeric(gsub(",", ".", x)))
@@ -247,13 +262,15 @@ assay <- apply(assay, c(1, 2), function(x) as.numeric(gsub(",", ".", x)))
 # Reassign assay back to MAE
 assay(mae[[1]], "counts") <- assay
 
-# From metagenomics data, remove those rows that do not have taxonomy info
+# From metagenomic data, remove those rows that do not have taxonomy info
 not_empty <- !apply(rowData(mae[[2]]), 1, function(x) all(is.na(x)))
 mae[[2]] <- mae[[2]][ not_empty, ]
 ```
 
-For demonstration purposes, we will focus on investigating two experiments (`FATTY ACIDS MG` and `metagenomic_assembly`) within the trial A performed by the HoloFood consortium. This trial the health effects of
-fermented seaweed added to the diet of salmons
+For demonstration purposes, we will focus on investigating two experiments 
+(`FATTY ACIDS MG` and `metagenomic_assembly`) within the trial A performed by 
+the HoloFood consortium. This trial the health effects of fermented seaweed added 
+to the diet of salmons.
 
 ```{r preprocess2}
 # Filter MAE object to include only Trial A
@@ -261,7 +278,9 @@ mae <- mae[ , colData(mae)[["Trial code"]] == "SA", ]
 mae
 ```
 
-```{r transformation}
+We log-transform fatty acid assay to approximate it to normal distribution.
+
+```{r transformation_fatty_acids}
 # Transform fatty acids in mg with log10
 mae[[1]] <- transformAssay(
     mae[[1]],
@@ -270,13 +289,10 @@ mae[[1]] <- transformAssay(
     method = "log10",
     pseudocount = TRUE
 )
+```
 
-meltAssay(mae[[2]],
-          add_row_data = TRUE,
-          add_col_data = TRUE,
-          assay.type = "counts")
-
-# Agglomerate metagenomics data to Genus level and add it to altExp slot
+```{r transformation_metagenomics}
+# Agglomerate metagenomic data to Genus level and add it to altExp slot
 rank <- "Genus"
 altExp(mae[[2]], rank) <- agglomerateByRank(mae[[2]], rank, na.rm = TRUE)
 
@@ -288,14 +304,10 @@ altExp(mae[[2]], rank) <- transformAssay(
 ```
 
 
-## Data exploration
-
-### Data preparation
-
 ```{r}
 # For cross-correlation analysis and MOFA2, replace original metagenomics data
-# with agglomerated one, remove additional assays and remove additional colData.
-mae_sub <- mae
+# with agglomerated one
+mae_sub <- mae # Keep original MAE intact
 mae_sub[[2]] <- altExp(mae_sub[[2]], rank)
 
 # Filter genera by prevalence and add it to altExp slot
@@ -306,15 +318,16 @@ altExp(mae_sub[[2]], "prev_genus") <- subsetByPrevalentFeatures(mae_sub[[2]], pr
 # and it is 0 for control and all other treatments except for maximum
 # concentration (2, Jaguar treatment code)
 mae_coldata_animal <- colData(mae)[, c("animal", "Treatment concentration")]
-colData(altExp(mae_sub[[2]], "prev_genus")) <- merge(colData(altExp(mae_sub[[2]], "prev_genus")), mae_coldata_animal, by = "animal")
+colData(altExp(mae_sub[[2]], "prev_genus")) <-
+  merge(colData(altExp(mae_sub[[2]], "prev_genus")), mae_coldata_animal, by = "animal")
 
 # Add control vs treatment groups
 colData(altExp(mae_sub[[2]], "prev_genus"))["treatment_group"] <- ifelse(
-  colData(altExp(mae_sub[[2]], "prev_genus") )[, "Treatment concentration"] == 0, "control", "treatment")
+  colData(altExp(mae_sub[[2]], "prev_genus"))[, "Treatment concentration"] == 0, "control", "treatment"
+)
 
-# Extract only transformed assays
-assays(mae_sub[[1]]) <- assays(mae_sub[[1]])[ names(assays(mae_sub[[1]])) %in% c("log10") ]
-# assays(mae_sub[[2]]) <- assays(mae_sub[[2]])[ names(assays(mae_sub[[2]])) %in% c("clr") ] # We might need relabundance data
+# Extract only transformed metabolomic assays
+assays(mae_sub[[1]]) <- assays(mae_sub[[1]])[names(assays(mae_sub[[1]])) %in% c("log10")]
 
 # Rename column names to make them more consistent
 names(colData(mae_sub)) <- tolower(gsub(" ", "_", names(colData(mae_sub))))
@@ -324,19 +337,16 @@ merged_coldata <- merge(x = colData(mae_sub), y = colData(mae_sub[[2]])[c("anima
 rownames(merged_coldata) <- merged_coldata$animal
 colData(mae_sub) <- merged_coldata
 
-# Add mass categories
-mass_median <- median(colData(mae_sub)[, "host.gutted.mass"])
-colData(mae_sub)["mass_category"] <- ifelse(
-  colData(mae_sub)[, "host.gutted.mass"] > mass_median, "heavy", "light")
-
 # Add control vs treatment groups
 colData(mae_sub)["treatment_group"] <- ifelse(
-  colData(mae_sub)[, "treatment_concentration"] == 0, "control", "treatment")
+  colData(mae_sub)[, "treatment_concentration"] == 0, "control", "treatment"
+)
 
 # Take those samples that can be found from both experiments
 mae_sub <- intersectColumns(mae_sub)
 ```
 
+## Data exploration
 
 ```{r show_metadata2}
 # Display columns of MAE object to select those of interest
@@ -345,356 +355,50 @@ colData(mae) |> names()
 
 ### Abundance plot
 
+And abundance plot of centered-log-ratio transformed metagenomic species
+is important for general understanding of the data. Additionally,
+we also indicate "control" and "treatment" groups with colors for initial
+assessment of difference between the groups.
+
 ```{r plot_abundance}
-colData(altExp(mae[[2]]))[["host.diet.treatment"]] <- colData(altExp(mae[[2]]))[["host.diet.treatment"]] |>
-  factor(levels = c(
-    "Jaguar: SA 2.0% seaweed",
-    "Cougar: SA 1.5% seaweed",
-    "Lion: SA 1.0% seaweed",
-    "Puma: SA 0.5% seaweed",
-    "Tiger: SA Control"
-  ))
-
-plotAbundanceDensity(altExp(mae[[2]], rank), assay.type = "clr", colour_by = "host.diet.treatment.concentration")
+plotAbundanceDensity(altExp(mae_sub[[2]], "prev_genus"), assay.type = "clr", colour_by = "treatment_group")
 ```
 
-### UpSet plot
-
-```{r omic_intersection}
-# fa_animals <- mae_sub[["FATTY ACIDS MG"]] |>
-#   colData() |>
-#   as.data.frame() |>
-#   select(animal)
-# species_animal <- mae_sub[["metagenomic_assembly"]] |>
-#   colData() |>
-#   as.data.frame() |>
-#   select("animal")
-#
-# # All animals have metagenomic and metabolomic samples
-# intersect(fa_animals, species_animal) |> nrow() # 179
-```
-
-```{r}
-#| fig-width: 12
-#| fig-height: 10
-mae[[2]] |> assay()
-
-# Show most prevalent features
-head(getPrevalence(mae[[2]], rank = "Genus", detection = 1/100, sort = TRUE,
-                   assay.type = "counts", as_relative = TRUE))
-
-# Get most prevalent genera
-most_prevalent_genera <- getPrevalentFeatures(altExp(mae[[2]]), detection = 0, prevalence = 50/100)
-
-# Filter microbe tse by most prevalent genera
-sub_tse <- altExp(mae[[2]])[most_prevalent_genera, ]
-
-# Substitute values in microbe assay to prepare it for UpSet plot
-# 1 means that a species is present in host
-assay(sub_tse)[assay(sub_tse) >= 1] <- 1
-
-# Prepare matrix for upset
-upset_matrix <- t(assay(sub_tse))
-
-# Delete Genus from rownames of matrix
-colnames(upset_matrix) <- gsub("Genus:", "", colnames(upset_matrix))
-
-# Change microbe matrix colnames from sample accession numbers
-# to animal accession numbers
-rownames(upset_matrix) <- rownames(colData(mae_sub))
-
-
-m <- make_comb_mat(upset_matrix,
-              top_n_sets = 5
-              )
-
-# Combination size
-cs <- comb_size(m)
-
-upset_plot <- UpSet(m,
-                    top_annotation = HeatmapAnnotation(
-                      "Species Intersections" = anno_barplot(cs,
-                                                             ylim = c(0, max(cs) * 1.1),
-                                                             border = FALSE,
-                                                             gp = gpar(fill = "black"),
-                                                             height = unit(4, "cm")
-                    ),
-        annotation_name_side = "left",
-        annotation_name_rot = 90),
-        column_title = "Intersections of 5 most prevalent genera"
-                    )
-
-# Prevent cut-offs
-upset_plot <- draw(upset_plot, padding = unit(c(20, 20, 20, 20), "mm"))
-
-# Column order
-co = column_order(upset_plot)
-
-# Add intersection numbers to bar plot
-decorate_annotation("Species Intersections", {
-    grid.text(cs[co], x = seq_along(cs), y = unit(cs[co], "native") + unit(2, "pt"),
-        default.units = "native", just = c("left", "bottom"),
-        gp = gpar(fontsize = 6, col = "#404040"), rot = 0)
-})
-```
-
-
-```{r}
-# Add treatment groups to matrix
-treatment_groups <- colData(mae_sub)[, "treatment_code"]
-treatment_groups <- factor(treatment_groups)
-# Encode
-# 1: Cougar
-# 2: Jaguar
-# 3: Lion
-# 4: Puma
-# 5: Tiger # Control
-numeric_treatment_groups <- as.numeric(treatment_groups)
-
-# Encode treatment
-numeric_treatment_groups[numeric_treatment_groups < 5] <- 1
-
-# Encode control
-numeric_treatment_groups[numeric_treatment_groups == 5] <- 0
-
-upset_matrix <- cbind(upset_matrix, numeric_treatment_groups)
-
-genera = c("Ammopiptanthus", "Medicago", "Salinimicrobium", "Photobacterium", "Mycoplasma")
-
-# Create combination matrices for each group
-m_list = tapply(seq_len(nrow(upset_matrix)), numeric_treatment_groups, function(ind) {
-    m = make_comb_mat(upset_matrix[ind, genera, drop = FALSE])
-    m[comb_degree(m) > 0]
-})
-
-# Normalize matrices
-m_list <- normalize_comb_mat(m_list)
-```
-
-
-```{r}
-max_set_size = max(sapply(m_list, set_size))
-max_comb_size = max(sapply(m_list, comb_size))
-```
-
-```{r}
-#| fig-width: 10
-#| fig-height: 10
-# Control vs. treatment (control: 0, treatment: 1)
-
-# Add row labels
-names(m_list) <- c("Control", "Treatment")
-ht_list = NULL
-
-for(i in seq_along(m_list)) {
-    ht_list = ht_list %v%
-        UpSet(m_list[[i]], row_title = paste0("", names(m_list)[i]),
-            set_order = NULL, comb_order = NULL,
-            top_annotation = upset_top_annotation(m_list[[i]], ylim = c(0, max_comb_size)),
-            right_annotation = upset_right_annotation(m_list[[i]], ylim = c(0, max_set_size)))
-}
-
-# Draw UpSet plot
-draw(ht_list,
-     column_title = "UpSet plots of genera intersections by treatment group",
-     padding = unit(c(2, 2, 2, 2), "cm"))
-```
-
-```{r}
-#| fig-width: 10
-#| fig-height: 10
-# Same but with relative fractions
-max_set_size = max(sapply(m_list, set_size))
-rel_comb_size = sapply(m_list, function(m) {
-    s = comb_size(m)
-    # because the combination matrix is generated under "distinct" mode
-    # the sum of `s` is the size of the full set
-    s/sum(s)
-})
-
-ht_list = NULL
-for(i in seq_along(m_list)) {
-    ht_list = ht_list %v%
-        UpSet(m_list[[i]], row_title = paste0("", names(m_list)[i]),
-            set_order = NULL, comb_order = NULL,
-            top_annotation = HeatmapAnnotation(
-                "Relative\nfraction" = anno_barplot(
-                    rel_comb_size[, i],
-                    ylim = c(0, 0.5),
-                    gp = gpar(fill = "black"),
-                    border = FALSE,
-                    height = unit(2, "cm"),
-                ),
-                annotation_name_side = "left",
-                annotation_name_rot = 0),
-            right_annotation = upset_right_annotation(m_list[[i]],
-                ylim = c(0, max_set_size))
-        )
-}
-
-# Draw UpSet plot
-draw(ht_list, column_title = "UpSet relative fraction plots\n of genera intersections by treatment group")
-```
-
-```{r}
-# Prepare metabolomic assay for UpSet plot
-# metabolomic_assay <- assay(mae[[1]])
-#
-# # Filter all "sum" fatty acids
-# to_exclude <- grep("^Sum", rownames(metabolomic_assay))
-# metabolomic_assay <- metabolomic_assay[-to_exclude, ]
-#
-# # Order fatty acids by concentration
-# max_conc_ind <- rowSums(metabolomic_assay) |> order(decreasing = TRUE)
-# metabolomic_assay <- metabolomic_assay[max_conc_ind, ]
-# # #
-# metabolomic_assay[metabolomic_assay > 0] <- 1
-# #
-# upset_matrix <- t(metabolomic_assay)
-#
-# # Change metabolomic matrix colnames from sample accession numbers
-# # to animal accession numbers
-# rownames(upset_matrix) <- rownames(colData(mae_sub))
-#
-# # Make combination matrix
-# m <- make_comb_mat(upset_matrix[, 1:31])
-#
-# UpSet(m)
-```
-
-## t-test by group
-
-1. t-test on weight between 0-day salmons
-2. t-test on weight between 60-day salmons
-
-Our hypotheses are as follows:
-
-1. $H_0$: there is no difference between salmon weights
-2. $H_1$: there is a difference between salmon weights
-
-```{r}
-library(car)
-# Add trial.timepoint data
-mae_coldata$animal <- rownames(mae_coldata)
-time_merged_coldata <- merge(x = mae_coldata, y = colData(mae_sub[[2]])[c("animal", "trial.timepoint")], all.x = TRUE, by = "animal")
-
-# Add treatment_group to coldata
-# time_merged_coldata$treatment_group <- (
-#   ifelse(
-#     time_merged_coldata$Treatment.concentration == 0,
-#     "control",
-#     "treatment")
-#   )
-
-# Set rownames
-rownames(time_merged_coldata) <- time_merged_coldata$animal
-#
-# # Add host.gutted.mass
-# time_merged_coldata <- merge(time_merged_coldata, colData(mae_sub), by = 0)
-
-# Split dataframe into 0- and 60-day groups
-day0 <- time_merged_coldata[time_merged_coldata$trial.timepoint == 0, ]
-day60 <- time_merged_coldata[time_merged_coldata$trial.timepoint == 60, ]
-
-# Levene's test for equal variances
-leveneTest(host.gutted.mass ~ treatment_group, data = day0) # Equal
-leveneTest(host.gutted.mass ~ treatment_group, data = day60) # Equal
-
-# Split into two groups
-day0_treatment <- day0[day0$treatment_group == "treatment", ]
-day0_control <- day0[day0$treatment_group == "control", ]
-day60_treatment <- day60[day60$treatment_group == "treatment", ]
-day60_control <- day60[day60$treatment_group == "control", ]
-
-# t-test
-t.test(day0_treatment$host.gutted.mass, day0_control$host.gutted.mass, var.equal = TRUE) # Do not reject $H_0$
-t.test(day60_treatment$host.gutted.mass, day60_control$host.gutted.mass, var.equal = TRUE) # Do not reject $H_0$
-```
+_Mycoplasma_ has bee shown to be associated with positive health effects
+(https://doi-org.ezproxy.utu.fi/10.1186/s42523-021-00096-2) and is generally
+predominant in salmons (https://doi-org.ezproxy.utu.fi/10.1007/s00248-002-1011-6).
 
 The addition of treatment does not change the weight of salmons.
 
-## ALDEx2
+## Perform cross-association analysis
 
-We can perform the differential abundance analysis with ALDEx2 that uses
-Dirichlet-multinomial model.
+Before cross-association analysis, we can filter out all features with
+standard deviation equal to 0 to avoid warnings from the cross-association
+function.
 
-### Metagenomics
 
-```{r aldex2_metagenomics}
-library(ALDEx2)
+```{r filter_0_sd}
 
-# We are using TreeSummarizedExperiment object agglomerated by rank
-# and subset with prevalence of 0.2
-aldex_data <- altExp(mae_sub[[2]], "prev_genus")
+altExp(mae_sub[[1]], "not_sd_0") <- mae_sub[[1]][apply(assay(mae_sub[[1]], "log10"), 1, sd) != 0, ]
 
-# Generate Monte Carlo samples of the Dirichlet distribution
-set.seed(42)
-# x <- aldex.clr(assay(aldex_data), aldex_data$treatment_group) # No significantly 
-# differentially abundant species (but might be interesting to look at anyway)
-x <- aldex.clr(assay(aldex_data), aldex_data$host.diet.treatment.concentration)
-
-# Compute expected values
-x_tt <- aldex.ttest(x, paired.test = FALSE, verbose = FALSE)
-
-# Compute effect size
-x_effect <- aldex.effect(x, CI = TRUE, verbose = FALSE)
-
-# Combine all outputs
-aldex_out <- data.frame(x_tt, x_effect)
-```
-
-```{r aldex2_metagenomics_viz}
-# ALDEx2 data visualization
-
-# MA plot
-par(mfrow = c(1, 2))
-
-aldex.plot(aldex_out,
-           type = "MA",
-           test = "welch",
-           main = "MA plot",
-           xlab = "Log-ratio abundance",
-           ylab = "Difference",
-           cutoff = 0.05)
-
-# MW plot for dispersion vs log-ratio abundance
-aldex.plot(aldex_out,
-           type = "MW",
-           test = "welch",
-           main = "Effect plot",
-           xlab = "Dispersion",
-           ylab = "Log-ratio abundance",
-           cutoff = 0.05)
-
-# Volcano plot
-aldex.plot(aldex_out,
-           type = "volcano",
-           test = "welch",
-           main = "Volcano plot",
-           cutoff = 0.05)
-```
-
-```{r aldex2_metagenomics_summary}
-aldex_out |>
-  rownames_to_column(var = "Genus") |>
-  filter(wi.eBH <= 0.05)  |>
-  dplyr::select(Genus, we.eBH, wi.eBH, effect, overlap) |>
-  knitr::kable()
 ```
 
 
-## Cross-correlation analysis
-
-```{r cross-correlation analysis}
+```{r cross_association_analysis}
 #| fig-width: 15
 #| fig-height: 15
 
-# Perform cross-correlation analysis
-res <- testExperimentCrossCorrelation(
-    mae_sub, experiment1 = 1, experiment2 = 2,
+
+# Perform cross-association analysis
+res <- testExperimentCrossAssociation(
+    mae_sub,
+    experiment1 = 1, 
+    experiment2 = 2,
+    altexp1 = "not_sd_0",
     altexp2 = "prev_genus",
     method = "kendall",
-    assay.type1 = "log10", assay.type2 = "clr",
+    assay.type1 = "log10",
+    assay.type2 = "clr",
     mode = "matrix"
     )
 
@@ -709,65 +413,11 @@ plot <- Heatmap(
           grid.shadowtext(sprintf("%s", "X"), x, y, gp = gpar(fontsize = 10, col = "white"))
         }
     },
-    heatmap_legend_param = list(title = "", legend_height = unit(5, "cm"))
-)
-plot
-```
-
-## Differential abundance analysis
-
-Differential abundance analysis of fatty acids.
-
-```{r wilcox_test}
-# Add treatment concentration and treatment code to fatty acid view
-merged_fatty_acid <- merge(x = colData(mae_sub[[1]]), y = colData(mae)[c("animal", "Treatment concentration", "Treatment code")], all.x = TRUE, by = "animal")
-rownames(merged_fatty_acid) <- merged_fatty_acid$accession
-colData(mae_sub[[1]]) <- merged_fatty_acid
-
-# Add treatment group to compare differential abundance of fatty acids on
-colData(mae_sub[[1]])[["treatment_group"]] <- as.factor(
-  ifelse(
-    colData(mae_sub[[1]])[["Treatment concentration"]] == 0,
-    "control",
-    "treatment")
+    heatmap_legend_param = list(title = "", legend_height = unit(10, "cm"))
 )
 
-# Melt the data
-df <- meltAssay(mae_sub[[1]], assay.type = "log10", add_col_data = "treatment_group")
-
-p_values <- c()
-assay_name <- "log10"
-treatment_group <- "treatment_group"
-
-for (name in rownames(mae_sub[[1]])) {
-  temp <- df[df$FeatureID == name, ]
-  formula <- as.formula(paste0(assay_name, "~", treatment_group))
-  p_values <- c(p_values, wilcox.test(formula, temp)$p.value)
-}
-
-# Adjusts p-values
-p_values <- p.adjust(p_values, method = "fdr")
-
-# Create data.frame from p-values data
-p_values <- data.frame(fatty_acid = rownames(mae_sub[[1]]), p_value = p_values)
-
-# Order data by p-value in ascending oder
-p_values <- p_values[order(p_values$p_value), ]
-
-# Create a plot, store it, and print it
-plot <- ggplot(p_values, aes(x = p_value)) +
-    geom_histogram(bins = 30, color="darkred", fill="lightblue") +
-    labs(x = "P-value", y = paste0("Number of fatty acids")) +
-    geom_vline(xintercept = 0.05, color = "red")
-    # geom_text(aes(0.05, 1, label = 0.05, angle = 90))  +
-    # theme(text = element_text(size = 8))
-plot
+draw(plot, padding = unit(c(2, 20, 2, 25), "mm"))
 ```
-
-```{r}
-p_values |> kable(digits = 10)
-```
-
 
 ## PCoA with beta-diversity
 
@@ -775,9 +425,6 @@ We can perform PCoA analysis based on Bray-Curtis index and visualize the
 results with explained variances on axis.
 
 ```{r}
-library(scater)
-library(patchwork)
-
 # Add treatment group (treatment or control) to metagenomic table
 tse <- mae_sub[[2]]
 colData(tse) <- merge(colData(tse), colData(mae_sub)[, c("animal", "treatment_group")], by = "animal")
@@ -846,59 +493,60 @@ wrap_plots(plots) +
 All four methods demonstrate that features from control and treatment are
 not dissimilar.
 
-## Kruskall-Wallis test
-
-```{r kruskall_wallis}
-# Vector to hold p-values
-p_values <- c()
-
-# Rename column names to make them more consistent
-names(colData(mae_sub[[1]])) <- tolower(gsub(" ", "_", names(colData(mae_sub[[1]]))))
-
-# Melt the data
-df <- meltAssay(mae_sub[[1]], assay.type = "log10", add_col_data = "treatment_code")
-
-# Set assay and response vairable
-assay_name <- "log10"
-treatment_code <- "treatment_code"
-
-# Perform Kruskall-Wallis test for each fatty acid
-for (name in rownames(mae_sub[[1]])) {
-  temp <- df[df$FeatureID == name, ]
-  formula <- as.formula(paste0(assay_name, "~", treatment_code))
-  p_values <- c(p_values, kruskal.test(formula, temp)$p.value)
-}
-
-# Adjusts p-values with false discovery rate method
-p_values <- p.adjust(p_values, method = "fdr")
-
-# Create data.frame from p-values data
-p_values <- data.frame(fatty_acid = rownames(mae_sub[[1]]), p_value = p_values)
-
-# Order data by p-value in ascending oder
-p_values <- p_values[order(p_values$p_value), ]
-
-p_values
-```
-
-
-```{r}
-library(FSA)
-# Perform dunnTest for fatty acid differential abundance by treatment_code
-dunnTest(log10 ~ treatment_code, data = df)
-```
-Interestingly, Tiger (control) and Jaguar (highest treatment concentration)
-are not differentially abundant.
-
-
 ## MOFA analysis
 
-```{r mofa_fit}
-# Select only the column we require
-colData(mae_sub) <- colData(mae_sub)[ , c("treatment_code", treatment_group, "host.gutted.mass", "mass_category"), drop = FALSE]
+Multi-omic factor analysis allows us to discover latent factors that underlie
+the biological differences by taking in consideration 2 or more omic assays.
+To cite the original auther, "MOFA can be viewed as a statistically rigorous
+generalization of (sparse) principal component analysis (PCA) to multi-omics
+data".
 
+We will use multi-group functionality and try to find the shared and exclusive
+variability between two groups of salmons at day 60 (after treatment).
+
+1. Heavy salmons that weigh more than than median
+2. Light salmons that weigh less than median
+
+Since we could not find any differentiation between salmons in control and
+treatment groups, we would like to know if any of metagenomic species or fatty
+acids drive the difference in salmon weight.
+
+
+```{r mofa_fit}
+# Fetch only salmons at day 60
+mae_day_60 <- mae_sub[, colData(mae[[2]])$trial.timepoint == 60]
+
+# Add mass categories
+mass_median <- median(as.numeric(colData(mae_day_60)[, "host.gutted.mass"]))
+colData(mae_day_60)["mass_category"] <- ifelse(
+  as.numeric(colData(mae_day_60)[, "host.gutted.mass"]) > mass_median, "heavy", "light"
+)
+
+# Add Mycoplasma abundance category
+relabundance <- assay(mae_day_60[[2]], "relabundance")["Mycoplasma", ]
+threshold <- 0.8
+
+colData(mae_day_60)$mycoplasma_abundance <- ifelse(relabundance > 0.8, "abundant", "not_abundant")
+
+
+# Add Aliivibrio abundance category
+relabundance <- assay(mae_day_60[[2]], "relabundance")["Aliivibrio", ]
+threshold <- 0.8
+
+colData(mae_day_60)$aliivibrio_abundance <- ifelse(relabundance > 0.1, "abundant", "not_abundant")
+
+# Select only the columns we require
+colData(mae_day_60) <- colData(mae_day_60)[ , c("treatment_code", treatment_group, "host.gutted.mass", "mass_category", "mycoplasma_abundance", "aliivibrio_abundance"), drop = FALSE]
+
+
+
+# Extract only transformed metagenomic assays for MOFA+ analysis
+assays(mae_day_60[[2]]) <- assays(mae_day_60[[2]])[names(assays(mae_day_60[[2]])) %in% c("clr")]
+
+# Transform MAE object to MultiAssayExperiment
 model <- create_mofa_from_MultiAssayExperiment(
-    mae_sub,
+    mae_day_60,
+    group = "mass_category",
     extract_metadata = TRUE
 )
 
@@ -938,98 +586,76 @@ plot_factor_cor(
 ```
 Overall, we do not observe highly correlated factors which is the
 
-## Visualization
+## Visualization of MOFA analysis
 
 ### Variance explained
 
-```{r get_variance}
-# Get variance explained
-var_explained <- get_variance_explained(model)
+Next, we will plot the variances explained by each factor.
 
-# Get total variance explained
-var_explained_total <- as.data.frame(
-  var_explained$r2_total$group1
-)
 
-# Get variance by factor
-var_explained_factor <- as.data.frame(var_explained$r2_per_factor$group1)
-
-# Change column names and add view names for clarity
-colnames(var_explained_total) <- "var_explained"
-var_explained_total["view"] <- rownames(var_explained_total)
-
-colnames(var_explained_factor) <- c("fatty_acids", "metagenomic_assembly")
-var_explained_factor["factor"] <- rownames(var_explained_factor)
-
-# Melt dataframe for plotting
-var_explained_factor_melt <- melt(
-  var_explained_factor,
-  id.vars = "factor",
-  measure.vars = c("fatty_acids", "metagenomic_assembly"))
+```{r var_factor1}
+plot_variance_explained(model, x = "group", y = "view", factor = 1, legend = T)
 ```
 
-```{r plot_var_explained_by_view}
-ggplot(
-  data = var_explained_total,
-  aes(x = view, y = var_explained, fill = view)
-) +
-  geom_bar(stat = "identity") +
-  labs(title = "Variance explained by profile", x = "Profile", y = "Variance explained") +
-  scale_x_discrete(labels = c("Fatty acids", "Metagenomics")) + # Custom x-axis ticks
-  scale_y_continuous(label = c(0, 20, 40, 60, "80%")) + # Custom y-axis ticks
-  theme_minimal() +
-  theme(
-    plot.title.position = "plot", # Align title position with plot
-    legend.position = "none"
-  )
+Factor 1 captures the variances explained in fatty acid view across both
+mass categories.
+
+
+```{r var_factor2}
+plot_variance_explained(model, x = "group", y = "view", factor = 2, legend = T)
 ```
 
-Most of the total variance (85%) is explained by the fatty acid view. We can have
-a more granular view and look at variance explained by factor and by view.
+On the other hand, factor 2 captures variance explained in metagenomic view,
+also across both mass categories.
 
-```{r plot_variance_explained_by_factor_view}
-# Plot
-ggplot(
-  data = var_explained_factor_melt, aes(x = factor, y = value, fill = variable)
-) +
-  geom_bar(position = "stack", stat = "identity") +
-  labs(
-    title = "Variance explained by factor by profile",
-    x = "", y = "Variance explained",
-    fill = "Profile",
-  ) +
-  scale_x_discrete(labels = c(paste("Factor", 1:5))) + # Custom x-axis ticks
-  ylim(0, 65) +
-  scale_fill_discrete(labels = c("Fatty acids", "Metagenomics")) +
-  theme_minimal() +
-  theme(
-    plot.title.position = "plot" # Align title position with plot
-  )
+```{r var_factor3}
+plot_variance_explained(model, x = "group", y = "view", factor = 3, legend = T)
+```
+Factor 3 is similar to factor 2 but the variance expliend numbers are slighly
+lower.
+
+```{r var_factor4}
+plot_variance_explained(model, x = "group", y = "view", factor = 4, legend = T)
+```
+Factor 4 switches back to fatty acid view, but the variance explained is much
+lower.
+
+```{r var_factor5}
+plot_variance_explained(model, x = "group", y = "view", factor = 5, legend = T)
 ```
 
-The first factor explains variability with fatty acid view, while the only factor that explains variability within metagenomic assembly view is factor 2. Moreover,
-within factor 2 metagenomic assembly view explains slightly more variability than
-fatty acids (16% and 13% respectively).
+Finally, Factor 5 explains the rest of the variance in fatty acid view.
 
 ## Plot factor
 
 We can now plot single factors. For demonstration purposes, we will focus on
-the second factor and color the samples by treatment group (Control vs. Treatment).
+the first factor and color the samples by mass category.
 
 ```{r plot_factor}
+
+
 plot_factor(model,
   factors = 2,
-  color_by = "treatment_group",
-  group_by = "treatment_group",
-  add_violin = TRUE
-) +
-  labs(fill = "Treatment group") +
-  scale_fill_hue(
-    labels = c(
-      "Control", "Treatment"
-    )
-  ) +
-  labs(y = "Factor 2")
+  color_by = "aliivibrio_abundance",
+  scale = TRUE,
+  # group_by = "mycoplasma_abundance",
+  add_violin = TRUE,
+  color_violin = TRUE, 
+) 
+  # labs(fill = "Treatment group") +
+  # scale_fill_hue(
+  #   labels = c(
+  #     "Control", "Treatment"
+  #   )
+  # ) +
+  # labs(y = "Factor 2")
+
+plot_factor(model,
+  factor = 1,
+  color_by = "treatment_group", 
+  dot_size = 1.5,
+  scale = TRUE, legend = FALSE
+)
 ```
 
 ```{r}
@@ -1300,7 +926,7 @@ plot_top_weights(model,
 Strangely, family _Mycoplsmataceae_ has very low weight.
 
 ```{r}
-species <- c("Genus:Mycoplasma")
+species <- c("Mycoplasma")
 
 for (i in species) {
   
