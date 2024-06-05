@@ -522,23 +522,8 @@ colData(mae_day_60)["mass_category"] <- ifelse(
   as.numeric(colData(mae_day_60)[, "host.gutted.mass"]) > mass_median, "heavy", "light"
 )
 
-# Add Mycoplasma abundance category
-relabundance <- assay(mae_day_60[[2]], "relabundance")["Mycoplasma", ]
-threshold <- 0.8
-
-colData(mae_day_60)$mycoplasma_abundance <- ifelse(relabundance > 0.8, "abundant", "not_abundant")
-
-
-# Add Aliivibrio abundance category
-relabundance <- assay(mae_day_60[[2]], "relabundance")["Aliivibrio", ]
-threshold <- 0.8
-
-colData(mae_day_60)$aliivibrio_abundance <- ifelse(relabundance > 0.1, "abundant", "not_abundant")
-
 # Select only the columns we require
-colData(mae_day_60) <- colData(mae_day_60)[ , c("treatment_code", treatment_group, "host.gutted.mass", "mass_category", "mycoplasma_abundance", "aliivibrio_abundance"), drop = FALSE]
-
-
+colData(mae_day_60) <- colData(mae_day_60)[ , c("treatment_code", treatment_group, "host.gutted.mass", "mass_category"), drop = FALSE]
 
 # Extract only transformed metagenomic assays for MOFA+ analysis
 assays(mae_day_60[[2]]) <- assays(mae_day_60[[2]])[names(assays(mae_day_60[[2]])) %in% c("clr")]
@@ -635,10 +620,9 @@ the first factor and color the samples by mass category.
 
 
 plot_factor(model,
-  factors = 2,
-  color_by = "aliivibrio_abundance",
+  factors = c(1, 2, 3),
+  color_by = "mass_category",
   scale = TRUE,
-  # group_by = "mycoplasma_abundance",
   add_violin = TRUE,
   color_violin = TRUE, 
 ) 
