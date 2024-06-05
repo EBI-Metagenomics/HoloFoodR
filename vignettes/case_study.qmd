@@ -342,6 +342,12 @@ colData(mae_sub)["treatment_group"] <- ifelse(
   colData(mae_sub)[, "treatment_concentration"] == 0, "control", "treatment"
 )
 
+# Add mass categories
+mass_median <- median(as.numeric(colData(mae_sub)[, "host.gutted.mass"]), na.rm = TRUE)
+colData(mae_sub)["mass_category"] <- ifelse(
+  as.numeric(colData(mae_sub)[, "host.gutted.mass"]) > mass_median, "heavy", "light"
+)
+
 # Take those samples that can be found from both experiments
 mae_sub <- intersectColumns(mae_sub)
 ```
@@ -516,12 +522,6 @@ acids drive the difference in salmon weight.
 # Fetch only salmons at day 60
 mae_day_60 <- mae_sub[, colData(mae[[2]])$trial.timepoint == 60]
 
-# Add mass categories
-mass_median <- median(as.numeric(colData(mae_day_60)[, "host.gutted.mass"]))
-colData(mae_day_60)["mass_category"] <- ifelse(
-  as.numeric(colData(mae_day_60)[, "host.gutted.mass"]) > mass_median, "heavy", "light"
-)
-
 # Select only the columns we require
 colData(mae_day_60) <- colData(mae_day_60)[ , c("treatment_code", treatment_group, "host.gutted.mass", "mass_category"), drop = FALSE]
 
@@ -611,45 +611,37 @@ plot_variance_explained(model, x = "group", y = "view", factor = 5, legend = T)
 
 Finally, Factor 5 explains the rest of the variance in fatty acid view.
 
-## Plot factor
 
-We can now plot single factors. For demonstration purposes, we will focus on
-the first factor and color the samples by mass category.
-
-```{r plot_factor}
-
-
-plot_factor(model,
-  factors = c(1, 2, 3),
-  color_by = "mass_category",
-  scale = TRUE,
-  add_violin = TRUE,
-  color_violin = TRUE, 
-) 
-  # labs(fill = "Treatment group") +
-  # scale_fill_hue(
-  #   labels = c(
-  #     "Control", "Treatment"
-  #   )
-  # ) +
-  # labs(y = "Factor 2")
-
-plot_factor(model,
-  factor = 1,
-  color_by = "treatment_group", 
-  dot_size = 1.5,
-  scale = TRUE, legend = FALSE
-)
-```
+We can also summarize the total variance explained in one plot.
 
 ```{r}
 plot_variance_explained(model, x = "group")
 ```
 
+## Plot factor
 
-We can observer, the the Tiger (control), and Jaguar (2% algae concentration)
-have very similar patters with factor values that are concentrated in the lower
-part of the violin plots for "heavy" salmons.
+We can now plot single factors. For demonstration purposes, we will focus on
+the first three factors and color the samples by treatment group (control and
+treatment).
+
+```{r plot_factor}
+plot_factor(model,
+  factors = c(1, 2, 3),
+  color_by = "treatment_group",
+  scale = TRUE,
+  add_violin = TRUE,
+  color_violin = TRUE, 
+) +
+  labs(fill = "Treatment group") +
+  scale_fill_hue(
+    labels = c(
+      "Control", "Treatment"
+    )
+  )
+```
+Control and treatment groups are mixed which again suggests that there is no
+much difference between these two groups in both heavy and light salmons.
+
 
 ## Plot weights
 
@@ -674,38 +666,9 @@ custom_plotter <- function(name, factor) {
 }
 
 custom_plotter("FATTY ACIDS MG", factor = 1)
-custom_plotter("FATTY ACIDS MG", factor = 2)
-custom_plotter("FATTY ACIDS MG", factor = 3)
 custom_plotter("metagenomic_assembly", factor = 2)
+custom_plotter("metagenomic_assembly", factor = 3)
 ```
-If you focus on the first plot, which depicts the top factor weights of the
-factor 1 of the fatty acid view,  you will notice that all fatty acids have
-negative weights on factor 1. By taking into consideration what we observed on
-the factor plot above, we can say that all these acids have lower concentrations
-in most of heavy salmons within control (Tiger) and maximum concentration
-treatments (Jaguar).
-
-A better view can be offered if we color samples by their individual masses
-instead of relying on median. Almost all "heavy" salmons have low concentrations
-of the acids seen above.
-
-```{r plot_factor_by_mass}
-plot_factor(model,
-  factors = 1,
-  color_by = "host.gutted.mass",
-  group_by = "treatment_code",
-)
-```
-
-An interesting example comes from an unknown fatty acid 16:4n-3, which exhibits
-the diametrically opposed effects in factors 1 and 3 compared to factor 2.
-Specifically, it has the largest effects in factors 2 and 3, in the former case
-the effect is positive, whereas in the latter case it is negative. Conversely,
-it has second most significant negative effect on factor 1.
-
-Similarly, these plots shows us that factors 2 and 3 mostly likely describe two
-different treatments, which have the opposite impacts on the concentrations
-of fatty acids.
 
 ### Plot weights per factor
 
@@ -716,36 +679,49 @@ overview of the impacts of different features on factors.
 plot_weights(
     model,
     view = 1,
-    nfeatures = 8,
-    factors = 1:3,
+    nfeatures = 10,
+    factors = 1,
     text_size = 4,
     ) +
-    labs(title = "Top 10 weights for the first three factors in fatty acid view") +
-  theme(plot.title = element_text(size = 25),
+    labs(title = "Top 10 weights for the first factor in fatty acid view") +
+  theme(plot.title = element_text(size = 20),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_text(size = 15)
   )
 ```
 
-These graphs provide us with more high-level overview of the impacts of
-the fatty acids on the factors.
+```{r}
+plot_weights(
+    model,
+    view = 2,
+    nfeatures = 10,
+    factors = 2,
+    text_size = 4,
+    ) +
+    labs(title = "Top 10 weights for the second factor in metagenomic view") +
+  theme(plot.title = element_text(size = 10),
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15)
+  )
+```
 
-We can observe that some fatty acids, such as lignoceric acid, are strongly positively associated with factor 2. Lignoceric acid, however, is negatively associated with factor 3, suggesting  that these factors describe distinct biological processes that underlie
-these two factors. Conversely, gamma-linolenic acid has the opposite effects in factor 2 and factor 3. It is negatively associated with factor 2 and positively with factor 3.
 
-Moreover, several other fatty acids differentiate the factors 2 and 3:
+```{r}
+plot_weights(
+    model,
+    view = 2,
+    nfeatures = 10,
+    factors = 3,
+    text_size = 4,
+    ) +
+    labs(title = "Top 10 weights for the third factor in metagenomic view") +
+  theme(plot.title = element_text(size = 10),
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15)
+  )
+```
 
-1. Nervonic acid (an analog of lignoceric acid)
-2. Myristoleic acid
-3. Paulinic acid
-4. Margaric acid
-5. Unknown fatty acid 16:4-3
 
-The factor 1 has two negatively associated fatty acids in common with factor 3:
-nervonic and paulinic acids. Most likely, factors 1 and 3 describe two similar underlying processes but it remains to be clarified why only these two acids
-are common between the two factors. Finally, one can pose a question of
-why factor 3 contains lignoceric and its analog nervonic acids, while only the former
-appears in factor 3.
 
 ## Plot Factors
 
@@ -754,22 +730,11 @@ appears in factor 3.
 We can plot multiple latent factors on a scatter plot.
 
 ```{r factor_visualization}
-plot_factors(model, factors = c(1, 2, 3), color_by = "treatment_code")
+plot_factors(model, factors = c(1, 2, 3), color_by = "mass_category")
 ```
 
-It can be noticed that scatter plots between factors 1 and 2, and factors 2 and 3,
-display two clusters:
 
-1. The first containing exclusively Tiger (control) and Jaguar (2.0% concentration
-of algae, the highest) treatment groups
-2. The second containing a mixture of all groups
-
-These plots demonstrate that we need to investigate the first cluster further
-because the control and the Jaguar treatment groups might be intuitively expected
-to be in two distinct clusters that reflect their opposing treatments.
-
-These clusters are found by a non-linear dimensional reduction technique
-Uniform Manifold Approximation and Projection for Dimension Reduction.
+No separation between heave and light salmons.
 
 ## Plot covariation patterns
 
@@ -800,129 +765,9 @@ model <- run_umap(model)
 plot_dimred(
   model,
   method = "UMAP",
-  color_by = "treatment_code"
+  color_by = "mass_category"
 ) +
-  labs(title = "UMAP plot of MOFA model")
-```
-As noted, above we also observe the same two clusters, first seen in the
-scatter plots of factors.
-
-
-### MOFA2 model by group
-
-We can also find sources of variability that drive each group and find out
-which sources are shared or different between the groups.
-
-```{r mofa_group}
-# Remove near-zero-variances from metagenomic assembly assay
-nzv <- nearZeroVar(t(assay(mae_sub[[2]])))
-no_var <- t(assay(mae_sub[[2]])[-nzv, ])
-no_var <- t(no_var)
-mae_sub_no_var <- mae_sub
-mae_sub_no_var <- mae_sub[rownames(no_var), ,]
-mae_sub_no_var[[1]] <- mae_sub[[1]]
-
-# Transform mass category to factor
-colData(mae_sub_no_var)$mass_category <- as.factor(colData(mae_sub_no_var)$mass_category)
-
-model <- create_mofa_from_MultiAssayExperiment(
-    mae_sub_no_var,
-    group = "treatment_group",
-    extract_metadata = TRUE
-)
-
-# Set model's options
-model_opts <- get_default_model_options(model)
-model_opts$num_factors <- 5
-train_opts <- get_default_training_options(model)
-
-# Change convergence mode to slightly improve accuracy
-train_opts$convergence_mode <- "medium"
-
-# Prepare MOFA model
-model <- prepare_mofa(
-  object = model,
-  model_options = model_opts,
-  training_options = train_opts
-)
-
-# Train model
-model <- run_mofa(model, use_basilisk = TRUE)
-```
-
-
-```{r}
-#| fig-width: 10
-plot_variance_explained(model, x = "group", y = "view")
-```
-
-```{r}
-colors <- c(
-  "heavy" = "grey70",
-  "light" = "#CD3278"
-)
-
-plot_factor(model,
-            factor = 1,
-            color_by = "mass_category", 
-            scale = TRUE, 
-            add_violin = TRUE, color_violin = TRUE, 
-            dodge = TRUE, dot_size = 1, legend = TRUE
-) + scale_color_manual(values=colors) + scale_fill_manual(values=colors)
-
-
-plot_factor(model,
-  factor = 1,
-  color_by = "mass_category", 
-  dot_size = 1.5,
-  scale = TRUE, legend = FALSE
-) + scale_color_manual(values=colors) + scale_fill_manual(values=colors)
-```
-
-We can now plot weights of factor 1 to determine the most important
-species that impact factor 1.
-
-```{r}
-plot_weights(model,
-  view = "metagenomic_assembly",
-  factor = 1,
-  nfeatures = 10,
-  scale = T
-)
-```
-
-_Mycoplasma_ genus stands out, and it has high positive weight, which
-suggests that it is an abundant species in salmons with positive Factor 1
-values. Most high positive numbers are located in treatment group and are salmons
-from the light mass category.
-
-
-```{r}
-plot_top_weights(model, 
-  view = "metagenomic_assembly",
-  factor = 1, 
-  nfeatures = 10,
-  scale = T, 
-  abs = T
-)
-```
-
-Strangely, family _Mycoplsmataceae_ has very low weight.
-
-```{r}
-species <- c("Mycoplasma")
-
-for (i in species) {
-  
-  p <- plot_factor(model,
-    factor = 1,
-    dot_size = 2.5,
-    color_by = i
-  ) + scale_colour_gradientn(colours = terrain.colors(10)) # change color scale
-  
-  print(p)
-  
-}
+  labs(title = "UMAP plot of MOFA model by mass category")
 ```
 
 Three samples have high abundances of _Mycoplasma_ as well as one sample in
@@ -941,8 +786,8 @@ metabolomics_df <- mae_sub[[1]] |> assay("log10") |> as.data.frame()
 metagenomics_df <- mae_sub[[2]] |> assay("clr") |> as.data.frame()
 
 # Replace "sample" names to animal accession numbers
-names(metabolomics_df) <- colData(mae[[1]])[, "animal"]
-names(metagenomics_df) <- colData(mae[[2]])[, "animal"]
+names(metabolomics_df) <- colData(mae_sub[[1]])[, "animal"]
+names(metagenomics_df) <- colData(mae_sub[[2]])[, "animal"]
 
 # Join feature tables together
 feature_table <- rbind(metagenomics_df, metabolomics_df)
