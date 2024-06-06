@@ -35,4 +35,4 @@ Suggests:
 URL: https://github.com/EBI-Metagenomics/HoloFoodR
 BugReports: https://github.com/EBI-Metagenomics/HoloFoodR/issues
 VignetteBuilder: knitr
-RoxygenNote: 7.3.0
+RoxygenNote: 7.3.1
