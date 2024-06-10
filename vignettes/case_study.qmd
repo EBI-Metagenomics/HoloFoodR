@@ -149,14 +149,66 @@ salmon_analysis_ids <- searchAnalysis(
 tse <- MGnifyR::getResult(
   x = mg,
   accession = salmon_analysis_ids,
-  get.func = FALSE
+  get.func = TRUE
 )
 
 # Save salmon_metagenomic_tse
 saveRDS <- saveRDS(object = tse, file = "../inst/extdata/salmon_metagenomic_tse.RDS")
 
 tse <- readRDS("../inst/extdata/salmon_metagenomic_tse.RDS")
+
+
+indices <- c(1, 5, 6)
+rank <- "Genus"
+
+# Agglomerate microbiota assays by rank
+for (i in indices) {
+  altExp(tse[[i]], rank) <- agglomerateByRank(tse[[i]], rank, na.rm = TRUE)
+
+  altExp(tse[[i]], rank) <- transformAssay(altExp(tse[[i]], rank), MARGIN = "samples", 
+                      method = "relabundance")
+
+  altExp(tse[[i]], rank) <- transformAssay(altExp(tse[[i]], rank), MARGIN = "samples", 
+                      method = "clr", pseudocount = 0.0003)
+
+  plotAbundanceDensity(altExp(tse[[i]], rank) , layout = "jitter", 
+                     assay.type = "clr",
+                     n = 40, point_size=1, point_shape=19, 
+                     point_alpha=0.1,
+                     )
+  
+}
+
+altExp(tse[[6]], rank) <- agglomerateByRank(tse[[6]], rank, na.rm = TRUE)
+
+altExp(tse[[6]], rank) <- transformAssay(altExp(tse[[6]], rank), MARGIN = "samples", 
+                    method = "relabundance")
+
+altExp(tse[[6]], rank) <- transformAssay(altExp(tse[[6]], rank), MARGIN = "samples", 
+                    method = "clr", pseudocount = 0.0003)
+
+plotAbundanceDensity(altExp(tse[[6]], rank) , layout = "jitter", 
+                   assay.type = "clr",
+                   n = 40, point_size=1, point_shape=19, 
+                   point_alpha=0.1,
+                   )
+
+altExp(tse[[5]], rank) <- agglomerateByRank(tse[[5]], rank, na.rm = TRUE)
+
+altExp(tse[[5]], rank) <- transformAssay(altExp(tse[[5]], rank), MARGIN = "samples", 
+                    method = "relabundance")
+
+altExp(tse[[5]], rank) <- transformAssay(altExp(tse[[5]], rank), MARGIN = "samples", 
+                    method = "clr", pseudocount = 0.0003)
+
+plotAbundanceDensity(altExp(tse[[5]], rank) , layout = "jitter", 
+                   assay.type = "clr",
+                   n = 40, point_size=1, point_shape=19, 
+                   point_alpha=0.1,
+                   )
 ```
+
+
 
 Data fetched from MGnify has MGnify-specific identifiers. We have to first
 rename samples with HoloFood specific ID and then add the data to
