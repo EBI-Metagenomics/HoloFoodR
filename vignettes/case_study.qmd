@@ -274,9 +274,9 @@ not_empty <- !apply(rowData(mae[[2]]), 1, function(x) all(is.na(x)))
 mae[[2]] <- mae[[2]][ not_empty, ]
 ```
 
-For demonstration purposes, we will focus on investigating two experiments 
-(`FATTY ACIDS MG` and `metagenomic_assembly`) within the trial A performed by 
-the HoloFood consortium. This trial the health effects of fermented seaweed added 
+For demonstration purposes, we will focus on investigating two experiments
+(`FATTY ACIDS MG` and `metagenomic_assembly`) within the trial A performed by
+the HoloFood consortium. This trial the health effects of fermented seaweed added
 to the diet of salmons.
 
 ```{r preprocess2}
@@ -410,7 +410,7 @@ altExp(mae_sub[[1]], "not_sd_0") <- mae_sub[[1]][apply(assay(mae_sub[[1]], "log1
 # Perform cross-association analysis
 res <- testExperimentCrossAssociation(
     mae_sub,
-    experiment1 = 1, 
+    experiment1 = 1,
     experiment2 = 2,
     altexp1 = "not_sd_0",
     altexp2 = "prev_genus",
@@ -642,7 +642,7 @@ plot_factor(model,
   color_by = "treatment_group",
   scale = TRUE,
   add_violin = TRUE,
-  color_violin = TRUE, 
+  color_violin = TRUE,
 ) +
   labs(fill = "Treatment group") +
   scale_fill_hue(
