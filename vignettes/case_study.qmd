@@ -153,8 +153,10 @@ tse <- MGnifyR::getResult(
 )
 
 # Save salmon_metagenomic_tse
-saveRDS <- saveRDS(object = tse, file = "../inst/extdata/salmon_metagenomic_tse.RDS")
+saveRDS(object = tse, file = "../inst/extdata/salmon_metagenomic_tse.RDS")
+```
 
+```{r abundance_plot}
 tse <- readRDS("../inst/extdata/salmon_metagenomic_tse.RDS")
 
 
@@ -165,45 +167,45 @@ rank <- "Genus"
 for (i in indices) {
   altExp(tse[[i]], rank) <- agglomerateByRank(tse[[i]], rank, na.rm = TRUE)
 
-  altExp(tse[[i]], rank) <- transformAssay(altExp(tse[[i]], rank), MARGIN = "samples", 
+  altExp(tse[[i]], rank) <- transformAssay(altExp(tse[[i]], rank), MARGIN = "samples",
                       method = "relabundance")
 
-  altExp(tse[[i]], rank) <- transformAssay(altExp(tse[[i]], rank), MARGIN = "samples", 
+  altExp(tse[[i]], rank) <- transformAssay(altExp(tse[[i]], rank), MARGIN = "samples",
                       method = "clr", pseudocount = 0.0003)
 
-  plotAbundanceDensity(altExp(tse[[i]], rank) , layout = "jitter", 
+  plotAbundanceDensity(altExp(tse[[i]], rank) , layout = "jitter",
                      assay.type = "clr",
-                     n = 40, point_size=1, point_shape=19, 
+                     n = 40, point_size=1, point_shape=19,
                      point_alpha=0.1,
                      )
-  
+
 }
 
 altExp(tse[[6]], rank) <- agglomerateByRank(tse[[6]], rank, na.rm = TRUE)
 
-altExp(tse[[6]], rank) <- transformAssay(altExp(tse[[6]], rank), MARGIN = "samples", 
+altExp(tse[[6]], rank) <- transformAssay(altExp(tse[[6]], rank), MARGIN = "samples",
                     method = "relabundance")
 
-altExp(tse[[6]], rank) <- transformAssay(altExp(tse[[6]], rank), MARGIN = "samples", 
+altExp(tse[[6]], rank) <- transformAssay(altExp(tse[[6]], rank), MARGIN = "samples",
                     method = "clr", pseudocount = 0.0003)
 
-plotAbundanceDensity(altExp(tse[[6]], rank) , layout = "jitter", 
+plotAbundanceDensity(altExp(tse[[6]], rank) , layout = "jitter",
                    assay.type = "clr",
-                   n = 40, point_size=1, point_shape=19, 
+                   n = 40, point_size=1, point_shape=19,
                    point_alpha=0.1,
                    )
 
 altExp(tse[[5]], rank) <- agglomerateByRank(tse[[5]], rank, na.rm = TRUE)
 
-altExp(tse[[5]], rank) <- transformAssay(altExp(tse[[5]], rank), MARGIN = "samples", 
+altExp(tse[[5]], rank) <- transformAssay(altExp(tse[[5]], rank), MARGIN = "samples",
                     method = "relabundance")
 
-altExp(tse[[5]], rank) <- transformAssay(altExp(tse[[5]], rank), MARGIN = "samples", 
+altExp(tse[[5]], rank) <- transformAssay(altExp(tse[[5]], rank), MARGIN = "samples",
                     method = "clr", pseudocount = 0.0003)
 
-plotAbundanceDensity(altExp(tse[[5]], rank) , layout = "jitter", 
+plotAbundanceDensity(altExp(tse[[5]], rank) , layout = "jitter",
                    assay.type = "clr",
-                   n = 40, point_size=1, point_shape=19, 
+                   n = 40, point_size=1, point_shape=19,
                    point_alpha=0.1,
                    )
 ```
@@ -319,9 +321,9 @@ not_empty <- !apply(rowData(mae[[2]]), 1, function(x) all(is.na(x)))
 mae[[2]] <- mae[[2]][ not_empty, ]
 ```
 
-For demonstration purposes, we will focus on investigating two experiments 
-(`FATTY ACIDS MG` and `metagenomic_assembly`) within the trial A performed by 
-the HoloFood consortium. This trial the health effects of fermented seaweed added 
+For demonstration purposes, we will focus on investigating two experiments
+(`FATTY ACIDS MG` and `metagenomic_assembly`) within the trial A performed by
+the HoloFood consortium. This trial the health effects of fermented seaweed added
 to the diet of salmons.
 
 ```{r preprocess2}
@@ -450,7 +452,7 @@ altExp(mae_sub[[1]], "not_sd_0") <- mae_sub[[1]][apply(assay(mae_sub[[1]], "log1
 # Perform cross-association analysis
 res <- testExperimentCrossAssociation(
     mae_sub,
-    experiment1 = 1, 
+    experiment1 = 1,
     experiment2 = 2,
     altexp1 = "not_sd_0",
     altexp2 = "prev_genus",
@@ -682,7 +684,7 @@ plot_factor(model,
   color_by = "treatment_group",
   scale = TRUE,
   add_violin = TRUE,
-  color_violin = TRUE, 
+  color_violin = TRUE,
 ) +
   labs(fill = "Treatment group") +
   scale_fill_hue(
