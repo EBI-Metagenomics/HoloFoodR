@@ -79,6 +79,8 @@ salmons <- HoloFoodR::doQuery("animals", system = "salmon", use.cache = TRUE)
 # Get only salmon metagenomic and fatty acid data
 salmons <- salmons |>
   filter(fatty_acids == TRUE & metagenomic_assembly == TRUE)
+
+colnames(salmons)
 ```
 
 Next, we can retrieve the data associated with each salmon.
@@ -91,21 +93,25 @@ salmon_data <- HoloFoodR::getData(
   use.cache = TRUE
 )
 
+# Show salmon data
+head(salmon_data[[2]])
+```
+
+```{r get_salmon_samples1}
 # Get salmon samples
 salmon_samples <- salmon_data[["samples"]]
 
 # Get sample IDs
 salmon_sample_ids <- unique(salmon_samples[["accession"]])
 
-# Show salmon data
-head(salmon_data[[2]])
+head(salmon_sample_ids)
 ```
 
 Finally, we can retrieve the data from each sample of each sample (for instance,
 metagenomic, metabolomic, transcriptomic, etc.) and store the result in a
 MultiAssayExperiment object.
 
-```{r get_samples, eval=FALSE}
+```{r get_salmon_mae, eval=FALSE}
 # Get salmon MAE experiments as MAE object
 mae <- HoloFoodR::getResult(
   salmon_sample_ids,
@@ -149,66 +155,12 @@ salmon_analysis_ids <- searchAnalysis(
 tse <- MGnifyR::getResult(
   x = mg,
   accession = salmon_analysis_ids,
-  get.func = TRUE
+  get.func = FALSE
 )
 
-# Save salmon_metagenomic_tse
-saveRDS <- saveRDS(object = tse, file = "../inst/extdata/salmon_metagenomic_tse.RDS")
-
-tse <- readRDS("../inst/extdata/salmon_metagenomic_tse.RDS")
-
-
-indices <- c(1, 5, 6)
-rank <- "Genus"
-
-# Agglomerate microbiota assays by rank
-for (i in indices) {
-  altExp(tse[[i]], rank) <- agglomerateByRank(tse[[i]], rank, na.rm = TRUE)
-
-  altExp(tse[[i]], rank) <- transformAssay(altExp(tse[[i]], rank), MARGIN = "samples", 
-                      method = "relabundance")
-
-  altExp(tse[[i]], rank) <- transformAssay(altExp(tse[[i]], rank), MARGIN = "samples", 
-                      method = "clr", pseudocount = 0.0003)
-
-  plotAbundanceDensity(altExp(tse[[i]], rank) , layout = "jitter", 
-                     assay.type = "clr",
-                     n = 40, point_size=1, point_shape=19, 
-                     point_alpha=0.1,
-                     )
-  
-}
-
-altExp(tse[[6]], rank) <- agglomerateByRank(tse[[6]], rank, na.rm = TRUE)
-
-altExp(tse[[6]], rank) <- transformAssay(altExp(tse[[6]], rank), MARGIN = "samples", 
-                    method = "relabundance")
-
-altExp(tse[[6]], rank) <- transformAssay(altExp(tse[[6]], rank), MARGIN = "samples", 
-                    method = "clr", pseudocount = 0.0003)
-
-plotAbundanceDensity(altExp(tse[[6]], rank) , layout = "jitter", 
-                   assay.type = "clr",
-                   n = 40, point_size=1, point_shape=19, 
-                   point_alpha=0.1,
-                   )
-
-altExp(tse[[5]], rank) <- agglomerateByRank(tse[[5]], rank, na.rm = TRUE)
-
-altExp(tse[[5]], rank) <- transformAssay(altExp(tse[[5]], rank), MARGIN = "samples", 
-                    method = "relabundance")
-
-altExp(tse[[5]], rank) <- transformAssay(altExp(tse[[5]], rank), MARGIN = "samples", 
-                    method = "clr", pseudocount = 0.0003)
-
-plotAbundanceDensity(altExp(tse[[5]], rank) , layout = "jitter", 
-                   assay.type = "clr",
-                   n = 40, point_size=1, point_shape=19, 
-                   point_alpha=0.1,
-                   )
+# Save salmon metagenomic TSE
+saveRDS(object = tse, file = "../inst/extdata/salmon_metagenomic_tse.RDS")
 ```
-
-
 
 Data fetched from MGnify has MGnify-specific identifiers. We have to first
 rename samples with HoloFood specific ID and then add the data to
@@ -216,6 +168,9 @@ MultiAssayExperiment combining all the data.
 
 
 ```{r add_metagenomic_data, eval=FALSE}
+# Read in salmon metagenomic TSE object
+tse <- readRDS(file = "../inst/extdata/salmon_metagenomic_tse.RDS")
+
 .add_MGnify <- function(
         mae, tse, holofood.id = "sample_biosample",
         exp.name = "metagenomic_assembly", new.exp = "metagenomic",
@@ -356,14 +311,19 @@ altExp(mae[[2]], rank) <- transformAssay(
 ```
 
 
+
+
 ```{r}
-# For cross-correlation analysis and MOFA2, replace original metagenomics data
+# For cross-correlation analysis and MOFA2, replace original metagenomic data
 # with agglomerated one
 mae_sub <- mae # Keep original MAE intact
 mae_sub[[2]] <- altExp(mae_sub[[2]], rank)
 
+# Show prevalent
+
 # Filter genera by prevalence and add it to altExp slot
-altExp(mae_sub[[2]], "prev_genus") <- subsetByPrevalentFeatures(mae_sub[[2]], prevalence = 0.2, detection = 0.001)
+altExp(mae_sub[[2]], "prev_genus") <- subsetByPrevalentFeatures(mae_sub[[2]],
+                                                                prevalence = 0.2, detection = 0.01)
 
 # Add Treatment concentration to alternative experiment
 # Note that host.diet.treatment.concentration variable is different,
