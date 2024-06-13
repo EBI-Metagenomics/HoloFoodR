@@ -154,6 +154,7 @@ salmon_analysis_ids <- searchAnalysis(
 # Get metagenomic taxonomic data for salmon from MGnify
 tse <- MGnifyR::getResult(
   x = mg,
+  taxa.su = "LSU",
   accession = salmon_analysis_ids,
   get.func = FALSE
 )
@@ -188,7 +189,7 @@ tse <- readRDS(file = "../inst/extdata/salmon_metagenomic_tse.RDS")
     cd <- merge(
         cd1, cd2,
         by.x = holofood.id,
-        by.y = "accession",
+        by.y = "sample_biosample",
         all.x = TRUE
     )
     rownames(cd) <- cd[[holofood.id]]
@@ -310,20 +311,44 @@ altExp(mae[[2]], rank) <- transformAssay(
     altExp(mae[[2]], rank), assay.type = "relabundance", method = "clr", pseudocount = TRUE)
 ```
 
+Before proceeding we keep the modified version of MultiAssayExperiment object
+intact and only modify its copy.
+
+```{r save_original_mae}
+mae_sub <- mae # Keep original MAE intact
+```
+
+Next, we can agglomerate features by prevalence to reduce the number of
+low-abundant species.
+
+```{r aggomerate_prevalence}
+# Clean taxonomy data, so that names do not include additional characters
+agglomerateByPrevalence(mae_sub[[2]],
+                        rank = "Genus",
+                        na.rm = TRUE,
+                        prevalence = 5/100,
+                        detection = 10,
+                        onRankOnly = T) |> rownames()
+```
+
+
 
 
 
 ```{r}
 # For cross-correlation analysis and MOFA2, replace original metagenomic data
 # with agglomerated one
-mae_sub <- mae # Keep original MAE intact
-mae_sub[[2]] <- altExp(mae_sub[[2]], rank)
+
 
 # Show prevalent
 
 # Filter genera by prevalence and add it to altExp slot
 altExp(mae_sub[[2]], "prev_genus") <- subsetByPrevalentFeatures(mae_sub[[2]],
-                                                                prevalence = 0.2, detection = 0.01)
+                                                                prevalence = 0.2,
+                                                                detection = 0.01,
+                                                                rank = "Genus")
+
+agglomerateByRank(altExp(mae_sub[[2]], "prev_genus"), rank = "Genus")
 
 # Add Treatment concentration to alternative experiment
 # Note that host.diet.treatment.concentration variable is different,
