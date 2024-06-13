@@ -286,12 +286,24 @@ mae <- mae[ , colData(mae)[["Trial code"]] == "SA", ]
 mae
 ```
 
+
+Before proceeding we keep the modified version of MultiAssayExperiment object
+intact and only modify its copy.
+
+```{r save_original_mae}
+mae_sub <- mae # Keep original MAE intact
+```
+
+
+Next, we transform the metagenomic and metabolomic data  to normalize the data,
+especially compositional data, such as metagenomic counts.
+
 We log-transform fatty acid assay to approximate it to normal distribution.
 
 ```{r transformation_fatty_acids}
 # Transform fatty acids in mg with log10
-mae[[1]] <- transformAssay(
-    mae[[1]],
+mae_sub[[1]] <- transformAssay(
+    mae_sub[[1]],
     assay.type = "counts",
     MARGIN = "samples",
     method = "log10",
@@ -301,55 +313,125 @@ mae[[1]] <- transformAssay(
 
 ```{r transformation_metagenomics}
 # Agglomerate metagenomic data to Genus level and add it to altExp slot
-rank <- "Genus"
-altExp(mae[[2]], rank) <- agglomerateByRank(mae[[2]], rank, na.rm = TRUE)
+# rank <- "Genus"
+# altExp(mae[[2]], rank) <- agglomerateByRank(mae[[2]], rank, na.rm = TRUE)
 
 # Transform microbiome with centered log-ratio method
-altExp(mae[[2]], rank) <- transformAssay(
-    altExp(mae[[2]], rank), method = "relabundance")
-altExp(mae[[2]], rank) <- transformAssay(
-    altExp(mae[[2]], rank), assay.type = "relabundance", method = "clr", pseudocount = TRUE)
-```
-
-Before proceeding we keep the modified version of MultiAssayExperiment object
-intact and only modify its copy.
-
-```{r save_original_mae}
-mae_sub <- mae # Keep original MAE intact
+mae_sub[[2]] <- transformAssay(
+    mae_sub[[2]], method = "relabundance")
+mae_sub[[2]] <- transformAssay(
+    mae_sub[[2]], assay.type = "relabundance", method = "clr", pseudocount = TRUE)
 ```
 
 Next, we can agglomerate features by prevalence to reduce the number of
 low-abundant species.
 
-```{r aggomerate_prevalence}
-# Clean taxonomy data, so that names do not include additional characters
-agglomerateByPrevalence(mae_sub[[2]],
+
+```{r}
+x <- agglomerateByRank((mae_sub[[2]]), "Genus", na.rm = TRUE) |> assay("counts")
+x["Ammopiptanthus", ] |> hist(
+  xlab="Number of reads",
+  breaks=10, 
+  freq = FALSE,
+  main = "Ammopiptanthus")
+```
+
+```{r}
+prevalence <- getPrevalence(mae_sub[[2]],
+                        rank = "Genus",
+                        assay.type = "relabundance",
+                        na.rm = TRUE,
+                        detection = 0.001)
+
+# Exclude microbes with 0 prevalence
+prevalence <- prevalence[prevalence != 0]
+
+prevalence["Aliivibrio"]
+```
+
+```{r}
+prevalence |> hist(breaks = 5)
+```
+
+
+```{r}
+# Manually compute prevalence
+compute_prev <- function(genus) {
+  agglomerated_genus <- agglomerateByRank(mae_sub[[2]],
+    "Genus",
+    assay.type = "relabundance",
+    na.rm = TRUE
+  )
+  assay <- assay(agglomerated_genus, "relabundance")[genus, ]
+  logical_ind <- assay(agglomerated_genus, "relabundance")[genus, ] > 0.001
+
+
+  prev <- length(assay[logical_ind]) / dim(mae_sub[[2]])[2]
+  return(prev)
+}
+
+compute_prev("Aliivibrio")
+```
+
+
+```{r agglomerate_prevalence}
+# For cross-correlation analysis and MOFA2, replace original metagenomic data
+# with agglomerated one
+# Agglomerate by prevalence and rank to remove low-abundant species
+altExp(mae_sub[[2]], "prev_genus")  <- agglomerateByPrevalence(mae_sub[[2]],
                         rank = "Genus",
                         na.rm = TRUE,
                         prevalence = 5/100,
-                        detection = 10,
-                        onRankOnly = T) |> rownames()
+                        detection = 0.001,
+                        as_relative = T,
+                        onRankOnly = T)
+
+getPrevalence(mae_sub[[2]],
+                        rank = "Genus",
+                        na.rm = TRUE,
+                        prevalence = 5/100,
+                        detection = 0.001,
+                        as_relative = T,
+                        onRankOnly = T)
+```
+
+
+Agglomerate by genus and sort by the number of reads:
+
+```{r}
+# Agglomerate by genus
+agglomerated_genus <- agglomerateByRank(mae_sub[[2]],
+    rank = "Genus",
+    na.rm = TRUE
+  )
+
+# Compute number of reads and sort in descending order
+assay(agglomerated_genus, "counts") |> rowSums() |> sort(decreasing = T)
+```
+
+
+Sort reads for the top 10 species.
+
+```{r}
+top_prevalent_genera <- sort(getPrevalence(mae_sub[[2]],
+    rank = "Genus",
+    na.rm = TRUE,
+    onRankOnly = TRUE
+  ), decreasing = T) |> names() |> head()
+
+for (genus in top_prevalent_genera) {
+  print(genus)
+  print(sort(assay(agglomerated_genus, "counts")[genus, ], decreasing = T))
+}
+
+
+print(sort(assay(agglomerated_genus, "relabundance")["Ammopiptanthus", ], decreasing = T))
 ```
 
 
 
 
-
 ```{r}
-# For cross-correlation analysis and MOFA2, replace original metagenomic data
-# with agglomerated one
-
-
-# Show prevalent
-
-# Filter genera by prevalence and add it to altExp slot
-altExp(mae_sub[[2]], "prev_genus") <- subsetByPrevalentFeatures(mae_sub[[2]],
-                                                                prevalence = 0.2,
-                                                                detection = 0.01,
-                                                                rank = "Genus")
-
-agglomerateByRank(altExp(mae_sub[[2]], "prev_genus"), rank = "Genus")
-
 # Add Treatment concentration to alternative experiment
 # Note that host.diet.treatment.concentration variable is different,
 # and it is 0 for control and all other treatments except for maximum
@@ -421,16 +503,13 @@ function.
 
 
 ```{r filter_0_sd}
-
 altExp(mae_sub[[1]], "not_sd_0") <- mae_sub[[1]][apply(assay(mae_sub[[1]], "log10"), 1, sd) != 0, ]
-
 ```
 
 
 ```{r cross_association_analysis}
 #| fig-width: 15
 #| fig-height: 15
-
 
 # Perform cross-association analysis
 res <- testExperimentCrossAssociation(
