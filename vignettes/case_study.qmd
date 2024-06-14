@@ -72,7 +72,7 @@ options(java.parameters = "-Xmx8g")
 Firstly, we have to query the HoloFood database to retrieve the salmon accession
 numbers.
 
-```{r get_animals, eval=FALSE}
+```{r get_animals}
 # Get salmon samples
 salmons <- HoloFoodR::doQuery("animals", system = "salmon", use.cache = TRUE)
 
@@ -85,16 +85,13 @@ colnames(salmons)
 
 Next, we can retrieve the data associated with each salmon.
 
-```{r get_animal_data, eval=FALSE}
+```{r get_animal_data}
 # Get salmon data
 salmon_data <- HoloFoodR::getData(
   accession.type = "animals",
   accession = salmons[["accession"]],
   use.cache = TRUE
 )
-
-# Show salmon data
-head(salmon_data[[2]])
 ```
 
 ```{r get_salmon_samples1}
@@ -111,8 +108,8 @@ Finally, we can retrieve the data from each sample of each sample (for instance,
 metagenomic, metabolomic, transcriptomic, etc.) and store the result in a
 MultiAssayExperiment object.
 
-```{r get_salmon_mae, eval=FALSE}
-# Get salmon MAE experiments as MAE object
+```{r get_salmon_mae}
+# Get salmon <- experiments as MAE object
 mae <- HoloFoodR::getResult(
   salmon_sample_ids,
   use.cache = TRUE
@@ -130,7 +127,7 @@ experiments(mae)
 HoloFood database does not include the data for metagenomic assemblies, which
 can be retrieved from the [MGnify portal](https://www.ebi.ac.uk/metagenomics).
 
-```{r get_metagenomic_samples, eval=FALSE}
+```{r get_metagenomic_samples}
 # Create MGnify object
 mg <- MgnifyClient(
   useCache = TRUE,
@@ -139,7 +136,7 @@ mg <- MgnifyClient(
 
 # Select only metagenomic assembly samples types
 metagenomic_salmon_samples <- salmon_samples[
-  salmon_samples[["sample_type"]] == "metagenomic_assembly",
+  salmon_samples[["sample_type"]] == "metagenomic_amplicon",
 ]
 
 # Search for sample IDs in MGnify database
@@ -150,11 +147,10 @@ salmon_analysis_ids <- searchAnalysis(
 )
 ```
 
-```{r get_metagenomic, eval=FALSE}
+```{r get_metagenomic}
 # Get metagenomic taxonomic data for salmon from MGnify
 tse <- MGnifyR::getResult(
   x = mg,
-  taxa.su = "LSU",
   accession = salmon_analysis_ids,
   get.func = FALSE
 )
@@ -168,13 +164,13 @@ rename samples with HoloFood specific ID and then add the data to
 MultiAssayExperiment combining all the data.
 
 
-```{r add_metagenomic_data, eval=FALSE}
+```{r add_metagenomic_data}
 # Read in salmon metagenomic TSE object
 tse <- readRDS(file = "../inst/extdata/salmon_metagenomic_tse.RDS")
 
 .add_MGnify <- function(
         mae, tse, holofood.id = "sample_biosample",
-        exp.name = "metagenomic_assembly", new.exp = "metagenomic",
+        exp.name = "metagenomic_amplicon", new.exp = "metagenomic",
         replace = TRUE){
     # Rename columns based on HoloFood ID
     colnames(tse) <- colData(tse)[[holofood.id]]
@@ -189,7 +185,7 @@ tse <- readRDS(file = "../inst/extdata/salmon_metagenomic_tse.RDS")
     cd <- merge(
         cd1, cd2,
         by.x = holofood.id,
-        by.y = "sample_biosample",
+        by.y = "accession",
         all.x = TRUE
     )
     rownames(cd) <- cd[[holofood.id]]
@@ -251,7 +247,7 @@ path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
 mae <- readRDS("../inst/extdata/salmon_mae.RDS")
 
 # Fetch only experiments that we need
-mae <- mae[, , c("FATTY ACIDS MG", "metagenomic_assembly")]
+mae <- mae[, , c("FATTY ACIDS MG", "metagenomic_amplicon")]
 ```
 
 ```{r preprocess}
@@ -337,7 +333,17 @@ x["Ammopiptanthus", ] |> hist(
 ```
 
 ```{r}
+# Remove taxonomy_unparsed column from rowData of metagenomic_amplicon
+rowData(mae_sub[[2]]) <- rowData(mae_sub[[2]])[, 1:(length(rowData(mae_sub[[2]]))-1)] 
+
 prevalence <- getPrevalence(mae_sub[[2]],
+                        rank = "Genus",
+                        assay.type = "relabundance",
+                        na.rm = TRUE,
+                        detection = 0.001)
+
+
+agglomerateByPrevalence(mae_sub[[2]],
                         rank = "Genus",
                         assay.type = "relabundance",
                         na.rm = TRUE,
@@ -347,6 +353,8 @@ prevalence <- getPrevalence(mae_sub[[2]],
 prevalence <- prevalence[prevalence != 0]
 
 prevalence["Aliivibrio"]
+
+sort(prevalence, decreasing = T) |> head(90)
 ```
 
 ```{r}
@@ -379,20 +387,11 @@ compute_prev("Aliivibrio")
 # with agglomerated one
 # Agglomerate by prevalence and rank to remove low-abundant species
 altExp(mae_sub[[2]], "prev_genus")  <- agglomerateByPrevalence(mae_sub[[2]],
+                        assay.type = "relabundance",                                        
                         rank = "Genus",
                         na.rm = TRUE,
-                        prevalence = 5/100,
-                        detection = 0.001,
-                        as_relative = T,
-                        onRankOnly = T)
-
-getPrevalence(mae_sub[[2]],
-                        rank = "Genus",
-                        na.rm = TRUE,
-                        prevalence = 5/100,
-                        detection = 0.001,
-                        as_relative = T,
-                        onRankOnly = T)
+                        onRankOnly = TRUE,
+                        detection = 0.001)
 ```
 
 
@@ -400,13 +399,12 @@ Agglomerate by genus and sort by the number of reads:
 
 ```{r}
 # Agglomerate by genus
-agglomerated_genus <- agglomerateByRank(mae_sub[[2]],
+agglomerated_genus <- agglomerateByPrevalence(mae_sub[[2]],
+    assay.type = "relabundance",
     rank = "Genus",
-    na.rm = TRUE
+    na.rm = TRUE,
+    onRankOnly = T
   )
-
-# Compute number of reads and sort in descending order
-assay(agglomerated_genus, "counts") |> rowSums() |> sort(decreasing = T)
 ```
 
 
@@ -416,16 +414,11 @@ Sort reads for the top 10 species.
 top_prevalent_genera <- sort(getPrevalence(mae_sub[[2]],
     rank = "Genus",
     na.rm = TRUE,
-    onRankOnly = TRUE
-  ), decreasing = T) |> names() |> head()
-
-for (genus in top_prevalent_genera) {
-  print(genus)
-  print(sort(assay(agglomerated_genus, "counts")[genus, ], decreasing = T))
-}
+    detection = 0.001,
+  ), decreasing = T) |> names() |> head(20)
 
 
-print(sort(assay(agglomerated_genus, "relabundance")["Ammopiptanthus", ], decreasing = T))
+print(sort(assay(agglomerated_genus, "relabundance")["Aliivibrio", ], decreasing = T))
 ```
 
 
