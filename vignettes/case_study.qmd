@@ -78,7 +78,7 @@ salmons <- HoloFoodR::doQuery("animals", system = "salmon", use.cache = TRUE)
 
 # Get only salmon metagenomic and fatty acid data
 salmons <- salmons |>
-  filter(fatty_acids == TRUE & metagenomic_assembly == TRUE)
+  filter(fatty_acids == TRUE & metagenomic_amplicon == TRUE)
 
 colnames(salmons)
 ```
@@ -117,6 +117,9 @@ mae <- HoloFoodR::getResult(
 
 # Save salmon MAE
 saveRDS(object = mae, file = "../inst/extdata/salmon_mae_without_mgnify.RDS")
+
+# Rename FATTY ACIDS MG to more readable format
+names(mae)[1] <- tolower(gsub(" ", "_", names(mae)[1]))
 
 # Show available salmon experiments
 experiments(mae)
@@ -175,7 +178,7 @@ tse <- readRDS(file = "../inst/extdata/salmon_metagenomic_tse.RDS")
     # Rename columns based on HoloFood ID
     colnames(tse) <- colData(tse)[[holofood.id]]
 
-    # Merge add MGnify metagenomic data to the existing metagenomic_assembly
+    # Merge add MGnify metagenomic data to the existing metagenomic_amplicon
     # experiment. Get the experiment from HoloFood data.
     tse2 <- mae[[exp.name]]
 
@@ -247,11 +250,11 @@ path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
 mae <- readRDS("../inst/extdata/salmon_mae.RDS")
 
 # Fetch only experiments that we need
-mae <- mae[, , c("FATTY ACIDS MG", "metagenomic_amplicon")]
+mae <- mae[, , c("fatty_acids_mg", "metagenomic_amplicon")]
 ```
 
 ```{r preprocess}
-# From metabolite data, remove organ-fatty acids row as it only contains a
+# From metabolomic data, remove organ-fatty acids row as it only contains a
 # string value "muscle"
 tse <- mae[[1]]
 tse <- tse[!(rowData(tse)[["marker.name"]] %in% c("Organ-fatty acids")), ]
@@ -272,7 +275,7 @@ mae[[2]] <- mae[[2]][ not_empty, ]
 ```
 
 For demonstration purposes, we will focus on investigating two experiments
-(`FATTY ACIDS MG` and `metagenomic_assembly`) within the trial A performed by
+(`fatty_acids_mg` and `metagenomic_amplicon`) within the trial A performed by
 the HoloFood consortium. This trial the health effects of fermented seaweed added
 to the diet of salmons.
 
@@ -298,7 +301,7 @@ We log-transform fatty acid assay to approximate it to normal distribution.
 
 ```{r transformation_fatty_acids}
 # Transform fatty acids in mg with log10
-mae_sub[[1]] <- transformAssay(
+mae_sub[["fatty_acids_mg"]] <- transformAssay(
     mae_sub[[1]],
     assay.type = "counts",
     MARGIN = "samples",
@@ -308,15 +311,11 @@ mae_sub[[1]] <- transformAssay(
 ```
 
 ```{r transformation_metagenomics}
-# Agglomerate metagenomic data to Genus level and add it to altExp slot
-# rank <- "Genus"
-# altExp(mae[[2]], rank) <- agglomerateByRank(mae[[2]], rank, na.rm = TRUE)
-
 # Transform microbiome with centered log-ratio method
-mae_sub[[2]] <- transformAssay(
-    mae_sub[[2]], method = "relabundance")
-mae_sub[[2]] <- transformAssay(
-    mae_sub[[2]], assay.type = "relabundance", method = "clr", pseudocount = TRUE)
+mae_sub[["metagenomic_amplicon"]] <- transformAssay(
+    mae_sub[["metagenomic_amplicon"]], method = "relabundance")
+mae_sub[["metagenomic_amplicon"]] <- transformAssay(
+    mae_sub[["metagenomic_amplicon"]], assay.type = "relabundance", method = "clr", pseudocount = TRUE)
 ```
 
 Next, we can agglomerate features by prevalence to reduce the number of
@@ -334,26 +333,19 @@ x["Ammopiptanthus", ] |> hist(
 
 ```{r}
 # Remove taxonomy_unparsed column from rowData of metagenomic_amplicon
-rowData(mae_sub[[2]]) <- rowData(mae_sub[[2]])[, 1:(length(rowData(mae_sub[[2]]))-1)] 
+rowData(mae_sub[[2]]) <- rowData(mae_sub[[2]])[, 1:(length(rowData(mae_sub[[2]])) - 1)] 
 
 prevalence <- getPrevalence(mae_sub[[2]],
                         rank = "Genus",
                         assay.type = "relabundance",
                         na.rm = TRUE,
-                        detection = 0.001)
-
-
-agglomerateByPrevalence(mae_sub[[2]],
-                        rank = "Genus",
-                        assay.type = "relabundance",
-                        na.rm = TRUE,
+                        sort = TRUE,
                         detection = 0.001)
 
 # Exclude microbes with 0 prevalence
 prevalence <- prevalence[prevalence != 0]
 
-prevalence["Aliivibrio"]
-
+# Sort prevalences in decreasing order
 sort(prevalence, decreasing = T) |> head(90)
 ```
 
@@ -378,7 +370,7 @@ compute_prev <- function(genus) {
   return(prev)
 }
 
-compute_prev("Aliivibrio")
+compute_prev("Ammopiptanthus")
 ```
 
 
@@ -390,7 +382,6 @@ altExp(mae_sub[[2]], "prev_genus")  <- agglomerateByPrevalence(mae_sub[[2]],
                         assay.type = "relabundance",                                        
                         rank = "Genus",
                         na.rm = TRUE,
-                        onRankOnly = TRUE,
                         detection = 0.001)
 ```
 
@@ -774,9 +765,9 @@ custom_plotter <- function(name, factor) {
     return(p)
 }
 
-custom_plotter("FATTY ACIDS MG", factor = 1)
-custom_plotter("metagenomic_assembly", factor = 2)
-custom_plotter("metagenomic_assembly", factor = 3)
+custom_plotter("fatty_acids_mg", factor = 1)
+custom_plotter("metagenomic_amplicon", factor = 2)
+custom_plotter("metagenomic_amplicon", factor = 3)
 ```
 
 ### Plot weights per factor
