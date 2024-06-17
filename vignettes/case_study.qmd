@@ -406,8 +406,8 @@ altExp(mae_sub[[2]], "prev_genus") <- agglomerateByPrevalence(mae_sub[[2]],
     assay.type = "relabundance",
     rank = "Genus",
     na.rm = TRUE,
-    onRankOnly = T,
-    prevalence = 5 / 100,
+    agg.na.rm = TRUE,
+    prevalence = 20 / 100,
     detection = 0.002
   )
 
@@ -622,7 +622,7 @@ acids drive the difference in salmon weight.
 
 ```{r mofa_fit}
 # Fetch only salmons at day 60
-mae_day_60 <- mae_sub[, colData(mae[[2]])$trial.timepoint == 60]
+mae_day_60 <- altExp(mae_sub[[2]])[, colData(mae[[2]])$trial.timepoint == 60]
 
 # Select only the columns we require
 colData(mae_day_60) <- colData(mae_day_60)[ , c("treatment_code", "mass_category"), drop = FALSE]
