@@ -294,6 +294,13 @@ mae_sub <- mae # Keep original MAE intact
 ```
 
 
+```{r}
+# Take those samples that can be found from both experiments
+mae_sub <- intersectColumns(mae_sub)
+```
+
+
+
 Next, we transform the metagenomic and metabolomic data  to normalize the data,
 especially compositional data, such as metagenomic counts.
 
@@ -373,21 +380,7 @@ compute_prev <- function(genus) {
 compute_prev("Ammopiptanthus")
 ```
 
-
-```{r agglomerate_prevalence}
-# For cross-correlation analysis and MOFA2, replace original metagenomic data
-# with agglomerated one
-# Agglomerate by prevalence and rank to remove low-abundant species
-altExp(mae_sub[[2]], "prev_genus")  <- agglomerateByPrevalence(mae_sub[[2]],
-                        assay.type = "relabundance",                                        
-                        rank = "Genus",
-                        na.rm = TRUE,
-                        detection = 0.001,
-                        prevalence = 10 / 100)
-```
-
-
-Agglomerate by genus and sort by the number of reads.
+### Agglomerate by genus and sort by the number of reads.
 
 When using `onRankOnly = TRUE` genera become separate separate entities in
 `rowData`.
@@ -411,12 +404,20 @@ altExp(mae_sub[[2]], "prev_genus") <- agglomerateByPrevalence(mae_sub[[2]],
     detection = 0.002
   )
 
-assay(byrank, "counts")["Medicago", ]
-
 altExp(mae_sub[[2]], "prev_genus")
 ```
 
+
 ```{r}
+# Standartize colData of metagenomic data
+#  names(colData(altExp(mae_sub[[2]], "prev_genus"))) <-
+#   colData(altExp(mae_sub[[2]], "prev_genus")) |> names() |> tolower()
+# 
+# names(colData(altExp(mae_sub[[2]], "prev_genus"))) <- 
+#   
+
+
+
 # Add Treatment concentration to alternative experiment
 # Note that host.diet.treatment.concentration variable is different,
 # and it is 0 for control and all other treatments except for maximum
@@ -441,20 +442,14 @@ merged_coldata <- merge(x = colData(mae_sub), y = colData(mae_sub[[2]])[c("anima
 rownames(merged_coldata) <- merged_coldata$animal
 colData(mae_sub) <- merged_coldata
 
-# Add control vs treatment groups
-colData(mae_sub)["treatment_group"] <- ifelse(
-  colData(mae_sub)[, "treatment_concentration"] == 0, "control", "treatment"
-)
-
 # Add mass categories
-mass_median <- median(as.numeric(colData(mae_sub)[, "host.gutted.mass"]), na.rm = TRUE)
-colData(mae_sub)["mass_category"] <- ifelse(
-  as.numeric(colData(mae_sub)[, "host.gutted.mass"]) > mass_median, "heavy", "light"
+mass_median <- median(as.numeric(colData(altExp(mae_sub[[2]]))[, "host.gutted.mass"]), na.rm = TRUE)
+colData(altExp(mae_sub[[2]], "prev_genus"))["mass_category"] <- ifelse(
+  as.numeric(colData(altExp(mae_sub[[2]], "prev_genus"))[, "host.gutted.mass"]) > mass_median, "heavy", "light"
 )
-
-# Take those samples that can be found from both experiments
-mae_sub <- intersectColumns(mae_sub)
 ```
+
+
 
 ## Data exploration
 
@@ -537,7 +532,7 @@ results with explained variances on axis.
 tse <- mae_sub[[2]]
 colData(tse) <- merge(colData(tse), colData(mae_sub)[, c("animal", "treatment_group")], by = "animal")
 
-tse_pcoa <- runMDS(tse,
+tse_pcoa <- runMDS(tse, "prev_genus"),
                    FUN = vegan::vegdist,
                    methods = "bray",
                    assay.type = "relabundance",
@@ -621,11 +616,22 @@ acids drive the difference in salmon weight.
 
 
 ```{r mofa_fit}
+# Add mass categories
+mass_median <- median(as.numeric(colData(mae_sub)[, "host.gutted.mass"]), na.rm = TRUE)
+colData(mae_sub)["mass_category"] <- ifelse(
+  as.numeric(colData(mae_sub)[, "host.gutted.mass"]) > mass_median, "heavy", "light"
+)
+
+# For MOFA, substitute metagenomic_amplicon experiment from MAE with agglomerated
+# by prevalence from alternative experiment
+mae_sub[[2]] <- altExp(mae_sub[[2]], "prev_genus")
+
 # Fetch only salmons at day 60
-mae_day_60 <- altExp(mae_sub[[2]])[, colData(mae[[2]])$trial.timepoint == 60]
+mae_day_60 <- mae_sub[, colData(mae_sub[[2]])$trial.timepoint == 60]
+
 
 # Select only the columns we require
-colData(mae_day_60) <- colData(mae_day_60)[ , c("treatment_code", "mass_category"), drop = FALSE]
+colData(mae_day_60) <- colData(mae_day_60)[ , c("mass_category"), drop = FALSE]
 
 # Extract only transformed metagenomic assays for MOFA+ analysis
 assays(mae_day_60[[2]]) <- assays(mae_day_60[[2]])[names(assays(mae_day_60[[2]])) %in% c("clr")]
