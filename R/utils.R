@@ -267,8 +267,12 @@
     if( use.cache || clear.cache ){
         # It is built from query info
         temp <- unlist(query_params)
+        # If user has specified the subdirectory, ensure that it works in any
+        # system by adding correct "/".
+        cache_dir <- as.list(strsplit(cache.dir, "[/\\\\]")[[1]])
+        cache_dir <- do.call(file.path, cache_dir)
         # Construct directory path
-        cache_dir <- file.path(cache.dir, "HoloFoodR_cache")
+        cache_dir <- file.path(cache_dir, "HoloFoodR_cache")
         # Construct file path
         cache_path <- c(path, names(temp), temp)
         cache_path <- paste(cache_path, collapse = "_")
@@ -303,7 +307,7 @@
             # Add the result to cache if specified
             if( use.cache ){
                 if( !dir.exists(cache_dir) ){
-                    dir.create(cache_dir)
+                    dir.create(cache_dir, recursive = TRUE)
                 }
                 saveRDS(res, cache_path)
             }
@@ -390,12 +394,23 @@
 # data.frame
 #' @importFrom dplyr full_join
 .full_join_list <- function(res){
-    df <- Reduce(function(df1, df2){
-        # Get common columns
-        common_cols <- intersect(colnames(df1), colnames(df2))
-        # Merge based on common columns
-        temp <- full_join(df1, df2, by = common_cols)
-        return(temp)
-    }, res)
+    # Remove empty elements
+    res <- res[ lengths(res) > 0 ]
+    # If there is more than one element, merge them
+    if( length(res) > 1 ){
+        df <- Reduce(function(df1, df2){
+            # Get common columns
+            common_cols <- intersect(colnames(df1), colnames(df2))
+            # Merge based on common columns
+            temp <- full_join(df1, df2, by = common_cols)
+            return(temp)
+        }, res)
+    } else if( length(res) == 1 ){
+        # Otherwise if there is only one element, give the element
+        df <- res[[1]]
+    } else{
+        # If all the data.frames were without information, give NULL
+        df <- NULL
+    }
     return(df)
 }

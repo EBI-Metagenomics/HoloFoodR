@@ -10,10 +10,10 @@
 #' @name HoloFoodR
 #' @docType package
 #' @seealso
-#' \link[SummarizedExperiment:SummarizedExperiment-class]{SummarizedExperiment}
-#' \link[MultiAssayExperiment:MultiAssayExperiment-class]{MultiAssaySummarizedExperiment}
+#' \link[TreeSummarizedExperiment:TreeSummarizedExperiment-class]{TreeSummarizedExperiment}
+#' \link[MultiAssayExperiment:MultiAssayExperiment-class]{MultiAssayExperiment}
 NULL
 
-#' @import SummarizedExperiment
+#' @import TreeSummarizedExperiment
 #' @import MultiAssayExperiment
 NULL

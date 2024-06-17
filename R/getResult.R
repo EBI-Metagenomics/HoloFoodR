@@ -5,8 +5,10 @@
 #' database. Compared to \code{getData}, this function is more convenient for
 #' fetching the samples data because it converts the data to
 #' \code{MultiAssayExperiment} where different omics are stored as
-#' \code{SummarizedExperiment} objects which are optimized for downstream
-#' analytics.
+#' \code{TreeSummarizedExperiment} objects which are optimized for downstream
+#' analytics. Columns of returned \code{MultiAssayExperiment} are individual
+#' animals. These columns are linked with individual samples that are stored in
+#' \code{TreeSummarizedExperiment} objects.
 #' 
 #' The HoloFood database lacks non-targeted metabolomic data but fetched from
 #' MetaboLights resource. The function \code{getResult} facilitates the
@@ -26,7 +28,7 @@
 #' accession IDs of type samples.
 #' 
 #' @param get.metabolomic \code{Logical scalar} specifying whether to retrieve
-#' metabolomic data from MetaboLights database. (Default: \code{TRUE})
+#' metabolomic data from MetaboLights database. (Default: \code{FALSE})
 #'
 #' @param ... optional arguments:
 #' \itemize{
@@ -44,7 +46,7 @@
 #'   use.cache (Default: \code{FALSE})
 #'   
 #'   \item \strong{assay.type} \code{Character scalar} specifying the name of
-#'   assay in resulting \code{SummarizedExperiment} object.
+#'   assay in resulting \code{TreeSummarizedExperiment} object.
 #'   (Default: \code{"counts"}) 
 #'   
 #' }
@@ -57,12 +59,12 @@
 #' samples <- doQuery("samples", animal_accession = "SAMEA112904746")
 #'
 #' # Get the data
-#' res <- getResult(samples[["accession"]])
-#' res
+#' mae <- getResult(samples[["accession"]])
+#' mae
 #'
 #' @seealso
 #' \code{\link[HoloFoodR:getData]{getData}}
-#' \code{\link[SummarizedExperiment:SummarizedExperiment-class]{SummarizedExperiment}}
+#' \code{\link[TreeSummarizedExperiment:TreeSummarizedExperiment-class]{TreeSummarizedExperiment}}
 #' \code{\link[MultiAssayExperiment:MultiAssayExperiment-class]{MultiAssayExperiment}}
 #' \code{\link[MGnifyR:getResult]{MGnifyR:getResult}}
 #'
@@ -71,7 +73,7 @@ NULL
 
 #' @rdname getResult
 #' @export
-getResult <- function(accession, get.metabolomic = TRUE, ...){
+getResult <- function(accession, get.metabolomic = FALSE, ...){
     # Check accession
     temp <- .check_input(accession, list("character vector"))
     # Check get.metabolomic
@@ -94,9 +96,10 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     # Replace accession with query accession to harmonize
     sample_data <- .query_accession_to_accession(sample_data)
     # Create a MultiAssayExperiment from the data
-    omics_list <- .construct_MAE(sample_data)
+    omics_list <- .construct_MAE(sample_data, ...)
     mae <- omics_list[["mae"]]
-    sample_metadata <- omics_list[["metadata"]]
+    sample_metadata <- omics_list[["sample_metadata"]]
+    study_metadata <- omics_list[["study_metadata"]]
     
     # If user wants to get metabolites data and retrieved sample IDs include
     # metabolite samples. It requires loading files from MetaboLights which
@@ -109,40 +112,24 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
         # Add it to MAE
         mae <- .add_metabolomic_data_to_MAE(mae, se_metabolomic, accession)
     }
-
-    # Get animal metadata for colData of MAE
-    # Get all the animals present in sample metadata
-    uniq_animals <- unique(sample_metadata[["animal"]])
-    # Retrieve the data
-    animal_data <- getData(accession.type = "animals", accession = uniq_animals)
-    # Align animal data with sample data
-    animal_data <- .align_animal_and_sample_data(animal_data, sample_metadata)
-    # Replace accession with query accession to harmonize
-    animal_data <- .query_accession_to_accession(animal_data)
-    # Remove samples and sample_types table since we already have that info
-    animal_data <- animal_data[ !names(
-        animal_data) %in% c("sample_types", "samples")]
-    # Construct MAE from animal data
-    mae_animal_list <- .construct_MAE(animal_data)
-    mae_animal <- mae_animal_list[["mae"]]
-    animal_metadata <- mae_animal_list[["metadata"]]
-    # Combine sample and animal data
-    mae <- .add_animal_data_to_MAE(mae, mae_animal, animal_metadata)
-
+    
     # If there are samples that user wanted to include but are not present in
-    # the data (they do not have data in HoloFood database), give warning
+    # the data (they do not have data in HoloFood database), give warning.
+    # Moreover, add them as empty experiments so that animal metadata can still
+    # be included for them also.
     not_found <- accession[ !accession %in% unlist(colnames(mae)) ]
     if( length(not_found) ){
         # Create a message
         msg <- "Data for the following samples cannot be found."
         # Get the type of samples
         types <- sample_data[["sample_type"]]
-        types <- types[types[["accession"]] %in% not_found, "sample_type"]
-        types <- unique(types)
+        types <- types[types[["accession"]] %in% not_found, ]
+        type_names <- types[["sample_type"]]
+        type_names <- unique(type_names)
         # Add sample types to message
-        if( !is.null(types) ){
+        if( !is.null(type_names) ){
             # Add info about sample types
-            msg_temp <- .create_msg_from_list(types, "and")
+            msg_temp <- .create_msg_from_list(type_names, "and")
             if( length(types) == 1 ){
                 msg_temp2 <- "The sample type is"
             } else{
@@ -151,7 +138,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
             msg <- paste0(msg, " ", msg_temp2, " ", msg_temp, ".")
             # If metagenomic assembly was one of the samples that user wanted,
             # give information that it can be found from MGnify database.
-            if( "metagenomic_assembly" %in% types ){
+            if( "metagenomic_assembly" %in% type_names ){
                 msg <- paste0(
                     msg, " (Note that metagenomic assemblies can be ",
                     "found from the MGnify database. See MGnifyR package.)")
@@ -160,11 +147,68 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
         # Add those sample IDs that cannot be found to message
         msg <- paste0(msg, ":\n'", paste(not_found, collapse = "', '"), "'")
         warning(msg, call. = FALSE)
+        
+        # Create empty SE objects and add them to MAE
+        mae <- .add_empty_experiments(mae, types, sample_metadata)
     }
+    
+    # Get animal metadata for colData of MAE
+    # Get all the animals present in sample metadata
+    uniq_animals <- unique(sample_metadata[["animal"]])
+    # Retrieve the data
+    animal_data <- getData(
+        accession.type = "animals", accession = uniq_animals, ...)
+    # Align animal data with sample data
+    animal_data <- .align_animal_and_sample_data(animal_data, sample_metadata)
+    # Replace accession with query accession to harmonize
+    animal_data <- .query_accession_to_accession(animal_data)
+    # Remove samples and sample_types table since we already have that info
+    animal_data <- animal_data[ !names(
+        animal_data) %in% c("sample_types", "samples")]
+    # Construct MAE from animal data
+    mae_animal_list <- .construct_MAE(animal_data, ...)
+    mae_animal <- mae_animal_list[["mae"]]
+    study_metadata2 <- mae_animal_list[["sample_metadata"]]
+    study_metadata3 <- mae_animal_list[["study_metadata"]]
+    # Combine sample and animal data
+    mae <- .add_animal_data_to_MAE(mae, mae_animal)
+    # Add study metadata to MAE
+    metadata_list <- list(study_metadata, study_metadata2, study_metadata3)
+    mae <- .add_study_metadata_to_MAE(mae, metadata_list)
+    # Modify MAE so that top-level has animal IDs which points to samples in
+    # individual SEs
+    mae <- .MAE_cols_to_animals(mae)
     return(mae)
 }
 
 ################################ HELP FUNCTIONS ################################
+
+# If accession cannot be found, animal metadata is not included for that
+# accession in MAE. Since user wanted to get the data for that also, add empty
+# SEs to MAE with accessions, so that animal metadata can be included for those
+# accessions in colData(mae).
+.add_empty_experiments <- function(mae, types, metadata){
+    # Loop through types and create SE from them
+    type_names <- unique(types[["sample_type"]])
+    ses <- lapply(type_names, function(type){
+        # Get all the accessions for that sample type
+        accessions <- types[types[["sample_type"]] == type, "accession"]
+        # Get metadata on those accessions
+        temp <- metadata[match(accessions, metadata[["accession"]], ), ]
+        rownames(temp) <- accessions
+        temp <- DataFrame(temp, check.names = FALSE)
+        # Create empty SE
+        se <- TreeSummarizedExperiment(colData = temp)
+        return(se)
+    })
+    names(ses) <- type_names
+    # Convert to ExperimentList
+    ses <- ExperimentList(ses)
+    # Add to MAE
+    exp_list <- c(experiments(mae), ses)
+    mae <- MultiAssayExperiment(exp_list)
+    return(mae)
+}
 
 # This function subsets metabolomic SE based on accession and adds the data
 # to MAE.
@@ -222,8 +266,8 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     names(assays) <- assay.type
     feat_meta <- DataFrame(feat_meta, check.names = FALSE)
     sample_meta <- DataFrame(sample_meta, check.names = FALSE)
-    # Create SummarizedExperiment
-    se <- SummarizedExperiment(
+    # Create TreeSummarizedExperiment
+    se <- TreeSummarizedExperiment(
         assays = assays, rowData = feat_meta, colData = sample_meta)
     
     # The data still has sample names from MetaboLights and not from HoloFood
@@ -245,7 +289,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
 }
 
 # This function constructs MAE object from the sample data.
-.construct_MAE <- function(sample_data){
+.construct_MAE <- function(sample_data, ...){
     # Get only structured metadata table. It includes info about measurements.
     # Other tables include info for instance about animals.
     sample_tab <- sample_data[["structured_metadata"]]
@@ -253,31 +297,45 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     f <- sample_tab[["marker.type"]]
     sample_tab <- split(sample_tab, f)
 
-    # Some metadata markers are sample information that goes to sample metadata
-    metadata_types <- c(
-        "ENA Checklist", "TRIAL", "SAMPLE", "TREATMENT", "TANK",
+    # Some metadata markers are sample information that goes to sample metadata.
+    # Some metadata is common for certain animal. That information goes to
+    # common "study" metadata --> colData(mae).
+    sample_metadata_types <- c("ENA Checklist", "SAMPLE")
+    study_metadata_types <- c(
+        "TRIAL", "TREATMENT", "TANK",
         "TOTAL FAT CONTENT", "PEN", "FAECES DIGESTIBILITY"
     )
-    metadata_types <-  names(sample_tab)[names(sample_tab) %in% metadata_types]
+    sample_metadata_types <-  names(sample_tab)[
+        names(sample_tab) %in% sample_metadata_types]
+    study_metadata_types <-  names(sample_tab)[
+        names(sample_tab) %in% study_metadata_types]
     # All other datatypes are stored as unique omics
-    omic_types <- names(sample_tab)[ !names(sample_tab) %in% metadata_types ]
+    omic_types <- names(sample_tab)[
+        !names(sample_tab) %in% c(sample_metadata_types, study_metadata_types)]
     # Divide the data to metadata and omics
-    metadata_types <- sample_tab[ metadata_types ]
+    sample_metadata_types <- sample_tab[ sample_metadata_types ]
+    study_metadata_types <- sample_tab[ study_metadata_types ]
     omic_types <- sample_tab[ omic_types ]
 
     # Create metadata table from metadata types
-    metadata <- .construct_metadata_from_markers(metadata_types)
-    # Convert to numeric those columns that can be converted
-    metadata <- .convert_cols_numeric(metadata)
+    sample_metadata <- .construct_metadata_from_markers(
+        sample_metadata_types, ...)
+    study_metadata <- .construct_metadata_from_markers(
+        study_metadata_types, ...)
     # Add rest of the sample data to metadata
     sample_data <- sample_data[ !names(sample_data) %in% "structured_metadata" ]
-    metadata <- .add_sample_data_to_metadata(sample_data, metadata)
+    sample_metadata <- .add_sample_data_to_metadata(
+        sample_data, sample_metadata)
     # Create SE objecst from individual omics. Add metadata to SEs,
     # Add omics to MAE.
-    omics <- .construct_omics_data_from_markers(omic_types, metadata)
+    omics <- .construct_omics_data_from_markers(
+        omic_types, sample_metadata, ...)
 
     # Create a result list
-    res <- list(mae = omics, metadata = metadata)
+    res <- list(
+        mae = omics,
+        sample_metadata = sample_metadata,
+        study_metadata = study_metadata)
     return(res)
 }
 
@@ -305,34 +363,25 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     sample_data <- sample_data[ , !colnames(
         sample_data) %in% c("title"), drop = FALSE]
     # Add metadata to sample data --> sample data includes all accessions
-    metadata <- full_join(sample_data, metadata, by = "accession")
-    # Remove duplicated accessions.
-    metadata <- metadata[ !duplicated(metadata[["accession"]]), ]
-    rownames(metadata) <- metadata[["accession"]]
-    return(metadata)
+    if( !is.null(metadata) ){
+        sample_data <- full_join(sample_data, metadata, by = "accession")
+    }
+    return(sample_data)
 }
 
 # This function creates a sample metadata from specific markers of structured
 # metadata.
 #' @importFrom dplyr bind_rows
-.construct_metadata_from_markers <- function(res){
+.construct_metadata_from_markers <- function(res, ...){
     # If there are results
     if( length(res) > 0 ){
         # Convert each sample metadata type to table where each row represents
         # single sample
-        res <- lapply(res, .convert_type_to_table)
+        res <- lapply(res, function(x) .convert_type_to_table(x, ...))
         # Combine data
         res <- bind_rows(res)
-        # Check if duplicated accession IDs
-        dupl_acc <- duplicated(res[["accession"]])
-        if( any(dupl_acc) ){
-            # Create a list from columns that have multiple values for
-            # certain rows. (Otherwise it could not be added to colData since
-            # only one row must point to single sample)
-            res <- .collapse_df(res)
-        }
-        # Add accession IDs as rownames
-        rownames(res) <- res[["accession"]]
+        # Convert to numeric those columns that can be converted
+        res <- .convert_cols_numeric(res, ...)
     } else{
         res <- NULL
     }
@@ -343,7 +392,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
 # It converts it to suitable format for sample metadata.
 #' @importFrom stats reshape
 #' @importFrom dplyr full_join
-.convert_type_to_table <- function(type){
+.convert_type_to_table <- function(type, ...){
     # Get those columns that are in long format and wide
     long_info <- c("accession", "measurement", "marker.name")
     wide_info <- c("accession", colnames(type)[!colnames(type) %in% long_info])
@@ -396,7 +445,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
             rownames(units) <- NULL
             units <- as.data.frame(units)
             # Replicate row so that there are as many rows as in original table
-            units <- units[rep(1, nrow(table)), ]
+            units <- units[rep(1, nrow(table)), , drop = FALSE]
             # Add to original table
             table <- cbind(table, units)
         }
@@ -404,7 +453,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     # Remove duplicates
     table <- table[ !duplicated(table), ]
     # Convert to numeric those columns that can be converted
-    table <- .convert_cols_numeric(table)
+    table <- .convert_cols_numeric(table, ...)
     return(table)
 }
 
@@ -450,6 +499,10 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
         if( all(lengths(col) == 1) ){
             col <- unlist(col)
         }
+        # Order data based on original table where the data will be added.
+        # The order can be changed during the process.
+        ind <- match(table[["accession"]], names(col))
+        col <- col[ ind ]
         # Add it to back to original table
         table[[name]] <- col
     }
@@ -457,9 +510,11 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
 }
 
 # This function cretaes a MAE object from list of tables.
-.construct_omics_data_from_markers <- function(res, metadata){
-    # Convert each table to SummarizedExperiment
-    res <- lapply(res, .convert_type_to_SummarizedExperiment, metadata)
+.construct_omics_data_from_markers <- function(res, metadata, ...){
+    # Convert each table to TreeSummarizedExperiment
+    res <- lapply(res, function(x){
+        .convert_type_to_TreeSummarizedExperiment(x, metadata, ...)
+    })
     # Create MultiAssayExperiment
     res <- ExperimentList(res)
     res <- MultiAssayExperiment(res)
@@ -470,7 +525,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
 # to SE.
 #' @importFrom stats reshape
 #' @importFrom S4Vectors SimpleList
-.convert_type_to_SummarizedExperiment <- function(
+.convert_type_to_TreeSummarizedExperiment <- function(
         type, metadata, assay.type = "counts", ...){
     # Check assay.type
     temp <- .check_input(assay.type, list("character scalar"))
@@ -499,7 +554,7 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     colnames(assay) <- gsub(paste0(num_col, "."), "", colnames(assay))
 
     # Try to convert columns to numeric.
-    assay <- .convert_cols_numeric(assay)
+    assay <- .convert_cols_numeric(assay, ...)
     # Samples are in columns and features in rows
     assay <- t(assay)
     assay <- as.matrix(assay)
@@ -510,7 +565,16 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     rownames(row_data) <- row_data[[rownames_col]]
     row_data <- row_data[ rownames(assay), ]
     row_data <- DataFrame(row_data)
-
+    
+    # Check if duplicated accession IDs
+    dupl_acc <- duplicated(metadata[["accession"]])
+    if( any(dupl_acc) ){
+        # Create a list from columns that have multiple values for
+        # certain rows. (Otherwise it could not be added to colData since
+        # only one row must point to single sample)
+        metadata <- .collapse_df(metadata)
+    }
+    rownames(metadata) <- metadata[["accession"]]
     # Get metadata fpr certain accessions
     col_data <- metadata[colnames(assay), ]
     # Remove those columns that do not have indfo
@@ -522,10 +586,10 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     # Convert to DF
     col_data <- DataFrame(col_data, check.names = FALSE)
 
-    # Create SummarizedExperiment
+    # Create TreeSummarizedExperiment
     assays <- SimpleList(assay)
     names(assays) <- assay.type
-    se <- SummarizedExperiment(
+    se <- TreeSummarizedExperiment(
         assays = assays, rowData = row_data,
         colData = col_data
         )
@@ -534,7 +598,10 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
 
 # This function gets data.frame as an input and it converts columns to numeric
 # if they can be converted.
-.convert_cols_numeric <- function(df){
+.convert_cols_numeric <- function(df, replace.lower.th = FALSE, ...){
+    # Check replace.lower.th
+    temp <- .check_input(replace.lower.th, list("logical scalar"))
+    #
     df <- as.data.frame(df, check.names = FALSE)
     # Skip those columns that are list
     is_list <- unlist(lapply(df, is.list))
@@ -545,6 +612,28 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     vec_cols <- lapply(vec_cols, function(x){
         # Some numeric values have comma instead of point
         temp <- gsub(",", ".", x)
+        # Some values have percentage symbol. The unit already tells that it is
+        # percentage.
+        temp <- gsub("%", "", temp)
+        # If user has specified, replace those values that are under detection
+        # threshold to 0.
+        msg <- NULL
+        if( replace.lower.th ){
+            # Get those values that matches to give warning message
+            pattern <- "<\\s*\\d+"
+            matched_values <- grep(pattern, temp, value = TRUE)
+            matched_values <- unique(matched_values)
+            # Replace values with 0.
+            if( length(matched_values) > 0 ){
+                # Replace
+                temp <- gsub(pattern, 0, temp)
+                # Create message text
+                msg <- paste0(
+                    "The following values are replaced with 0: '",
+                    paste0(matched_values, collapse = "', '"), "'")
+            }
+            
+        }
         # Try to convert to numeric
         temp_num <- suppressWarnings( as.numeric(temp) )
         # Check if we lost info. If we did, then the column is not numeric. If
@@ -552,6 +641,10 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
         # succesful and the values are numeric.
         if( all(is.na(temp_num) == is.na(x)) ){
             x <- temp_num
+            # Give warning message about replacing lower threshold
+            if( !is.null(msg) ){
+                warning(msg, call. = FALSE)
+            }
         }
         return(x)
     })
@@ -588,14 +681,64 @@ getResult <- function(accession, get.metabolomic = TRUE, ...){
     return(animal_data)
 }
 
-# This function modifies animal metadata and adds it to MAE's colData slot.
-.add_animal_data_to_MAE <- function(mae, mae_animal, metadata){
+# This function adds animal data to MAE
+.add_animal_data_to_MAE <- function(mae, mae_animal){
     # IF animal MultiAssayExperiment has data, add it to main MAE
-    experiments(mae) <- c( experiments(mae), experiments(mae_animal))
+    exp_list <- c( experiments(mae), experiments(mae_animal))
+    mae <- MultiAssayExperiment(exp_list)
+    return(mae)
+}
+
+# This functions combines metadata from samples and animals and add it to
+# colData slot of MAE
+.add_study_metadata_to_MAE <- function(mae, metadata_list){
+    # Combine metadata
+    metadata <- .full_join_list(metadata_list)
+    # There might be multiple values for each accession. This means that there
+    # are multiple values for each data type. Collapse values so that values
+    # becomes to list
+    dupl_acc <- duplicated(metadata[["accession"]])
+    if( any(dupl_acc) ){
+        # Create a list from columns that have multiple values for
+        # certain rows. (Otherwise it could not be added to colData since
+        # only one row must point to single sample)
+        metadata <- .collapse_df(metadata)
+    }
+    rownames(metadata) <- metadata[["accession"]]
     # Create a DataFrame and drop those rows that are not present in MAE
     metadata <- DataFrame(metadata, check.names = FALSE)
     metadata <- metadata[ rownames(metadata) %in% unlist(colnames(mae)), ]
     # Add it to colData
     colData(mae) <- metadata
+    return(mae)
+}
+
+# This function modifies MAE so that each column in MAE is an animal. These
+# columns are pointing to samples in individual experiments.
+.MAE_cols_to_animals <- function(mae){
+    # Get experiments
+    exp_list <- experiments(mae)
+    # Get sample mapping
+    sample_map <- sampleMap(mae)
+    # Get animal metadata
+    col_data <- colData(mae)
+    # Replace MAE-level key with animal ID
+    animal_ids <- col_data[ , c("accession", "animal")]
+    ind <- match(sample_map[["primary"]], animal_ids[["accession"]])
+    animal_ids <- animal_ids[ind, ]
+    sample_map[["primary"]] <- animal_ids[["animal"]]
+    # Remove samples from animal metadata
+    col_data[["accession"]] <- NULL
+    # Rename rows with animal IDs
+    rownames(col_data) <- col_data[["animal"]]
+    # Remove duplicates so that there is only one row per animal
+    col_data <- unique(col_data)
+    
+    # Finally, create MAE
+    mae <- MultiAssayExperiment(
+        experiments = exp_list,
+        colData = col_data,
+        sampleMap = sample_map
+    )
     return(mae)
 }

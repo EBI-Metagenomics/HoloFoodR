@@ -1,6 +1,6 @@
 Package: HoloFoodR
 Type: Package
-Version: 0.1.1
+Version: 0.99.6
 Authors@R:
     c(person(given = "Tuomas", family = "Borman", role = c("aut", "cre"),
              email = "tuomas.v.borman@utu.fi",
@@ -13,25 +13,26 @@ Description:
     Utility package to facilitate integration and analysis of EBI HoloFood data
     in R. This package streamlines access to the resource, allowing for direct
     loading of data into formats optimized for downstream analytics.
-biocViews: PackageTypeData, ExperimentData
+biocViews: Software, Infrastructure, DataImport
 License: Artistic-2.0 | file LICENSE
 Encoding: UTF-8
 Depends:
-    R(>= 4.3.0),
-    SummarizedExperiment,
+    R(>= 4.4.0),
+    TreeSummarizedExperiment,
     MultiAssayExperiment
 Imports:
     dplyr,
     httr2,
     jsonlite,
-    S4Vectors
+    S4Vectors,
+    stats,
+    utils
 Suggests:
     testthat,
     knitr,
     rmarkdown,
-    BiocStyle,
-    TreeSummarizedExperiment
-URL: https://github.com/microbiome/HoloFoodR
-BugReports: https://github.com/microbiome/HoloFoodR/issues
+    BiocStyle
+URL: https://github.com/EBI-Metagenomics/HoloFoodR
+BugReports: https://github.com/EBI-Metagenomics/HoloFoodR/issues
 VignetteBuilder: knitr
-RoxygenNote: 7.3.0
+RoxygenNote: 7.3.1

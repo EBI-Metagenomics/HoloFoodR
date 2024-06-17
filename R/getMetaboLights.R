@@ -23,10 +23,15 @@
 #'
 #' @examples
 #' 
+#' # This example is not run, because the server fails to respond sometimes.
+#' 
 #' url <- "https://www.ebi.ac.uk/metabolights/ws/studies/MTBLS4381"
-#' res <- getMetaboLights(url)
-#' names(res)
-#' head(res[["feat_meta"]])
+#' 
+#' if( FALSE ){
+#'     res <- getMetaboLights(url)
+#'     names(res)
+#'     head(res[["feat_meta"]])
+#' }
 #' 
 #' @seealso
 #' \code{\link[HoloFoodR:getResult]{getResult}}
@@ -127,6 +132,7 @@ getMetaboLights <- function(url, ...){
 }
 
 # This is a common function for downloading a file from MetaboLights database
+#' @importFrom utils download.file read.delim
 .get_metabolights_file <- function(
         study.id, file.name, cache.dir = tempdir(),
         metabolights.base.url = "http://ftp.ebi.ac.uk/pub/databases/metabolights/studies/public/", ...){

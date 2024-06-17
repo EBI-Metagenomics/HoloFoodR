@@ -14,8 +14,8 @@ information, and
 details on the JSONAPI implementation.
 }
 \seealso{
-\link[SummarizedExperiment:SummarizedExperiment-class]{SummarizedExperiment}
-\link[MultiAssayExperiment:MultiAssayExperiment-class]{MultiAssaySummarizedExperiment}
+\link[TreeSummarizedExperiment:TreeSummarizedExperiment-class]{TreeSummarizedExperiment}
+\link[MultiAssayExperiment:MultiAssayExperiment-class]{MultiAssayExperiment}
 }
 \author{
 \strong{Maintainer}: Tuomas Borman \email{tuomas.v.borman@utu.fi} (\href{https://orcid.org/0000-0002-8563-8884}{ORCID})
