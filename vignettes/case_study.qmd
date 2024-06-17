@@ -382,38 +382,39 @@ altExp(mae_sub[[2]], "prev_genus")  <- agglomerateByPrevalence(mae_sub[[2]],
                         assay.type = "relabundance",                                        
                         rank = "Genus",
                         na.rm = TRUE,
-                        detection = 0.001)
+                        detection = 0.001,
+                        prevalence = 10 / 100)
 ```
 
 
-Agglomerate by genus and sort by the number of reads:
+Agglomerate by genus and sort by the number of reads.
+
+When using `onRankOnly = TRUE` genera become separate separate entities in
+`rowData`.
+
+The selection of the most prevalent genera is a hard topic. I have noticed that
+a flowering plant genus _Ammopiptanthus_ appears in the data. However, since
+it is part of the phylum Viridiplantae, I believe it is a false positive as
+_Viridiplantae_ includes green algae (see https://www-ncbi-nlm-nih-gov.ezproxy.utu.fi/books/NBK579936/).
+
+We a reasonable prevalence of 20%, and relative abundance detection threshold
+of 0.02%, only bacteria species remain.
 
 ```{r}
-# Agglomerate by genus
-agglomerated_genus <- agglomerateByPrevalence(mae_sub[[2]],
+# Agglomerate by prevalence by genus
+altExp(mae_sub[[2]], "prev_genus") <- agglomerateByPrevalence(mae_sub[[2]],
     assay.type = "relabundance",
     rank = "Genus",
     na.rm = TRUE,
-    onRankOnly = T
+    onRankOnly = T,
+    prevalence = 5 / 100,
+    detection = 0.002
   )
+
+assay(byrank, "counts")["Medicago", ]
+
+altExp(mae_sub[[2]], "prev_genus")
 ```
-
-
-Sort reads for the top 10 species.
-
-```{r}
-top_prevalent_genera <- sort(getPrevalence(mae_sub[[2]],
-    rank = "Genus",
-    na.rm = TRUE,
-    detection = 0.001,
-  ), decreasing = T) |> names() |> head(20)
-
-
-print(sort(assay(agglomerated_genus, "relabundance")["Aliivibrio", ], decreasing = T))
-```
-
-
-
 
 ```{r}
 # Add Treatment concentration to alternative experiment
@@ -470,7 +471,8 @@ we also indicate "control" and "treatment" groups with colors for initial
 assessment of difference between the groups.
 
 ```{r plot_abundance}
-plotAbundanceDensity(altExp(mae_sub[[2]], "prev_genus"), assay.type = "clr", colour_by = "treatment_group")
+plotAbundanceDensity(altExp(mae_sub[[2]], "prev_genus"), assay.type = "clr", colour_by = "treatment_group") +
+  labs(title = "Abundance plot")
 ```
 
 _Mycoplasma_ has bee shown to be associated with positive health effects
@@ -623,7 +625,7 @@ acids drive the difference in salmon weight.
 mae_day_60 <- mae_sub[, colData(mae[[2]])$trial.timepoint == 60]
 
 # Select only the columns we require
-colData(mae_day_60) <- colData(mae_day_60)[ , c("treatment_code", treatment_group, "host.gutted.mass", "mass_category"), drop = FALSE]
+colData(mae_day_60) <- colData(mae_day_60)[ , c("treatment_code", "mass_category"), drop = FALSE]
 
 # Extract only transformed metagenomic assays for MOFA+ analysis
 assays(mae_day_60[[2]]) <- assays(mae_day_60[[2]])[names(assays(mae_day_60[[2]])) %in% c("clr")]
@@ -696,21 +698,8 @@ also across both mass categories.
 ```{r var_factor3}
 plot_variance_explained(model, x = "group", y = "view", factor = 3, legend = T)
 ```
-Factor 3 is similar to factor 2 but the variance expliend numbers are slighly
+Factor 3 is similar to factor 2 but the variance explained numbers are slightly
 lower.
-
-```{r var_factor4}
-plot_variance_explained(model, x = "group", y = "view", factor = 4, legend = T)
-```
-Factor 4 switches back to fatty acid view, but the variance explained is much
-lower.
-
-```{r var_factor5}
-plot_variance_explained(model, x = "group", y = "view", factor = 5, legend = T)
-```
-
-Finally, Factor 5 explains the rest of the variance in fatty acid view.
-
 
 We can also summarize the total variance explained in one plot.
 
@@ -727,22 +716,19 @@ treatment).
 ```{r plot_factor}
 plot_factor(model,
   factors = c(1, 2, 3),
-  color_by = "treatment_group",
+  color_by = "mass_category",
   scale = TRUE,
   add_violin = TRUE,
   color_violin = TRUE,
-) +
-  labs(fill = "Treatment group") +
-  scale_fill_hue(
-    labels = c(
-      "Control", "Treatment"
-    )
-  )
+)
+# ) +
+#   labs(fill = "mass_category") +
+  # scale_fill_hue(
+  #   labels = c(
+  #     "Control", "Treatment"
+  #   )
+#   )
 ```
-Control and treatment groups are mixed which again suggests that there is no
-much difference between these two groups in both heavy and light salmons.
-
-
 ## Plot weights
 
 The next step is to have a deeper look inside the observations we found above.
