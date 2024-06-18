@@ -299,8 +299,6 @@ mae_sub <- mae # Keep original MAE intact
 mae_sub <- intersectColumns(mae_sub)
 ```
 
-
-
 Next, we transform the metagenomic and metabolomic data  to normalize the data,
 especially compositional data, such as metagenomic counts.
 
@@ -389,13 +387,12 @@ setdiff(colData(mae_sub)$animal, colData(mae_sub[[2]])$animal) # No difference
 colData(mae_sub[["metagenomic_amplicon"]])$treatment_concentration <-
   colData(mae_sub)$`Treatment concentration`
 
-# Add treatment_group (control vs. treatment to metagenomic data)
+# Add treatment_group (control vs. treatment) to metagenomic data
 metagenomic_data <- colData(mae_sub[["metagenomic_amplicon"]])
 metagenomic_data$treatment_group <-
   ifelse(metagenomic_data$treatment_concentration == 0, "control", "treatment")
 colData(mae_sub[["metagenomic_amplicon"]]) <- metagenomic_data
 ```
-
 ### Agglomerate by genus and sort by the number of reads.
 
 When using `onRankOnly = TRUE` genera become separate separate entities in
@@ -435,13 +432,38 @@ names(colData(mae_sub)) <- tolower(gsub(" ", "_", names(colData(mae_sub))))
 merged_coldata <- merge(x = colData(mae_sub), y = colData(mae_sub[[2]])[c("animal", "host.gutted.mass")], all.x = TRUE, by = "animal")
 rownames(merged_coldata) <- merged_coldata$animal
 colData(mae_sub) <- merged_coldata
+```
 
-# Add mass categories
+
+
+
+We need to add a few columns for the subsequent data analys steps. For instance,
+we are interested in understanding the difference between heavy and light salmons
+split into two groups by the median of their mass.
+
+```{r add_salmon_mass_category}
+# Add mass categories to main MAE object
+mass_median <- median(as.numeric(colData(mae_sub)[, "host.gutted.mass"]), na.rm = TRUE)
+colData(mae_sub)["mass_category"] <- ifelse(
+  as.numeric(colData(mae_sub)[, "host.gutted.mass"]) > mass_median, "heavy", "light"
+)
+
+# Add mass categories to alternative experiment with agglomerated by prevalence
+# metagenomic data
 mass_median <- median(as.numeric(colData(altExp(mae_sub[[2]]))[, "host.gutted.mass"]), na.rm = TRUE)
 colData(altExp(mae_sub[[2]], "prev_genus"))["mass_category"] <- ifelse(
   as.numeric(colData(altExp(mae_sub[[2]], "prev_genus"))[, "host.gutted.mass"]) > mass_median, "heavy", "light"
 )
 ```
+
+We are also interested in investigating potential differences between treatment
+and control.
+
+```{r add_treatment_group}
+colData(mae_sub)["treatment_group"] <-
+  ifelse(colData(mae_sub)$treatment_concentration == 0, "control", "treatment")
+```
+
 
 ## Data exploration
 
@@ -607,12 +629,6 @@ acids drive the difference in salmon weight.
 
 
 ```{r mofa_fit}
-# Add mass categories
-mass_median <- median(as.numeric(colData(mae_sub)[, "host.gutted.mass"]), na.rm = TRUE)
-colData(mae_sub)["mass_category"] <- ifelse(
-  as.numeric(colData(mae_sub)[, "host.gutted.mass"]) > mass_median, "heavy", "light"
-)
-
 # For MOFA, substitute metagenomic_amplicon experiment from MAE with agglomerated
 # by prevalence from alternative experiment
 mae_sub[[2]] <- altExp(mae_sub[[2]], "prev_genus")
@@ -621,7 +637,9 @@ mae_sub[[2]] <- altExp(mae_sub[[2]], "prev_genus")
 mae_day_60 <- mae_sub[, colData(mae_sub[[2]])$trial.timepoint == 60]
 
 
-# Select only the columns we require
+# Select only the column we require
+# It is a necessary step for MOFA as it will not run if there are more than one
+# column
 colData(mae_day_60) <- colData(mae_day_60)[ , c("mass_category"), drop = FALSE]
 
 # Extract only transformed metagenomic assays for MOFA+ analysis
@@ -830,24 +848,43 @@ control.
 
 ### Data preparation
 
+
+We will be only using data at day 60 after salmons have grown and been subjected
+(treatment) or not (control) to the algae meal.
+
 ```{r}
-# Get colData
-mae_coldata <- colData(mae_sub)
+# Get colData from MAE object at day 60
+mae_day_60_coldata <- colData(mae_day_60)
+
+# Add treatment_group to colData(mae_day_60) that was removed for MOFA
+# analysis
+# Add treatment_group (control vs. treatment) to colData of MAE at day 60
+mae_day_60_coldata <- merge(colData(mae_sub)["treatment_group"], colData(mae_day_60), by = 0)
+
+# Add host.gutted.weight to colData(mae_day_60)
+mae_day_60_coldata <- merge(colData(mae_sub)[c("host.gutted.mass", "animal")],
+                            mae_day_60_coldata,
+                            by = "animal", by.y = "Row.names")
+
 
 # Create feature dataframe for IntegratedLearner
-metabolomics_df <- mae_sub[[1]] |> assay("log10") |> as.data.frame()
-metagenomics_df <- mae_sub[[2]] |> assay("clr") |> as.data.frame()
+metabolomics_df <- mae_day_60[["fatty_acids_mg"]] |>
+  assay("log10") |>
+  as.data.frame()
+metagenomics_df <- mae_day_60[["metagenomic_amplicon"]] |>
+  assay("clr") |>
+  as.data.frame()
 
 # Replace "sample" names to animal accession numbers
-names(metabolomics_df) <- colData(mae_sub[[1]])[, "animal"]
-names(metagenomics_df) <- colData(mae_sub[[2]])[, "animal"]
+names(metabolomics_df) <- colData(mae_day_60[["fatty_acids_mg"]])[, "animal"]
+names(metagenomics_df) <- colData(mae_day_60[["metagenomic_amplicon"]])[, "animal"]
 
 # Join feature tables together
 feature_table <- rbind(metagenomics_df, metabolomics_df)
 
 # Sanity check: are columns from colData the same as rownames of feature table
-all(colnames(metagenomics_df) == rownames(colData(mae_sub))) # TRUE
-all(colnames(metabolomics_df) == rownames(colData(mae_sub))) # TRUE
+all(colnames(metagenomics_df) == rownames(colData(mae_day_60))) # TRUE
+all(colnames(metabolomics_df) == rownames(colData(mae_day_60))) # TRUE
 ```
 
 We also need to retain only features with non-zero variance
@@ -865,7 +902,7 @@ features_table <- as.data.frame(t(features_filtered))
 
 ```{r}
 # Y column for sample_metadata
-Y <- as.numeric(factor(mae_coldata$mass_category))
+Y <- as.numeric(factor(mae_day_60_coldata$mass_category))
 # Change all 1s to 0 and all 2s to 1
 Y <- ifelse(Y == 1, 0, ifelse(Y == 2, 1, Y))
 
@@ -947,7 +984,7 @@ rf_fit <- IntegratedLearner(feature_table = feature_table_train,
 plot.obj <- IntegratedLearner:::plot.learner(rf_fit)
 ```
 
-When using stacked approach or metabolites, the area-under-curve is very high: 0.98.
+When using stacked approach or metabolites.
 
 #### Trial time points
 
@@ -957,45 +994,45 @@ After encoding 1 is 60 days, and 0 is 0 days.
 
 ```{r}
 # Y column for sample_metadata
-Y <- as.numeric(factor(time_merged_coldata$trial.timepoint))
-# Change all 1s to 0 and all 2s to 1
-Y <- ifelse(Y == 1, 0, ifelse(Y == 2, 1, Y))
-
-# Create sample_metadata dataframe for IntegratedLearner
-sample_metadata <- data.frame(
-  Y = Y,
-  subjectID = colnames(metabolomics_df)
-)
-rownames(sample_metadata) <- colnames(metabolomics_df)
-
-# Split sample_metadata into train and validation dataframes
-# feature_table and feature_metadata remain the same
-sample_metadata_train <- sample_metadata[colnames(feature_table_train), ]
-sample_metadata_valid <- sample_metadata[colnames(feature_table_valid), ]
-
-# Sanity check
-all(rownames(sample_metadata_train) == colnames(feature_table_train)) # TRUE
-all(rownames(sample_metadata_valid) == colnames(feature_table_valid)) # TRUE
+# Y <- as.numeric(factor(time_merged_coldata$trial.timepoint))
+# # Change all 1s to 0 and all 2s to 1
+# Y <- ifelse(Y == 1, 0, ifelse(Y == 2, 1, Y))
+#
+# # Create sample_metadata dataframe for IntegratedLearner
+# sample_metadata <- data.frame(
+#   Y = Y,
+#   subjectID = colnames(metabolomics_df)
+# )
+# rownames(sample_metadata) <- colnames(metabolomics_df)
+#
+# # Split sample_metadata into train and validation dataframes
+# # feature_table and feature_metadata remain the same
+# sample_metadata_train <- sample_metadata[colnames(feature_table_train), ]
+# sample_metadata_valid <- sample_metadata[colnames(feature_table_valid), ]
+#
+# # Sanity check
+# all(rownames(sample_metadata_train) == colnames(feature_table_train)) # TRUE
+# all(rownames(sample_metadata_valid) == colnames(feature_table_valid)) # TRUE
 ```
 
 
 ```{r}
 # Random forest fit
-rf_fit <- IntegratedLearner:::IntegratedLearner(feature_table = feature_table_train,
-                               sample_metadata = sample_metadata_train,
-                               feature_metadata = feature_metadata,
-                               feature_table_valid = feature_table_valid,
-                               sample_metadata_valid = sample_metadata_valid,
-                               folds = 10,
-                               base_learner = "SL.randomForest",
-                               meta_learner = "SL.nnls.auc",
-                               verbose = TRUE,
-                               family = binomial())
+# rf_fit <- IntegratedLearner:::IntegratedLearner(feature_table = feature_table_train,
+#                                sample_metadata = sample_metadata_train,
+#                                feature_metadata = feature_metadata,
+#                                feature_table_valid = feature_table_valid,
+#                                sample_metadata_valid = sample_metadata_valid,
+#                                folds = 10,
+#                                base_learner = "SL.randomForest",
+#                                meta_learner = "SL.nnls.auc",
+#                                verbose = TRUE,
+#                                family = binomial())
 ```
 
 ```{r}
 # Visualization (trial time points)
-plot.obj <- IntegratedLearner:::plot.learner(rf_fit)
+# plot.obj <- IntegratedLearner:::plot.learner(rf_fit)
 ```
 
 Trial time points can also be predicted with high accuracy.
@@ -1007,8 +1044,12 @@ Finally, we can test whether predictions of treatment vs. control can be made.
 After encoding, control is 0, and treatment is 1.
 
 ```{r}
+metagenomic_data$treatment_group <-
+  ifelse(metagenomic_data$treatment_concentration == 0, "control", "treatment")
+colData(mae_sub[["metagenomic_amplicon"]]) <- metagenomic_data
+
 # Y column for sample_metadata
-Y <- as.numeric(factor(mae_coldata$treatment_group))
+Y <- as.numeric(factor(mae_day_60_coldata$treatment_group))
 
 # Change all 1s to 0 and all 2s to 1
 Y <- ifelse(Y == 1, 0, ifelse(Y == 2, 1, Y))
@@ -1242,7 +1283,7 @@ variable is continuous: `host.gutted.mass`.
 ```{r}
 # Y column for sample_metadata
 # Create sample_metadata dataframe for IntegratedLearner
-Y <- mae_coldata$host.gutted.mass
+Y <- as.numeric(mae_day_60_coldata$host.gutted.mass)
 
 sample_metadata_gutted_weight <- data.frame(
   Y = Y,
