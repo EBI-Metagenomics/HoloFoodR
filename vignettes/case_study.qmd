@@ -380,6 +380,16 @@ compute_prev <- function(genus) {
 compute_prev("Ammopiptanthus")
 ```
 
+```{r}
+# Compare two sets of animal samples in order to add the treatment concentration
+# column to metagenomic data
+setdiff(colData(mae_sub)$animal, colData(mae_sub[[2]])$animal) # No difference
+
+# We then can simply add treatment_concentration column to metagenomic data
+colData(mae_sub[["metagenomic_amplicon"]])$treatment_concentration <-
+  colData(mae_sub)$`Treatment concentration`
+```
+
 ### Agglomerate by genus and sort by the number of reads.
 
 When using `onRankOnly = TRUE` genera become separate separate entities in
@@ -409,15 +419,6 @@ altExp(mae_sub[[2]], "prev_genus")
 
 
 ```{r}
-# Standartize colData of metagenomic data
-#  names(colData(altExp(mae_sub[[2]], "prev_genus"))) <-
-#   colData(altExp(mae_sub[[2]], "prev_genus")) |> names() |> tolower()
-# 
-# names(colData(altExp(mae_sub[[2]], "prev_genus"))) <- 
-#   
-
-
-
 # Add Treatment concentration to alternative experiment
 # Note that host.diet.treatment.concentration variable is different,
 # and it is 0 for control and all other treatments except for maximum
@@ -428,7 +429,7 @@ colData(altExp(mae_sub[[2]], "prev_genus")) <-
 
 # Add control vs treatment groups
 colData(altExp(mae_sub[[2]], "prev_genus"))["treatment_group"] <- ifelse(
-  colData(altExp(mae_sub[[2]], "prev_genus"))[, "Treatment concentration"] == 0, "control", "treatment"
+  colData(altExp(mae_sub[[2]], "prev_genus"))[, "treatment_concentration"] == 0, "control", "treatment"
 )
 
 # Extract only transformed metabolomic assays
@@ -448,8 +449,6 @@ colData(altExp(mae_sub[[2]], "prev_genus"))["mass_category"] <- ifelse(
   as.numeric(colData(altExp(mae_sub[[2]], "prev_genus"))[, "host.gutted.mass"]) > mass_median, "heavy", "light"
 )
 ```
-
-
 
 ## Data exploration
 
