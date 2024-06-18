@@ -333,14 +333,14 @@ low-abundant species.
 x <- agglomerateByRank((mae_sub[[2]]), "Genus", na.rm = TRUE) |> assay("counts")
 x["Ammopiptanthus", ] |> hist(
   xlab="Number of reads",
-  breaks=10, 
+  breaks=10,
   freq = FALSE,
   main = "Ammopiptanthus")
 ```
 
 ```{r}
 # Remove taxonomy_unparsed column from rowData of metagenomic_amplicon
-rowData(mae_sub[[2]]) <- rowData(mae_sub[[2]])[, 1:(length(rowData(mae_sub[[2]])) - 1)] 
+rowData(mae_sub[[2]]) <- rowData(mae_sub[[2]])[, 1:(length(rowData(mae_sub[[2]])) - 1)]
 
 prevalence <- getPrevalence(mae_sub[[2]],
                         rank = "Genus",
@@ -388,6 +388,12 @@ setdiff(colData(mae_sub)$animal, colData(mae_sub[[2]])$animal) # No difference
 # We then can simply add treatment_concentration column to metagenomic data
 colData(mae_sub[["metagenomic_amplicon"]])$treatment_concentration <-
   colData(mae_sub)$`Treatment concentration`
+
+# Add treatment_group (control vs. treatment to metagenomic data)
+metagenomic_data <- colData(mae_sub[["metagenomic_amplicon"]])
+metagenomic_data$treatment_group <-
+  ifelse(metagenomic_data$treatment_concentration == 0, "control", "treatment")
+colData(mae_sub[["metagenomic_amplicon"]]) <- metagenomic_data
 ```
 
 ### Agglomerate by genus and sort by the number of reads.
@@ -405,7 +411,7 @@ of 0.02%, only bacteria species remain.
 
 ```{r}
 # Agglomerate by prevalence by genus
-altExp(mae_sub[[2]], "prev_genus") <- agglomerateByPrevalence(mae_sub[[2]],
+altExp(mae_sub[["metagenomic_amplicon"]], "prev_genus") <- agglomerateByPrevalence(mae_sub[["metagenomic_amplicon"]],
     assay.type = "relabundance",
     rank = "Genus",
     na.rm = TRUE,
@@ -419,19 +425,6 @@ altExp(mae_sub[[2]], "prev_genus")
 
 
 ```{r}
-# Add Treatment concentration to alternative experiment
-# Note that host.diet.treatment.concentration variable is different,
-# and it is 0 for control and all other treatments except for maximum
-# concentration (2, Jaguar treatment code)
-mae_coldata_animal <- colData(mae)[, c("animal", "Treatment concentration")]
-colData(altExp(mae_sub[[2]], "prev_genus")) <-
-  merge(colData(altExp(mae_sub[[2]], "prev_genus")), mae_coldata_animal, by = "animal")
-
-# Add control vs treatment groups
-colData(altExp(mae_sub[[2]], "prev_genus"))["treatment_group"] <- ifelse(
-  colData(altExp(mae_sub[[2]], "prev_genus"))[, "treatment_concentration"] == 0, "control", "treatment"
-)
-
 # Extract only transformed metabolomic assays
 assays(mae_sub[[1]]) <- assays(mae_sub[[1]])[names(assays(mae_sub[[1]])) %in% c("log10")]
 
@@ -521,22 +514,21 @@ plot <- Heatmap(
 draw(plot, padding = unit(c(2, 20, 2, 25), "mm"))
 ```
 
-## PCoA with beta-diversity
+## Principal coordinate analysis (PCoA) of beta-diversity
 
-We can perform PCoA analysis based on Bray-Curtis index and visualize the
-results with explained variances on axis.
+We can perform principle coordinate analysis with multi-dimensional scaling
+based on Bray-Curtis index and visualize the results with explained variances
+on axes.
 
-```{r}
-# Add treatment group (treatment or control) to metagenomic table
-tse <- mae_sub[[2]]
-colData(tse) <- merge(colData(tse), colData(mae_sub)[, c("animal", "treatment_group")], by = "animal")
-
-tse_pcoa <- runMDS(tse, "prev_genus"),
+```{r pcoa_beta_diversity1}
+# Run PCoA with multi-dimensional scaling and Bray-Curtis index
+tse_pcoa <- runMDS(mae_sub[["metagenomic_amplicon"]],
                    FUN = vegan::vegdist,
                    methods = "bray",
                    assay.type = "relabundance",
                    name = "MDS_bray")
 
+# Display dissimilarity on a plot
 p <- plotReducedDim(tse_pcoa, "MDS_bray",
                     colour_by = "treatment_group")
 
@@ -559,7 +551,7 @@ We can also apply different methods on the same data and visualize the
 results.
 
 ```{r}
-# Run NMDS on relabundance assay with Bray-Curtis distances
+# Run NMDS on relative abundance assay with Bray-Curtis distances
 tse_pcoa <- runNMDS(tse_pcoa,
                FUN = vegan::vegdist,
                method = "bray",
@@ -719,20 +711,20 @@ the first three factors and color the samples by treatment group (control and
 treatment).
 
 ```{r plot_factor}
+set.seed(42)
 plot_factor(model,
   factors = c(1, 2, 3),
   color_by = "mass_category",
   scale = TRUE,
   add_violin = TRUE,
   color_violin = TRUE,
-)
-# ) +
-#   labs(fill = "mass_category") +
-  # scale_fill_hue(
-  #   labels = c(
-  #     "Control", "Treatment"
-  #   )
-#   )
+) +
+  labs(fill = "Mass category") +
+  scale_fill_hue(
+    labels = c(
+      "Heavy", "Light"
+    )
+  )
 ```
 ## Plot weights
 
