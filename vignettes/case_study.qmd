@@ -742,7 +742,7 @@ custom_plotter <- function(name, factor) {
         model,
         view = name,
         factors = factor,
-        nfeatures = 10
+        nfeatures = 6
     ) +
     labs(title = paste0("Top weights of the ", name, " assay for factor ", factor))
     return(p)
@@ -802,36 +802,6 @@ plot_weights(
         axis.title.x = element_text(size = 15),
         axis.title.y = element_text(size = 15)
   )
-```
-
-
-
-## Plot Factors
-
-### Multiple Factors
-
-We can plot multiple latent factors on a scatter plot.
-
-```{r factor_visualization}
-plot_factors(model, factors = c(1, 2, 3), color_by = "mass_category")
-```
-
-
-No separation between heave and light salmons.
-
-## Plot covariation patterns
-
-```{r, fig.width=10}
-# Heatmap of relationships between factor and top features
-plot_data_heatmap(
-    model,
-    view = 1,
-    factor = 1,
-    features = 20,
-    cluster_rows = TRUE, cluster_cols = FALSE,
-    show_rownames = TRUE, show_colnames = FALSE,
-    main = "Heatmap of top 20 fatty acids weight captured by factor 1"
-)
 ```
 
 
@@ -928,7 +898,7 @@ feature_metadata$featureID <- as.factor(feature_metadata$featureID)
 ```
 
 ```{r}
-# Mass category distribution (1: heavy, 2: light)
+# Mass category distribution (0: heavy, 1: light)
 table(sample_metadata$Y)
 ```
 
@@ -948,9 +918,6 @@ feature_table_sample <- sample(
 feature_table_train <- feature_table[, feature_table_sample]
 feature_table_valid <- feature_table[, !feature_table_sample]
 
-# feature_metadata (probably not required)
-# feature_metadata_train <- data.frame(feature_metadata)
-# feature_metadata_valid <- data.frame(feature_metadata)
 
 # sample_metadata
 sample_metadata_train <- sample_metadata[colnames(feature_table_train), ]
