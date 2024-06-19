@@ -984,59 +984,6 @@ rf_fit <- IntegratedLearner(feature_table = feature_table_train,
 plot.obj <- IntegratedLearner:::plot.learner(rf_fit)
 ```
 
-When using stacked approach or metabolites.
-
-#### Trial time points
-
-There are two trial time points: 0 and 60 days.
-
-After encoding 1 is 60 days, and 0 is 0 days.
-
-```{r}
-# Y column for sample_metadata
-# Y <- as.numeric(factor(time_merged_coldata$trial.timepoint))
-# # Change all 1s to 0 and all 2s to 1
-# Y <- ifelse(Y == 1, 0, ifelse(Y == 2, 1, Y))
-#
-# # Create sample_metadata dataframe for IntegratedLearner
-# sample_metadata <- data.frame(
-#   Y = Y,
-#   subjectID = colnames(metabolomics_df)
-# )
-# rownames(sample_metadata) <- colnames(metabolomics_df)
-#
-# # Split sample_metadata into train and validation dataframes
-# # feature_table and feature_metadata remain the same
-# sample_metadata_train <- sample_metadata[colnames(feature_table_train), ]
-# sample_metadata_valid <- sample_metadata[colnames(feature_table_valid), ]
-#
-# # Sanity check
-# all(rownames(sample_metadata_train) == colnames(feature_table_train)) # TRUE
-# all(rownames(sample_metadata_valid) == colnames(feature_table_valid)) # TRUE
-```
-
-
-```{r}
-# Random forest fit
-# rf_fit <- IntegratedLearner:::IntegratedLearner(feature_table = feature_table_train,
-#                                sample_metadata = sample_metadata_train,
-#                                feature_metadata = feature_metadata,
-#                                feature_table_valid = feature_table_valid,
-#                                sample_metadata_valid = sample_metadata_valid,
-#                                folds = 10,
-#                                base_learner = "SL.randomForest",
-#                                meta_learner = "SL.nnls.auc",
-#                                verbose = TRUE,
-#                                family = binomial())
-```
-
-```{r}
-# Visualization (trial time points)
-# plot.obj <- IntegratedLearner:::plot.learner(rf_fit)
-```
-
-Trial time points can also be predicted with high accuracy.
-
 #### Treatment group
 
 Finally, we can test whether predictions of treatment vs. control can be made.
