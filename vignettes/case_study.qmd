@@ -434,26 +434,23 @@ rownames(merged_coldata) <- merged_coldata$animal
 colData(mae_sub) <- merged_coldata
 ```
 
-
-
-
 We need to add a few columns for the subsequent data analysis steps. For instance,
 we are interested in understanding the difference between heavy and light salmons
 split into two groups by the median of their mass.
 
 ```{r add_salmon_mass_category}
 # Add mass categories to main MAE object
-mass_median <- median(as.numeric(colData(mae_sub)[, "host.gutted.mass"]), na.rm = TRUE)
-colData(mae_sub)["mass_category"] <- ifelse(
-  as.numeric(colData(mae_sub)[, "host.gutted.mass"]) > mass_median, "heavy", "light"
-)
-
-# Add mass categories to alternative experiment with agglomerated by prevalence
-# metagenomic data
-mass_median <- median(as.numeric(colData(altExp(mae_sub[[2]]))[, "host.gutted.mass"]), na.rm = TRUE)
-colData(altExp(mae_sub[[2]], "prev_genus"))["mass_category"] <- ifelse(
-  as.numeric(colData(altExp(mae_sub[[2]], "prev_genus"))[, "host.gutted.mass"]) > mass_median, "heavy", "light"
-)
+# mass_median <- median(as.numeric(colData(mae_sub)[, "host.gutted.mass"]), na.rm = TRUE)
+# colData(mae_sub)["mass_category"] <- ifelse(
+#   as.numeric(colData(mae_sub)[, "host.gutted.mass"]) > mass_median, "heavy", "light"
+# )
+#
+# # Add mass categories to alternative experiment with agglomerated by prevalence
+# # metagenomic data
+# mass_median <- median(as.numeric(colData(altExp(mae_sub[[2]]))[, "host.gutted.mass"]), na.rm = TRUE)
+# colData(altExp(mae_sub[[2]], "prev_genus"))["mass_category"] <- ifelse(
+#   as.numeric(colData(altExp(mae_sub[[2]], "prev_genus"))[, "host.gutted.mass"]) > mass_median, "heavy", "light"
+# )
 ```
 
 We are also interested in investigating potential differences between treatment
@@ -463,7 +460,6 @@ and control.
 colData(mae_sub)["treatment_group"] <-
   ifelse(colData(mae_sub)$treatment_concentration == 0, "control", "treatment")
 ```
-
 
 ## Data exploration
 
@@ -636,6 +632,13 @@ mae_sub[[2]] <- altExp(mae_sub[[2]], "prev_genus")
 # Fetch only salmons at day 60
 mae_day_60 <- mae_sub[, colData(mae_sub[[2]])$trial.timepoint == 60]
 
+# Add mass categories to mae_day_60
+# This number is different from the media for the entire MAE object
+# as this one was filtered to include **only** salmons at day 60
+mass_median <- median(as.numeric(colData(mae_day_60)[, "host.gutted.mass"]), na.rm = TRUE)
+colData(mae_day_60)["mass_category"] <- ifelse(
+  as.numeric(colData(mae_day_60)[, "host.gutted.mass"]) > mass_median, "heavy", "light"
+)
 
 # Select only the column we require
 # It is a necessary step for MOFA as it will not run if there are more than one
@@ -699,7 +702,7 @@ Next, we will plot the variances explained by each factor.
 plot_variance_explained(model, x = "group", y = "view", factor = 1, legend = T)
 ```
 
-Factor 1 captures the variances explained in fatty acid view across both
+Factor 1 captures the variances explained in metagenomic view across both
 mass categories.
 
 
@@ -707,14 +710,13 @@ mass categories.
 plot_variance_explained(model, x = "group", y = "view", factor = 2, legend = T)
 ```
 
-On the other hand, factor 2 captures variance explained in metagenomic view,
+On the other hand, factor 2 captures variance explained in fatty acid view,
 also across both mass categories.
 
 ```{r var_factor3}
 plot_variance_explained(model, x = "group", y = "view", factor = 3, legend = T)
 ```
-Factor 3 is similar to factor 2 but the variance explained numbers are slightly
-lower.
+Factor 3 is similar to factor 2 but the variance explained numbers are lower.
 
 We can also summarize the total variance explained in one plot.
 
@@ -766,9 +768,9 @@ custom_plotter <- function(name, factor) {
     return(p)
 }
 
-custom_plotter("fatty_acids_mg", factor = 1)
-custom_plotter("metagenomic_amplicon", factor = 2)
-custom_plotter("metagenomic_amplicon", factor = 3)
+custom_plotter("metagenomic_amplicon", factor = 1)
+custom_plotter("fatty_acids_mg", factor = 2)
+custom_plotter("fatty_acids_mg", factor = 3)
 ```
 
 ### Plot weights per factor
@@ -779,12 +781,12 @@ overview of the impacts of different features on factors.
 ```{r weight_visualization2, fig.width=15}
 plot_weights(
     model,
-    view = 1,
+    view = 2,
     nfeatures = 10,
     factors = 1,
     text_size = 4,
     ) +
-    labs(title = "Top 10 weights for the first factor in fatty acid view") +
+    labs(title = "Top weights for the first factor in metagenomic view") +
   theme(plot.title = element_text(size = 20),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_text(size = 15)
@@ -794,12 +796,12 @@ plot_weights(
 ```{r}
 plot_weights(
     model,
-    view = 2,
+    view = 1,
     nfeatures = 10,
     factors = 2,
     text_size = 4,
     ) +
-    labs(title = "Top 10 weights for the second factor in metagenomic view") +
+    labs(title = "Top 10 weights for the second factor in fatty acid view") +
   theme(plot.title = element_text(size = 10),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_text(size = 15)
@@ -810,12 +812,12 @@ plot_weights(
 ```{r}
 plot_weights(
     model,
-    view = 2,
+    view = 1,
     nfeatures = 10,
     factors = 3,
     text_size = 4,
     ) +
-    labs(title = "Top 10 weights for the third factor in metagenomic view") +
+    labs(title = "Top 10 weights for the third factor in fatty acid view") +
   theme(plot.title = element_text(size = 10),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_text(size = 15)
