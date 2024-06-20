@@ -826,8 +826,41 @@ plot_weights(
 
 ## IntegratedLearner
 
-### Data preparation
+IntegratedLearner R package is build on SuperLearner package which uses Bayesian
+ensemble method to predict desired variables by utilizing the information across
+multi omic layers. The advantage of such method compared to traditional frequentist
+approaches is the option to account for quantifiable uncertainty.
 
+IntegratedLearner allow us to test multiple machine learning algorithms. Thus,
+we will test two: Random Forest and Bayesian Additive Regression Trees machines
+(BART machines). Both methods use trees as their basis and might sound very similar
+since they are both ensemble machine learning algorithms.
+
+Random Forest employs multiple decisions trees, where each tree performs a
+prediction to, for example, classify an object. In the final stage, the most
+"voted" class will be assigned to the object.
+
+BART machines algorithms employ regression trees, where each tree makes one _weak_
+prediction, i.e., explains a tiny component of an outcome. BART then combines
+these _weak_ predictions to create a stronger prediction, while accounting for
+uncertainty.
+
+Random Forest algorithm is used for classification. In our case, we apply it to
+investigate whether we can reliable classify salmons into "heavy" (above mass
+median) or "light" (below or equal to mass) salmons. We also attempt to classify
+salmons into "treatment" and "control" groups. Previously, we did not see any
+difference between the groups when using Bray-Curtis distances for metagenomic
+data. Thus, we are interested in understanding whether we are able to classify
+them into two different groups if we combine the omic data.
+
+BART machines algorithm can be used for continuous data, such as host gutted mass.
+We are not directly interested in predicting salmon masses but rather in investigating
+what species and fatty acids have the greatest impact on the mass. With BART
+machines, we can use variable inclusion proportion to estimate the weight each
+feature holds in prediction results. It allows us to indirectly list
+the most important features from metagenomic and fatty acid datasets.
+
+### Data preparation
 
 We will be only using data at day 60 after salmons have grown and been subjected
 (treatment) or not (control) to the algae meal.
@@ -836,8 +869,8 @@ We will be only using data at day 60 after salmons have grown and been subjected
 # Get colData from MAE object at day 60
 mae_day_60_coldata <- colData(mae_day_60)
 
-# Add treatment_group to colData(mae_day_60) that was removed for MOFA
-# analysis
+# Add treatment_group to colData(mae_day_60) that was removed for MOFA analysis
+
 # Add treatment_group (control vs. treatment) to colData of MAE at day 60
 mae_day_60_coldata <- merge(colData(mae_sub)["treatment_group"], colData(mae_day_60), by = 0)
 
@@ -845,7 +878,6 @@ mae_day_60_coldata <- merge(colData(mae_sub)["treatment_group"], colData(mae_day
 mae_day_60_coldata <- merge(colData(mae_sub)[c("host.gutted.mass", "animal")],
                             mae_day_60_coldata,
                             by = "animal", by.y = "Row.names")
-
 
 # Create feature dataframe for IntegratedLearner
 metabolomics_df <- mae_day_60[["fatty_acids_mg"]] |>
