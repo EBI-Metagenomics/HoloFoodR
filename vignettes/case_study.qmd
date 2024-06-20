@@ -824,28 +824,6 @@ plot_weights(
   )
 ```
 
-
-## Non-linear dimensionality reduction
-
-Finally, we can use trained MOFA model to cluster the samples by using non-linear methods, such as Uniform Manifold Approximation and Projection for Dimension Reduction (UMAP).
-
-### UMAP
-
-```{r umap}
-set.seed(142)
-model <- run_umap(model)
-
-plot_dimred(
-  model,
-  method = "UMAP",
-  color_by = "mass_category"
-) +
-  labs(title = "UMAP plot of MOFA model by mass category")
-```
-
-Three samples have high abundances of _Mycoplasma_ as well as one sample in
-control.
-
 ## IntegratedLearner
 
 ### Data preparation
