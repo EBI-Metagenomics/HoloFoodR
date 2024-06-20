@@ -859,13 +859,15 @@ what species and fatty acids have the greatest impact on the mass. With BART
 machines, we can use variable inclusion proportion to estimate the weight each
 feature holds in prediction results. It allows us to indirectly list
 the most important features from metagenomic and fatty acid datasets.
+Combined with the relative importance of each layer (metagenomics or fatty acids),
+we can output the most promising features for the subsquent analyses.
 
 ### Data preparation
 
 We will be only using data at day 60 after salmons have grown and been subjected
-(treatment) or not (control) to the algae meal.
+(treatment) or not (control) to the algae meal. 
 
-```{r}
+```{r extract_mae_data_day_60}
 # Get colData from MAE object at day 60
 mae_day_60_coldata <- colData(mae_day_60)
 
@@ -878,7 +880,13 @@ mae_day_60_coldata <- merge(colData(mae_sub)["treatment_group"], colData(mae_day
 mae_day_60_coldata <- merge(colData(mae_sub)[c("host.gutted.mass", "animal")],
                             mae_day_60_coldata,
                             by = "animal", by.y = "Row.names")
+```
 
+We also need to prepare the data for the IntegratedLearner package. We are
+using MultiAssayExperiment container, so extracting the data is trivial and
+can be performed with basic R transformations.
+
+```{r prepare_data_integrated_learner1}
 # Create feature dataframe for IntegratedLearner
 metabolomics_df <- mae_day_60[["fatty_acids_mg"]] |>
   assay("log10") |>
@@ -899,9 +907,10 @@ all(colnames(metagenomics_df) == rownames(colData(mae_day_60))) # TRUE
 all(colnames(metabolomics_df) == rownames(colData(mae_day_60))) # TRUE
 ```
 
-We also need to retain only features with non-zero variance
+We also need to retain only features with non-zero variance as these the most
+useful for the algorithm.
 
-```{r feature-table-remove-zero-variance}
+```{r feature_table_remove_zero_variance}
 # Transpose feature table for subsequent filtering
 feature_table_t <- as.data.frame(t(feature_table))
 
@@ -911,6 +920,7 @@ features_filtered <- feature_table_t[, -nzv]
 features_table <- as.data.frame(t(features_filtered))
 ```
 
+Next we need to encode mass category string into 0s and 1s.
 
 ```{r}
 # Y column for sample_metadata
@@ -959,14 +969,18 @@ all(colnames(feature_table) == rownames(sample_metadata)) # TRUE
 
 ### Random forest algorithm
 
-```{r}
+We will split data into train and validation datasets to train the data and
+then perform independent validation.
+
+```{r prepared_data_random_forest}
+# Set seed for reproduciblity
 set.seed(423)
+
 # Split dataframes into train and validation dataframes
 feature_table_sample <- sample(
   c(TRUE, FALSE), ncol(feature_table), replace = TRUE, prob = c(0.67, 0.33))
 feature_table_train <- feature_table[, feature_table_sample]
 feature_table_valid <- feature_table[, !feature_table_sample]
-
 
 # sample_metadata
 sample_metadata_train <- sample_metadata[colnames(feature_table_train), ]
@@ -977,7 +991,10 @@ all(rownames(sample_metadata_train) == colnames(feature_table_train)) # TRUE
 all(rownames(sample_metadata_valid) == colnames(feature_table_valid)) # TRUE
 ```
 
-```{r}
+We apply Random Forest as our base model for per-layer predictions, and non
+negative least squares method to make final predictions.
+
+```{r fit_random_forest}
 # Random forest fit
 rf_fit <- IntegratedLearner(feature_table = feature_table_train,
                                sample_metadata = sample_metadata_train,
@@ -998,7 +1015,7 @@ plot.obj <- IntegratedLearner:::plot.learner(rf_fit)
 
 #### Treatment group
 
-Finally, we can test whether predictions of treatment vs. control can be made.
+We can test whether predictions of treatment versus control can be made.
 
 After encoding, control is 0, and treatment is 1.
 
@@ -1032,6 +1049,8 @@ all(rownames(sample_metadata_train) == colnames(feature_table_train)) # TRUE
 all(rownames(sample_metadata_valid) == colnames(feature_table_valid)) # TRUE
 ```
 
+We apply th same non-negative least square meta-learner as before.
+
 ```{r}
 # Random forest fit for treatment vs. control
 rf_fit <- IntegratedLearner:::IntegratedLearner(feature_table = feature_table_train,
@@ -1061,8 +1080,7 @@ rf_fit$yhat.train
 
 #### host.gutted.mass
 
-For BART machine algorithm we are using full datasets, and the response
-variable is continuous: `host.gutted.mass`.
+For BART machine algorithm we are using the continuous response variable: `host.gutted.mass`.
 
 
 ```{r}
@@ -1104,6 +1122,8 @@ bart_fit <- IntegratedLearner:::IntegratedLearner(
 plot.obj <- IntegratedLearner:::plot.learner(bart_fit)
 ```
 
+Since we are employing Bayestin statistics we can generate credible intervals
+
 ```{r}
 # Generate credible intervals
 # Requires longitudinal data for extracting very important features
@@ -1135,6 +1155,11 @@ points(bart_dataY[temp])
 title(main ="", xlab = "Observations", ylab = "Host gutted mass (in gramms)",
        line = NA, outer = FALSE)
 ```
+
+
+Finally, as stated in the introduction to IntegratedLearner section,
+we are able to output the relative importance of each layer and the most important
+features in each layer.
 
 ```{r}
 ### Find most important features ###
