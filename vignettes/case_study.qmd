@@ -244,7 +244,7 @@ saveRDS(object = mae, file = "../inst/extdata/salmon_mae.RDS")
 Now we can pre-process data and prepared it for subsequent analyses.
 
 ```{r load_data}
-path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
+# path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
 #salmon_mae <- readRDS(path)
 # mae <- readRDS(path)
 mae <- readRDS("../inst/extdata/salmon_mae.RDS")
@@ -271,7 +271,7 @@ assay(mae[[1]], "counts") <- assay
 
 # From metagenomic data, remove those rows that do not have taxonomy info
 not_empty <- !apply(rowData(mae[[2]]), 1, function(x) all(is.na(x)))
-mae[[2]] <- mae[[2]][ not_empty, ]
+mae[[2]] <- mae[[2]][not_empty, ]
 ```
 
 For demonstration purposes, we will focus on investigating two experiments
@@ -358,26 +358,6 @@ sort(prevalence, decreasing = TRUE) |> head(90)
 prevalence |> hist(breaks = 5)
 ```
 
-
-```{r}
-# Manually compute prevalence
-compute_prev <- function(genus) {
-  agglomerated_genus <- agglomerateByRank(mae_sub[[2]],
-    "Genus",
-    assay.type = "relabundance",
-    na.rm = TRUE
-  )
-  assay <- assay(agglomerated_genus, "relabundance")[genus, ]
-  logical_ind <- assay(agglomerated_genus, "relabundance")[genus, ] > 0.001
-
-
-  prev <- length(assay[logical_ind]) / dim(mae_sub[[2]])[2]
-  return(prev)
-}
-
-compute_prev("Ammopiptanthus")
-```
-
 ```{r}
 # Compare two sets of animal samples in order to add the treatment concentration
 # column to metagenomic data
@@ -393,6 +373,7 @@ metagenomic_data$treatment_group <-
   ifelse(metagenomic_data$treatment_concentration == 0, "control", "treatment")
 colData(mae_sub[["metagenomic_amplicon"]]) <- metagenomic_data
 ```
+
 ### Agglomerate by genus and sort by the number of reads.
 
 When using `onRankOnly = TRUE` genera become separate separate entities in
@@ -437,21 +418,6 @@ colData(mae_sub) <- merged_coldata
 We need to add a few columns for the subsequent data analysis steps. For instance,
 we are interested in understanding the difference between heavy and light salmons
 split into two groups by the median of their mass.
-
-```{r add_salmon_mass_category}
-# Add mass categories to main MAE object
-# mass_median <- median(as.numeric(colData(mae_sub)[, "host.gutted.mass"]), na.rm = TRUE)
-# colData(mae_sub)["mass_category"] <- ifelse(
-#   as.numeric(colData(mae_sub)[, "host.gutted.mass"]) > mass_median, "heavy", "light"
-# )
-#
-# # Add mass categories to alternative experiment with agglomerated by prevalence
-# # metagenomic data
-# mass_median <- median(as.numeric(colData(altExp(mae_sub[[2]]))[, "host.gutted.mass"]), na.rm = TRUE)
-# colData(altExp(mae_sub[[2]], "prev_genus"))["mass_category"] <- ifelse(
-#   as.numeric(colData(altExp(mae_sub[[2]], "prev_genus"))[, "host.gutted.mass"]) > mass_median, "heavy", "light"
-# )
-```
 
 We are also interested in investigating potential differences between treatment
 and control.
