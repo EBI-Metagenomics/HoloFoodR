@@ -1,19 +1,20 @@
----
-title: "ECCB Paper HoloFood Salmon - MOFA2 Analysis"
-date: "`r Sys.Date()`"
-package: HoloFoodR
-output:
-    BiocStyle::html_document:
-        fig_height: 7
-        fig_width: 10
-        toc: yes
-        toc_depth: 2
-        number_sections: true
-vignette: >
-    %\VignetteIndexEntry{mia}
-    %\VignetteEngine{knitr::rmarkdown}
-    %\VignetteEncoding{UTF-8}
----
+ ---
+ title: "HoloFoodR R package — case study"
+ date: "`r Sys.Date()`"
+ package: HoloFoodR
+ output:
+     BiocStyle::html_document:
+         fig_height: 7
+         fig_width: 10
+         toc: yes
+         toc_depth: 2
+         number_sections: true
+ vignette: >
+     %\VignetteIndexEntry{mia}
+     %\VignetteEngine{knitr::rmarkdown}
+     %\VignetteEncoding{UTF-8}
+ ---
+
 
 ```{r, include = FALSE}
 library(knitr)
@@ -306,7 +307,7 @@ We log-transform fatty acid assay to approximate it to normal distribution.
 
 ```{r transformation_fatty_acids}
 # Transform fatty acids in mg with log10
-mae_sub[["fatty_acids_mg"]] <- transformAssay(
+mae_sub[[1]] <- transformAssay(
     mae_sub[[1]],
     assay.type = "counts",
     MARGIN = "samples",
@@ -317,24 +318,19 @@ mae_sub[["fatty_acids_mg"]] <- transformAssay(
 
 ```{r transformation_metagenomics}
 # Transform microbiome with centered log-ratio method
-mae_sub[["metagenomic_amplicon"]] <- transformAssay(
-    mae_sub[["metagenomic_amplicon"]], method = "relabundance")
-mae_sub[["metagenomic_amplicon"]] <- transformAssay(
-    mae_sub[["metagenomic_amplicon"]], assay.type = "relabundance", method = "clr", pseudocount = TRUE)
+mae_sub[[2]] <- transformAssay(
+    mae_sub[[2]], method = "relabundance")
+mae_sub[[2]] <- transformAssay(
+    mae_sub[[2]],
+    assay.type = "relabundance",
+    method = "clr",
+    pseudocount = TRUE
+  )
 ```
 
 Next, we can agglomerate features by prevalence to reduce the number of
 low-abundant species.
 
-
-```{r}
-x <- agglomerateByRank((mae_sub[[2]]), "Genus", na.rm = TRUE) |> assay("counts")
-x["Ammopiptanthus", ] |> hist(
-  xlab="Number of reads",
-  breaks=10,
-  freq = FALSE,
-  main = "Ammopiptanthus")
-```
 
 ```{r}
 # Remove taxonomy_unparsed column from rowData of metagenomic_amplicon
@@ -358,20 +354,20 @@ sort(prevalence, decreasing = TRUE) |> head(90)
 prevalence |> hist(breaks = 5)
 ```
 
-```{r}
+```{r add_treatment_group1}
 # Compare two sets of animal samples in order to add the treatment concentration
 # column to metagenomic data
 setdiff(colData(mae_sub)$animal, colData(mae_sub[[2]])$animal) # No difference
 
 # We then can simply add treatment_concentration column to metagenomic data
-colData(mae_sub[["metagenomic_amplicon"]])$treatment_concentration <-
+colData(mae_sub[[2]])$treatment_concentration <-
   colData(mae_sub)$`Treatment concentration`
 
 # Add treatment_group (control vs. treatment) to metagenomic data
-metagenomic_data <- colData(mae_sub[["metagenomic_amplicon"]])
+metagenomic_data <- colData(mae_sub[[2]])
 metagenomic_data$treatment_group <-
   ifelse(metagenomic_data$treatment_concentration == 0, "control", "treatment")
-colData(mae_sub[["metagenomic_amplicon"]]) <- metagenomic_data
+colData(mae_sub[[2]]) <- metagenomic_data
 ```
 
 ### Agglomerate by genus and sort by the number of reads.
@@ -389,7 +385,7 @@ of 0.02%, only bacteria species remain.
 
 ```{r}
 # Agglomerate by prevalence by genus
-altExp(mae_sub[["metagenomic_amplicon"]], "prev_genus") <- agglomerateByPrevalence(mae_sub[["metagenomic_amplicon"]],
+altExp(mae_sub[[2]], "prev_genus") <- agglomerateByPrevalence(mae_sub[[2]],
     assay.type = "relabundance",
     rank = "Genus",
     na.rm = TRUE,
@@ -422,7 +418,7 @@ split into two groups by the median of their mass.
 We are also interested in investigating potential differences between treatment
 and control.
 
-```{r add_treatment_group}
+```{r add_treatment_group2}
 colData(mae_sub)["treatment_group"] <-
   ifelse(colData(mae_sub)$treatment_concentration == 0, "control", "treatment")
 ```
@@ -460,7 +456,8 @@ function.
 
 
 ```{r filter_0_sd}
-altExp(mae_sub[[1]], "not_sd_0") <- mae_sub[[1]][apply(assay(mae_sub[[1]], "log10"), 1, sd) != 0, ]
+tse_filter <- mae_sub[[1]][apply(assay(mae_sub[[1]], "log10"), 1, sd) != 0, ]
+altExp(mae_sub[[1]], "not_sd_0") <- tse_filter
 ```
 
 
