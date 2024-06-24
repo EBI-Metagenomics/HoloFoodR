@@ -504,9 +504,23 @@ We can perform principle coordinate analysis with multi-dimensional scaling
 based on Bray-Curtis index and visualize the results with explained variances
 on axes.
 
+In the following workflow steps, we will only use salmons at day 60 because, they
+might be differ from each other while salmons at day 0 are more similar to each
+other despite being categorized into "control" and "treatment" groups, although
+they did not have any treatment.
+
+```{r fetch_day60_salmons}
+# Substitute original metagenomic TreeSummarizedExperiment with agglomerated
+# version
+mae_sub[[2]] <- altExp(mae_sub[[2]], "prev_genus")
+
+# Fetch only salmons at day 60
+mae_day_60 <- mae_sub[, colData(mae_sub[[2]])$trial.timepoint == 60]
+```
+
 ```{r pcoa_beta_diversity1}
 # Run PCoA with multi-dimensional scaling and Bray-Curtis index
-tse_pcoa <- runMDS(mae_sub[["metagenomic_amplicon"]],
+tse_pcoa <- runMDS(mae_day_60[["metagenomic_amplicon"]],
                    FUN = vegan::vegdist,
                    methods = "bray",
                    assay.type = "relabundance",
@@ -590,14 +604,7 @@ treatment groups, we would like to know if any of metagenomic species or fatty
 acids drive the difference in salmon weight.
 
 
-```{r mofa_fit}
-# For MOFA, substitute metagenomic_amplicon experiment from MAE with agglomerated
-# by prevalence from alternative experiment
-mae_sub[[2]] <- altExp(mae_sub[[2]], "prev_genus")
-
-# Fetch only salmons at day 60
-mae_day_60 <- mae_sub[, colData(mae_sub[[2]])$trial.timepoint == 60]
-
+```{r mofa_fit} 
 # Add mass categories to mae_day_60
 # This number is different from the media for the entire MAE object
 # as this one was filtered to include **only** salmons at day 60
@@ -655,7 +662,7 @@ plot_factor_cor(
   mar=c(0, 0, 2, 0),
 )
 ```
-Overall, we do not observe highly correlated factors which is the
+Overall, we do not observe highly correlated factors which is the a good sign.
 
 ## Visualization of MOFA analysis
 
