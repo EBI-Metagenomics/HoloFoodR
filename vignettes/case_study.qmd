@@ -351,7 +351,7 @@ prevalence <- getPrevalence(mae_sub[[2]],
 prevalence <- prevalence[prevalence != 0]
 
 # Sort prevalence in decreasing order
-sort(prevalence, decreasing = T) |> head(90)
+sort(prevalence, decreasing = TRUE) |> head(90)
 ```
 
 ```{r}
@@ -699,7 +699,7 @@ Next, we will plot the variances explained by each factor.
 
 
 ```{r var_factor1}
-plot_variance_explained(model, x = "group", y = "view", factor = 1, legend = T)
+plot_variance_explained(model, x = "group", y = "view", factor = 1, legend = TRUE)
 ```
 
 Factor 1 captures the variances explained in metagenomic view across both
@@ -707,14 +707,14 @@ mass categories.
 
 
 ```{r var_factor2}
-plot_variance_explained(model, x = "group", y = "view", factor = 2, legend = T)
+plot_variance_explained(model, x = "group", y = "view", factor = 2, legend = TRUE)
 ```
 
 On the other hand, factor 2 captures variance explained in fatty acid view,
 also across both mass categories.
 
 ```{r var_factor3}
-plot_variance_explained(model, x = "group", y = "view", factor = 3, legend = T)
+plot_variance_explained(model, x = "group", y = "view", factor = 3, legend = TRUE)
 ```
 Factor 3 is similar to factor 2 but the variance explained numbers are lower.
 
