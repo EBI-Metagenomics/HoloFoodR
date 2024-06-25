@@ -30,7 +30,7 @@ packages <- c(
     "ggplot2", "knitr", "mia", "dplyr", "miaViz", "MOFA2",  "patchwork", "reticulate",
     "MGnifyR", "reshape2", "GGally", "IntegratedLearner", "SuperLearner",
     "bartMachine", "mcmcplots", "tidyverse", "UpSetR", "shadowtext", "ComplexHeatmap",
-    "stringr", "cowplot", "caret", "scater"
+    "stringr", "cowplot", "caret", "scater", "ggsignif"
     )
 
 # Get packages that are already installed installed
@@ -445,6 +445,52 @@ _Mycoplasma_ has bee shown to be associated with positive health effects
 predominant in salmons (https://doi-org.ezproxy.utu.fi/10.1007/s00248-002-1011-6).
 
 The addition of treatment does not change the weight of salmons.
+
+### Alpha-diversity
+
+We can measure alpha-diversity of the microbiome experiment. This type of
+diversity is within the same sample.
+
+```{r richness}
+tse <- mae[[2]]
+
+# Estimate (observed) richness
+tse <- mia::estimateRichness(tse, 
+                             assay.type = "counts", 
+                             index = "observed", 
+                             name="observed")
+
+# Add treatment vs. control into tse object at day 60
+day60 <- colData(tse)$trial.timepoint == 60
+tse <- tse[, day60]
+colData(tse)$treatment_group <- ifelse(colData(tse)$host.diet.treatment.concentration == 0,
+                                       "control", "treatment")
+
+
+plotColData(tse,
+            "observed",
+            "treatment_group")
+```
+
+```{r shannon_diversity}
+tse <- mia::estimateDiversity(tse, 
+                              assay.type = "counts",
+                              index = "shannon", 
+                              name = "shannon")
+
+df <- as.data.frame(colData(tse))
+df$treatment_group <- factor(df$treatment_group)
+
+comb <- split(t(combn(levels(df$treatment_group), 2)), 
+           seq(nrow(t(combn(levels(df$treatment_group), 2)))))
+
+ggplot(df, aes(x = treatment_group, y = shannon)) +
+  geom_boxplot(outlier.shape = NA) + 
+  geom_jitter(width = 0.2) + 
+  geom_signif(comparisons = comb, map_signif_level = FALSE,
+              correction = "fdr") +
+  theme(text = element_text(size = 10))
+```
 
 ## Perform cross-association analysis
 
