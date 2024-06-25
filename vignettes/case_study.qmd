@@ -29,7 +29,7 @@ knitr::opts_chunk$set(
 packages <- c(
     "ggplot2", "knitr", "mia", "dplyr", "miaViz", "MOFA2",  "patchwork", "reticulate",
     "MGnifyR", "reshape2", "GGally", "IntegratedLearner", "SuperLearner",
-    "bartMachine", "mcmcplots", "tidyverse", "UpSetR", "shadowtext", "ComplexHeatmap",
+    "bartMachine", "mcmcplots", "tidyverse", "shadowtext", "ComplexHeatmap",
     "stringr", "cowplot", "caret", "scater", "ggsignif"
     )
 
