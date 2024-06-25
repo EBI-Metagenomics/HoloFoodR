@@ -494,14 +494,25 @@ ggplot(df, aes(x = treatment_group, y = shannon)) +
 
 ## Perform cross-association analysis
 
-Before cross-association analysis, we can filter out all features with
-standard deviation equal to 0 to avoid warnings from the cross-association
-function.
+Before cross-association analysis, we can filter out all features with low
+standard deviation to exclude potential false positives from cross-association
+analysis. To decide the threshold of filtering, we can use a histogram of standard
+deviations
 
 
-```{r filter_0_sd}
-# Filter out out zero-variance features
-tse_filter <- mae_sub[[1]][apply(assay(mae_sub[[1]], "log10"), 1, sd) != 0, ]
+```{r standard_deviation_hist}
+sd <- as.data.frame(apply(assay(mae_sub[[1]], "log10"), 1, sd))
+colnames(sd) <- c("standard_deviation")
+
+# Histogram of standard deviations
+p <- ggplot(sd, aes(x = standard_deviation)) +
+  geom_histogram(bins = 7)
+p
+```
+A good threshold would be at 0.1.
+
+```{r filter_low_sd}
+tse_filter <- mae_sub[[1]][apply(assay(mae_sub[[1]], "log10"), 1, sd) > 0.1, ]
 altExp(mae_sub[[1]], "not_sd_0") <- tse_filter
 ```
 
