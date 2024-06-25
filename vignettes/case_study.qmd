@@ -121,9 +121,6 @@ saveRDS(object = mae, file = "../inst/extdata/salmon_mae_without_mgnify.RDS")
 
 # Rename FATTY ACIDS MG to more readable format
 names(mae)[1] <- tolower(gsub(" ", "_", names(mae)[1]))
-
-# Show available salmon experiments
-experiments(mae)
 ```
 
 ### Fetch metagenomic data from MGnify
@@ -132,6 +129,8 @@ HoloFood database does not include the data for metagenomic assemblies, which
 can be retrieved from the [MGnify portal](https://www.ebi.ac.uk/metagenomics).
 
 ```{r get_metagenomic_samples}
+#| include: false
+
 # Create MGnify object
 mg <- MgnifyClient(
   useCache = TRUE,
@@ -456,12 +455,14 @@ function.
 
 
 ```{r filter_0_sd}
+# Filter out out zero-variance features
 tse_filter <- mae_sub[[1]][apply(assay(mae_sub[[1]], "log10"), 1, sd) != 0, ]
 altExp(mae_sub[[1]], "not_sd_0") <- tse_filter
 ```
 
 
 ```{r cross_association_analysis}
+#| include: false
 #| fig-width: 15
 #| fig-height: 15
 
