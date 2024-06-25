@@ -894,18 +894,36 @@ features_table <- as.data.frame(t(features_filtered))
 
 Next we need to encode mass category string into 0s and 1s.
 
-```{r}
-# Y column for sample_metadata
-Y <- as.numeric(factor(mae_day_60_coldata$mass_category))
-# Change all 1s to 0 and all 2s to 1
-Y <- ifelse(Y == 1, 0, ifelse(Y == 2, 1, Y))
+```{r prepare_integrated_learner_functions}
+create_sample_metadata <- function(df, Y, subjectID, factor) {
+  if (factor == TRUE) {
+    Y <- as.numeric(factor(df[[Y]]))
 
-# Create sample_metadata dataframe for IntegratedLearner
-sample_metadata <- data.frame(
-  Y = Y,
-  subjectID = colnames(metabolomics_df)
-)
-rownames(sample_metadata) <- colnames(metabolomics_df)
+    # Change all 1s to 0 and all 2s to 1
+    Y <- ifelse(Y == 1, 0, ifelse(Y == 2, 1, Y))
+    sample_metadata <- data.frame(
+      Y = Y,
+      subjectID = subjectID
+    )
+  } else {
+    Y <- as.numeric(df[[Y]])
+    sample_metadata <- data.frame(
+      Y = Y,
+      subjectID = subjectID
+    )
+  }
+  rownames(sample_metadata) <- subjectID
+  return(sample_metadata)
+}
+```
+
+
+
+```{r}
+sample_metadata <- create_sample_metadata(df = mae_day_60_coldata,
+                                          Y = "mass_category",
+                                          subjectID = colnames(metabolomics_df),
+                                          factor = TRUE)
 
 # Create feature metadata dataframe for metagenomics
 feature_metadata_metagenomics <- data.frame(
@@ -994,22 +1012,13 @@ After encoding, control is 0, and treatment is 1.
 ```{r}
 metagenomic_data$treatment_group <-
   ifelse(metagenomic_data$treatment_concentration == 0, "control", "treatment")
-# colData(mae_sub[["metagenomic_amplicon"]]) <- metagenomic_data
 
-# Set response variable Y to control vs. treatment
-Y <- as.numeric(factor(mae_day_60_coldata$treatment_group))
-
-# Change all 1s to 0 and all 2s to 1
 # Control: 0
 # Treatment: 1
-Y <- ifelse(Y == 1, 0, ifelse(Y == 2, 1, Y))
-
-# Create sample_metadata dataframe for IntegratedLearner
-sample_metadata <- data.frame(
-  Y = Y,
-  subjectID = colnames(metabolomics_df)
-)
-rownames(sample_metadata) <- colnames(metabolomics_df)
+sample_metadata <- create_sample_metadata(df = mae_day_60_coldata,
+                                          Y = "treatment_group",
+                                          subjectID = colnames(metabolomics_df),
+                                          factor = TRUE)
 
 # Split sample_metadata into train and validation dataframes
 # feature_table and feature_metadata remain the same
@@ -1056,13 +1065,12 @@ For BART machine algorithm we are using the continuous response variable: `host.
 
 
 ```{r}
-# Y column for sample_metadata
 # Create sample_metadata dataframe for IntegratedLearner
-Y <- as.numeric(mae_day_60_coldata$host.gutted.mass)
-sample_metadata_gutted_weight <- data.frame(
-  Y = Y,
-  subjectID = colnames(metabolomics_df)
-)
+sample_metadata_gutted_weight <- create_sample_metadata(df = mae_day_60_coldata,
+                                                        Y = "host.gutted.mass",
+                                                        subjectID = colnames(metabolomics_df),
+                                                        factor = FALSE)
+
 # Add rownames to animal HoloFood IDs
 rownames(sample_metadata_gutted_weight) <- sample_metadata_gutted_weight$subjectID
 sample_metadata_gutted_weight_train <- sample_metadata_gutted_weight[sample_metadata_train$subjectID, ]
