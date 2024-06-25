@@ -1,19 +1,18 @@
- ---
- title: "HoloFoodR R package — case study"
- date: "`r Sys.Date()`"
- package: HoloFoodR
- output:
-     BiocStyle::html_document:
-         fig_height: 7
-         fig_width: 10
-         toc: yes
-         toc_depth: 2
-         number_sections: true
- vignette: >
-     %\VignetteIndexEntry{mia}
-     %\VignetteEngine{knitr::rmarkdown}
-     %\VignetteEncoding{UTF-8}
- ---
+---
+title: "HoloFoodR R package — case study"
+date: "`r Sys.Date()`"
+output:
+   BiocStyle::html_document:
+       fig_height: 7
+       fig_width: 10
+       toc: yes
+       toc_depth: 2
+       number_sections: true
+vignette: >
+   %\VignetteIndexEntry{mia}
+   %\VignetteEngine{knitr::rmarkdown}
+   %\VignetteEncoding{UTF-8}
+---
 
 
 ```{r, include = FALSE}
@@ -462,7 +461,6 @@ altExp(mae_sub[[1]], "not_sd_0") <- tse_filter
 
 
 ```{r cross_association_analysis}
-#| include: false
 #| fig-width: 15
 #| fig-height: 15
 
@@ -480,7 +478,7 @@ res <- testExperimentCrossAssociation(
     )
 
 # Create a heatmap and store it
-plot <- Heatmap(
+p <- Heatmap(
     res$cor,
     # Print values to cells
     cell_fun = function(j, i, x, y, width, height, fill) {
@@ -493,7 +491,7 @@ plot <- Heatmap(
     heatmap_legend_param = list(title = "", legend_height = unit(10, "cm"))
 )
 
-draw(plot, padding = unit(c(2, 20, 2, 25), "mm"))
+draw(p, padding = unit(c(2, 20, 2, 25), "mm"))
 ```
 
 ## Principal coordinate analysis (PCoA) of beta-diversity
@@ -816,13 +814,16 @@ prediction, i.e., explains a tiny component of an outcome. BART then combines
 these _weak_ predictions to create a stronger prediction, while accounting for
 uncertainty.
 
-Random Forest algorithm is used for classification. In our case, we apply it to
-investigate whether we can reliable classify salmons into "heavy" (above mass
-median) or "light" (below or equal to mass) salmons. We also attempt to classify
+Random Forest algorithm is used for classification. We also attempt to classify
 salmons into "treatment" and "control" groups. Previously, we did not see any
 difference between the groups when using Bray-Curtis distances for metagenomic
 data. Thus, we are interested in understanding whether we are able to classify
 them into two different groups if we combine the omic data.
+
+Furthermore, we apply it to investigate whether we can reliable classify salmons
+into "heavy" (above mass median) or "light" (below or equal to mass) salmons.
+We hypothesize that "heavy" salmons are distinct from "light" salmons that
+might be due to differences in treatment, genomics, or starting weight baseline.
 
 BART machines algorithm can be used for continuous data, such as host gutted mass.
 We are not directly interested in predicting salmon masses but rather in investigating
@@ -962,8 +963,8 @@ all(rownames(sample_metadata_train) == colnames(feature_table_train)) # TRUE
 all(rownames(sample_metadata_valid) == colnames(feature_table_valid)) # TRUE
 ```
 
-We apply Random Forest as our base model for per-layer predictions, and non
-negative least squares method to make final predictions.
+We apply Random Forest as our base model for per-layer predictions, and
+non-negative least squares method to make final predictions.
 
 ```{r fit_random_forest}
 # Random forest fit
