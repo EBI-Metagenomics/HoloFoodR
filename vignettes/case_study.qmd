@@ -918,7 +918,6 @@ create_sample_metadata <- function(df, Y, subjectID, factor) {
 ```
 
 
-
 ```{r}
 sample_metadata <- create_sample_metadata(df = mae_day_60_coldata,
                                           Y = "mass_category",
@@ -1242,6 +1241,42 @@ plot_grid(p5,
              labels = c("Top features of microbiome and metabolites layers"),
              label_size = 8, vjust = 0.1)+
   theme(plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"))
+```
+
+### Heavy vs. light classification
+
+With BART machines, we can also perform classification.
+
+```{r}
+# predict() function is conflicting with one of bartMachine algorithms
+# so we need to unload it from namespace
+unloadNamespace("MOFA2")
+
+sample_metadata <- create_sample_metadata(df = mae_day_60_coldata,
+                                          Y = "mass_category",
+                                          subjectID = colnames(metabolomics_df),
+                                          factor = TRUE)
+# sample_metadata
+sample_metadata_train <- sample_metadata[colnames(feature_table_train), ]
+sample_metadata_valid <- sample_metadata[colnames(feature_table_valid), ]
+
+# Sanity check
+all(rownames(sample_metadata_train) == colnames(feature_table_train)) # TRUE
+all(rownames(sample_metadata_valid) == colnames(feature_table_valid)) # TRUE
+
+bart_fit <- IntegratedLearner:::IntegratedLearner(feature_table = feature_table_train,
+                               sample_metadata = sample_metadata_train,
+                               feature_metadata = feature_metadata,
+                               feature_table_valid = feature_table_valid,
+                               sample_metadata_valid = sample_metadata_valid,
+                               folds = 10,
+                               base_learner = "SL.BART",
+                               meta_learner = "SL.nnls.auc",
+                               verbose = TRUE,
+                               family = binomial())
+
+# Visualization
+plot.obj <- IntegratedLearner:::plot.learner(bart_fit)
 ```
 
 ## Conclusions
