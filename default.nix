@@ -7,28 +7,31 @@ let
   # Packages from CRAN
   rpkgs = with pkgs.rPackages; [
     ALDEx2
-    bartMachine
-    basilisk
     BiocManager
     BiocVersion
-    biomformat
-    chromote
     ComplexHeatmap
     FSA
-    dplyr
-    glmnet
-    ggplot2
-    ggpubr
-    knitr
-    gbm
     GGally
     MGnifyR
-    miaViz
     MOFA2
+    UpSetR
+    bartMachine
+    basilisk
+    biomformat
+    chromote
+    dplyr
+    gbm
+    ggplot2
+    ggpubr
+    glmnet
+    knitr
+    miaViz
+    miniUI
     multiview
     patchwork
     pheatmap
     randomForest
+    renv
     reshape2
     reticulate
     rmarkdown
@@ -36,8 +39,6 @@ let
     styler
     vegan
     xgboost
-    UpSetR
-    miniUI
   ];
 
   # Build mia package
@@ -54,33 +55,34 @@ let
       # mia dependencies (see DESCRIPTION)
       propagatedBuildInputs = builtins.attrValues {
         inherit (pkgs.rPackages)
-          ape
+
           BiocGenerics
           BiocParallel
           Biostrings
-          bluster
           DECIPHER
-          decontam
           DelayedArray
           DelayedMatrixStats
           DirichletMultinomial
-          dplyr
           IRanges
           MASS
           MatrixGenerics
-          mediation
           MultiAssayExperiment
-          rlang
           S4Vectors
-          scater
-          scuttle
           SingleCellExperiment
           SummarizedExperiment
+          TreeSummarizedExperiment
+          ape
+          bluster
+          decontam
+          dplyr
+          mediation
+          rbiom
+          rlang
+          scater
+          scuttle
           tibble
           tidyr
-          TreeSummarizedExperiment
           vegan
-          rbiom
           ;
       };
     })
@@ -100,12 +102,12 @@ let
       # HoloFoodR dependencies (see DESCRIPTION)
       propagatedBuildInputs = builtins.attrValues {
         inherit (pkgs.rPackages)
-          TreeSummarizedExperiment
           MultiAssayExperiment
+          S4Vectors
+          TreeSummarizedExperiment
           dplyr
           httr2
           jsonlite
-          S4Vectors
           ;
       };
     })
@@ -125,39 +127,46 @@ let
       # IntegratedLearner dependencies
       propagatedBuildInputs = builtins.attrValues {
         inherit (pkgs.rPackages)
-          SuperLearner
-          tidyverse
-          caret
-          mcmcplots
-          glmnetUtils
           ROCR
-          quadprog
+          SuperLearner
+          caret
+          glmnetUtils
+          mcmcplots
           nloptr
+          quadprog
+          tidyverse
           ;
       };
     })
   ];
 
   # System dependencies
-  system_packages = builtins.attrValues { inherit (pkgs) R glibcLocales quarto texliveFull ; };
+  system_packages = builtins.attrValues {
+    inherit (pkgs)
+      R
+      glibcLocales
+      quarto
+      texliveFull
+      ;
+  };
 
   # R wrapper for nix
   R = pkgs.rWrapper.override {
     packages = [
-      rpkgs
-      mia
       holofoodr
       integrated_learner
+      mia
+      rpkgs
     ];
   };
 
   # RStudio wrapper for nix
   rstudio_pkgs = pkgs.rstudioWrapper.override {
     packages = [
-      rpkgs
-      mia
       holofoodr
       integrated_learner
+      mia
+      rpkgs
     ];
   };
 in
