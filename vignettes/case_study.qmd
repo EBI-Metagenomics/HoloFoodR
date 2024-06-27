@@ -553,23 +553,26 @@ standard deviation to exclude potential false positives from cross-association
 analysis. To decide the threshold of filtering, we can use a histogram of standard
 deviations
 
-
 ```{r standard_deviation_hist}
 sd <- as.data.frame(apply(assay(mae_sub[[1]], "log10"), 1, sd))
 colnames(sd) <- c("standard_deviation")
 
 # Histogram of standard deviations
 p <- ggplot(sd, aes(x = standard_deviation)) +
-  geom_histogram(bins = 7)
+  geom_histogram(bins = 7) +
+  labs(title = "Standard deviations of log10-transformed fatty acid concentrations")
 p
 ```
-A good threshold would be at 0.1.
+A good threshold would be at 0.1. Thus, we can filter out any fatty acid whose
+standard deviation of concentration is below 0.1.
 
 ```{r filter_low_sd}
 tse_filter <- mae_sub[[1]][apply(assay(mae_sub[[1]], "log10"), 1, sd) > 0.1, ]
 altExp(mae_sub[[1]], "not_sd_0") <- tse_filter
 ```
 
+Now, we can perform cross-association analysis using Kendall method and display
+significantly correlated species and fatty acids.
 
 ```{r cross_association_analysis}
 #| fig-width: 15
