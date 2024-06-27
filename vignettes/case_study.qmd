@@ -1,6 +1,7 @@
 ---
 title: "HoloFoodR R package — case study"
 date: "`r Sys.Date()`"
+bibliography: HoloFoodR.bib
 output:
    BiocStyle::html_document:
        fig_height: 7
@@ -311,7 +312,7 @@ mae[[1]] <- tse
 # Transform matrices to numeric. Some values are "< 0.01"
 # If a number is < 0.01, assume it to be 0
 assay <- assay(mae[[1]], "counts")
-assay[ assay == "<0.01" ] <- 0
+assay[assay == "<0.01"] <- 0
 assay <- apply(assay, c(1, 2), function(x) as.numeric(gsub(",", ".", x)))
 
 # Reassign assay back to MAE
@@ -333,14 +334,15 @@ mae <- mae[ , colData(mae)[["Trial code"]] == "SA", ]
 mae
 ```
 
-
-Before proceeding we keep the modified version of MultiAssayExperiment object
+Before proceeding, we keep the modified version of MultiAssayExperiment object
 intact and only modify its copy.
 
 ```{r save_original_mae}
 mae_sub <- mae # Keep original MAE intact
 ```
 
+Then we need to filter out all samples that are not found in both experiments
+since we are interested in multi-omic data analysis.
 
 ```{r}
 # Take those samples that can be found from both experiments
@@ -350,7 +352,7 @@ mae_sub <- intersectColumns(mae_sub)
 Next, we transform the metagenomic and metabolomic data  to normalize the data,
 especially compositional data, such as metagenomic counts.
 
-We log-transform fatty acid assay to approximate it to normal distribution.
+We log-transform fatty acid assay.
 
 ```{r transformation_fatty_acids}
 # Transform fatty acids in mg with log10
@@ -362,6 +364,9 @@ mae_sub[[1]] <- transformAssay(
     pseudocount = TRUE
 )
 ```
+
+And we transform metagenomic counts first into relative abundances,
+and then use centered log-ratio method to tackle the compositional data (see A field guide for the compositional analysis of any-omics data).
 
 ```{r transformation_metagenomics}
 # Transform microbiome with centered log-ratio method
@@ -378,8 +383,11 @@ mae_sub[[2]] <- transformAssay(
 Next, we can agglomerate features by prevalence to reduce the number of
 low-abundant species.
 
+First, we visualize prevalence distribution with a histogram to decide the
+prevalence threshold to use. We use 0.01% detection level to filter out
+extremely low-abundant species present in each sample.
 
-```{r}
+```{r prevalence_histgoram}
 # Remove taxonomy_unparsed column from rowData of metagenomic_amplicon
 rowData(mae_sub[[2]]) <- rowData(mae_sub[[2]])[, 1:(length(rowData(mae_sub[[2]])) - 1)]
 
@@ -393,13 +401,18 @@ prevalence <- getPrevalence(mae_sub[[2]],
 # Exclude microbes with 0 prevalence
 prevalence <- prevalence[prevalence != 0]
 
-# Sort prevalence in decreasing order
-sort(prevalence, decreasing = TRUE) |> head(90)
+prevalence |> hist(breaks = 6)
 ```
 
-```{r}
-prevalence |> hist(breaks = 5)
+We can also look at the raw prevalence numbers
+
+```{r display_prevalence_numbers}
+# Sort prevalence in decreasing order
+sort(prevalence, decreasing = TRUE) |> head(10)
 ```
+
+_Mycoplasma_ is present in all samples, which is not surprising as this genus was
+found to be one of the most common in salmon intestine (see @zarkasiPyrosequencingbasedCharacterizationGastrointestinal2014).
 
 ```{r add_treatment_group1}
 # Compare two sets of animal samples in order to add the treatment concentration
