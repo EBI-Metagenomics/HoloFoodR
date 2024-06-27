@@ -541,8 +541,8 @@ comb <- split(t(combn(levels(df$treatment_group), 2)),
 ggplot(df, aes(x = treatment_group, y = shannon)) +
   geom_boxplot(outlier.shape = NA) + 
   geom_jitter(width = 0.2) + 
-  geom_signif(comparisons = comb, map_signif_level = FALSE,
-              correction = "fdr") +
+  geom_signif(comparisons = comb,
+              map_signif_level = FALSE) +
   theme(text = element_text(size = 10))
 ```
 
