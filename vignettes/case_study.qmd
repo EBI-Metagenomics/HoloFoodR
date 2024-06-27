@@ -366,7 +366,8 @@ mae_sub[[1]] <- transformAssay(
 ```
 
 And we transform metagenomic counts first into relative abundances,
-and then use centered log-ratio method to tackle the compositional data (see A field guide for the compositional analysis of any-omics data).
+and then use centered log-ratio method to tackle the compositional data (see
+@quinnFieldGuideCompositional2019).
 
 ```{r transformation_metagenomics}
 # Transform microbiome with centered log-ratio method
@@ -432,11 +433,8 @@ colData(mae_sub[[2]]) <- metagenomic_data
 
 ### Agglomerate by prevalence and sort by the number of reads
 
-When using `onRankOnly = TRUE` genera become separate separate entities in
-`rowData`.
-
 With a reasonable prevalence of 20%, and relative abundance detection threshold
-of 0.2%, only bacteria species remain.
+of 0.2%, only bacterial genera remain.
 
 ```{r}
 # Agglomerate by prevalence by genus
@@ -452,6 +450,8 @@ altExp(mae_sub[[2]], "prev_genus") <- agglomerateByPrevalence(mae_sub[[2]],
 altExp(mae_sub[[2]], "prev_genus")
 ```
 
+We now can extract only log10-transformed metabolomic assays because raw
+concentrations are no longer needed.
 
 ```{r}
 # Extract only transformed metabolomic assays
@@ -466,24 +466,33 @@ rownames(merged_coldata) <- merged_coldata$animal
 colData(mae_sub) <- merged_coldata
 ```
 
-We need to add a few columns for the subsequent data analysis steps. For instance,
-we are interested in understanding the difference between heavy and light salmons
-split into two groups by the median of their mass.
-
-We are also interested in investigating potential differences between treatment
-and control.
+We need to add a few columns for the subsequent data analysis steps. We are
+interested in investigating potential differences between treatment
+and control. Furthermore, we will only focus on salmons at day 60 because
+these salmons were sampled after experimental period. In contrast, day-0 salmons
+that were sampled immediately in the beginning of the trial.
 
 ```{r add_treatment_group2}
 colData(mae_sub)["treatment_group"] <-
   ifelse(colData(mae_sub)$treatment_concentration == 0, "control", "treatment")
+
+# Extract metagenomic data
+tse <- mae[[2]]
+
+# Add treatment vs. control into TSE object at day 60
+day60 <- colData(tse)$trial.timepoint == 60
+tse <- tse[, day60]
+colData(tse)$treatment_group <- ifelse(colData(tse)$host.diet.treatment.concentration == 0,
+                                       "control", "treatment")
 ```
 
 ## Data exploration
 
-```{r show_metadata2}
-# Display columns of MAE object to select those of interest
-colData(mae) |> names()
-```
+Before proceeding to data analysis, we will employ some basic data exploration
+methods:
+
+1. Abundance plot of metagenomic species
+2. Alpha-diversity
 
 ### Abundance plot
 
@@ -497,37 +506,25 @@ plotAbundanceDensity(altExp(mae_sub[[2]], "prev_genus"), assay.type = "clr", col
   labs(title = "Abundance plot")
 ```
 
-_Mycoplasma_ has bee shown to be associated with positive health effects
-(https://doi-org.ezproxy.utu.fi/10.1186/s42523-021-00096-2) and is generally
-predominant in salmons (https://doi-org.ezproxy.utu.fi/10.1007/s00248-002-1011-6).
-
-The addition of treatment does not change the weight of salmons.
-
 ### Alpha-diversity
 
-We can measure alpha-diversity of the microbiome experiment. This type of
-diversity is within the same sample.
+We can measure alpha-diversity of the microbiome experiment. This metric measures
+diversity within a sample.
 
 ```{r richness}
-tse <- mae[[2]]
-
 # Estimate (observed) richness
 tse <- mia::estimateRichness(tse, 
                              assay.type = "counts", 
                              index = "observed", 
                              name="observed")
 
-# Add treatment vs. control into tse object at day 60
-day60 <- colData(tse)$trial.timepoint == 60
-tse <- tse[, day60]
-colData(tse)$treatment_group <- ifelse(colData(tse)$host.diet.treatment.concentration == 0,
-                                       "control", "treatment")
-
-
 plotColData(tse,
             "observed",
             "treatment_group")
 ```
+To measure the diversity of species in each sample, we will use Shannon
+diversity and compare diversities in control and treatment groups.
+
 
 ```{r shannon_diversity}
 tse <- mia::estimateDiversity(tse, 
