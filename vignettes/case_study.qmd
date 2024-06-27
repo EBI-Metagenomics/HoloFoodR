@@ -15,6 +15,27 @@ vignette: >
 ---
 
 
+## Introduction
+
+[HoloFood database](https://www.holofooddata.org) is a large collection of
+holo-omic and multi-omic data from two animal systems, chicken and salmon. It was
+created by the HoloFood consortium. One of its objectives is to study the 
+interactions between animal systems, their microbiomes, and feed additives
+to optimize the diet strategies of these farm animals.
+For make it easily accessible, the creators provide an Application Programming
+Interface (API) that permits interaction with programming languages, such as R or
+Python.
+
+We improve the accessibility by creating the HoloFoodR package that simplifies
+API interaction and assists translating raw database data into R/Bioconductor
+data containers, connecting to a vast ecosystem of bioinformatics R packages.
+
+We do not aim to demonstrate HoloFoodR in isolation from the rest of the ecosystem,
+but to showcase the possibility of data integration from other databases,
+such as MGnify, which holds metagenomic data. Furthermore, we provide a workflow
+from data exploration to advanced machine learning and multi-omics,
+offering a practical example for readers.
+
 ```{r, include = FALSE}
 library(knitr)
 knitr::opts_chunk$set(
