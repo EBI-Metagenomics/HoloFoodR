@@ -67,7 +67,7 @@ if( !require("BiocManager") ){
 }
 
 # If there are packages that need to be installed, installs them with BiocManager
-# Updates old packages.
+# Updates old packages
 if( length(packages_need_to_install) > 0 ) {
    install(packages_need_to_install, ask = FALSE)
 }
@@ -88,16 +88,20 @@ options(java.parameters = "-Xmx8g")
 
 ## Import data
 
+We start the workflow from data retrieval. We will use [salmon data](https://www.holofooddata.org/samples/?animal__system=salmon)
+and its associated fatty acid and metagenomic amplicon as an example.
+
 ### Retrieve HoloFood data
 
-Firstly, we have to query the HoloFood database to retrieve the salmon accession
+First of all, we have to query the HoloFood database to retrieve the salmon accession
 numbers.
 
 ```{r get_animals}
 # Get salmon samples
 salmons <- HoloFoodR::doQuery("animals", system = "salmon", use.cache = TRUE)
 
-# Get only salmon metagenomic and fatty acid data
+# Get only the data that has both metagenomic amplicion and fatty acid
+# data
 salmons <- salmons |>
   filter(fatty_acids == TRUE & metagenomic_amplicon == TRUE)
 
@@ -125,9 +129,12 @@ salmon_sample_ids <- unique(salmon_samples[["accession"]])
 head(salmon_sample_ids)
 ```
 
-Finally, we can retrieve the data from each sample of each sample (for instance,
-metagenomic, metabolomic, transcriptomic, etc.) and store the result in a
-MultiAssayExperiment object.
+The data returned above is a list of all sample accession numbers that are associated with all
+salmons. For example, metagenomic amplicon samples, such as [SAMEA112750580](https://www.holofooddata.org/sample/SAMEA112750580)
+or genomic sample, such as [SAMEA9068691](https://www.holofooddata.org/sample/SAMEA9068691).
+
+We can use these accession numbers to fetch the data associated with each
+sample type and store them as `experiments` in a MultiAssayExperiment (MAE) object.
 
 ```{r get_salmon_mae}
 # Get salmon <- experiments as MAE object
