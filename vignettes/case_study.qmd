@@ -152,19 +152,19 @@ names(mae)[1] <- tolower(gsub(" ", "_", names(mae)[1]))
 
 ### Fetch metagenomic data from MGnify
 
-HoloFood database does not include the data for metagenomic assemblies, which
+HoloFood database does not include the data for metagenomic data. This data
 can be retrieved from the [MGnify portal](https://www.ebi.ac.uk/metagenomics).
+For this purpose, we will use MGnifyR package, which in a similar fashion to
+HoloFoodR, allows simple interaction with MGnify API.
 
 ```{r get_metagenomic_samples}
-#| include: false
-
 # Create MGnify object
 mg <- MgnifyClient(
   useCache = TRUE,
   cacheDir = ".MGnifyR_cache"
 )
 
-# Select only metagenomic assembly samples types
+# Select only metagenomic_amplicon sample type
 metagenomic_salmon_samples <- salmon_samples[
   salmon_samples[["sample_type"]] == "metagenomic_amplicon",
 ]
@@ -176,6 +176,11 @@ salmon_analysis_ids <- searchAnalysis(
   metagenomic_salmon_samples[["accession"]]
 )
 ```
+
+`salmon_analysis_ids` character vector holds associations of HoloFood metagenomic
+amplicon accession numbers (SAMEAxxxxxx) to their counterparts in MGnify database
+(MGYAxxxxxx).
+
 
 ```{r get_metagenomic}
 # Get metagenomic taxonomic data for salmon from MGnify
@@ -268,7 +273,23 @@ saveRDS(object = mae, file = "../inst/extdata/salmon_mae.RDS")
 
 ## Data preprocess
 
-Now we can pre-process data and prepared it for subsequent analyses.
+Data cleaning is one of the most time-consuming and most important steps in
+data cleaning. For instance, we need to handle missing data, transform data assays,
+and agglomerate the data.
+
+In the next steps, we will:
+
+1. Remove unnecessary data
+2. Convert data from string to numeric format
+3. Transform data with logarithmic methods to prepare it for statistical analysis.
+In particular, we will use log10-transformation for fatty acid data and sequential
+transformation from counts to relative abundance to centered log-ratio transformation
+for compositional metagenomic data
+4. Agglomerate metagenomic data by prevalence. We will keep only the species
+that are present in more that a specified percentage of samples and are only
+present at certain percentage of relative abundance in each sample. This step
+is important to filter out species that are present in only a small number of
+species and/or at lower abundances.
 
 ```{r load_data}
 # path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
@@ -280,8 +301,8 @@ mae <- readRDS("../inst/extdata/salmon_mae.RDS")
 mae <- mae[, , c("fatty_acids_mg", "metagenomic_amplicon")]
 ```
 
-```{r preprocess}
-# From metabolomic data, remove organ-fatty acids row as it only contains a
+```{r preprocess1}
+# From metabolomic data, remove organ-fatty acids row because it only contains a
 # string value "muscle"
 tse <- mae[[1]]
 tse <- tse[!(rowData(tse)[["marker.name"]] %in% c("Organ-fatty acids")), ]
@@ -396,18 +417,13 @@ metagenomic_data$treatment_group <-
 colData(mae_sub[[2]]) <- metagenomic_data
 ```
 
-### Agglomerate by genus and sort by the number of reads.
+### Agglomerate by prevalence and sort by the number of reads
 
 When using `onRankOnly = TRUE` genera become separate separate entities in
 `rowData`.
 
-The selection of the most prevalent genera is a hard topic. I have noticed that
-a flowering plant genus _Ammopiptanthus_ appears in the data. However, since
-it is part of the phylum Viridiplantae, I believe it is a false positive as
-_Viridiplantae_ includes green algae (see https://www-ncbi-nlm-nih-gov.ezproxy.utu.fi/books/NBK579936/).
-
-We a reasonable prevalence of 20%, and relative abundance detection threshold
-of 0.02%, only bacteria species remain.
+With a reasonable prevalence of 20%, and relative abundance detection threshold
+of 0.2%, only bacteria species remain.
 
 ```{r}
 # Agglomerate by prevalence by genus
