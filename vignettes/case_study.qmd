@@ -15,7 +15,6 @@ vignette: >
    %\VignetteEncoding{UTF-8}
 ---
 
-
 ## Introduction
 
 [HoloFood database](https://www.holofooddata.org) is a large collection of
