@@ -1,4 +1,5 @@
-FROM bioconductor/bioconductor_docker:RELEASE_3_19
+ARG BIOC_VERSION
+FROM bioconductor/bioconductor_docker:${BIOC_VERSION}
 
 #Install essentials
 RUN apt-get install -y python3 python3-setuptools python3-dev python3-pip
@@ -20,7 +21,7 @@ RUN rm -f "$TEMP_DEB"
 # Install mofapy2
 RUN python3 -m pip install 'https://github.com/bioFAM/mofapy2/tarball/master'
 
-# Create directory for HolofoodR 
+# Create directory for HolofoodR
 WORKDIR /root/holofoodr
 
 # Internal port for RStudio server is 8787
