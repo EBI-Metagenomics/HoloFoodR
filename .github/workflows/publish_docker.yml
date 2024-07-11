@@ -11,6 +11,12 @@ jobs:
   build_and_publish:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
     steps:
       - uses: actions/checkout@v4
       - name: Login to GitHub Container Registry
