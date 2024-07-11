@@ -1,7 +1,7 @@
 name: Publish HoloFoodR case study Docker image
 on:
   push:
-    branches: [case-study]
+    branches: [docker]
 jobs:
   build_and_publish:
     runs-on: ubuntu-latest
