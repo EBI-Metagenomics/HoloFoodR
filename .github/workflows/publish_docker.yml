@@ -2,6 +2,10 @@ name: Publish HoloFoodR case study Docker image
 on:
   push:
     branches: [docker]
+
+env:
+  BIOC_VERSION: RELEASE_3_19
+
 jobs:
   build_and_publish:
     runs-on: ubuntu-latest
@@ -22,6 +26,7 @@ jobs:
         uses:  docker/build-push-action@v6
         with:
           context: .
+          build-args: BIOC_VERSION=${{ env.BIOC_VERSION}}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
