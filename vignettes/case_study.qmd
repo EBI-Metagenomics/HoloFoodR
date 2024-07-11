@@ -545,67 +545,6 @@ ggplot(df, aes(x = treatment_group, y = shannon)) +
   theme(text = element_text(size = 10))
 ```
 
-## Perform cross-association analysis
-
-Before cross-association analysis, we can filter out all features with low
-standard deviation to exclude potential false positives from cross-association
-analysis. To decide the threshold of filtering, we can use a histogram of standard
-deviations
-
-```{r standard_deviation_hist}
-sd <- as.data.frame(apply(assay(mae_sub[[1]], "log10"), 1, sd))
-colnames(sd) <- c("standard_deviation")
-
-# Histogram of standard deviations
-p <- ggplot(sd, aes(x = standard_deviation)) +
-  geom_histogram(bins = 7) +
-  labs(title = "Standard deviations of log10-transformed fatty acid concentrations")
-p
-```
-A good threshold would be at 0.1. Thus, we can filter out any fatty acid whose
-standard deviation of concentration is below 0.1.
-
-```{r filter_low_sd}
-tse_filter <- mae_sub[[1]][apply(assay(mae_sub[[1]], "log10"), 1, sd) > 0.1, ]
-altExp(mae_sub[[1]], "not_sd_0") <- tse_filter
-```
-
-Now, we can perform cross-association analysis using Kendall method and display
-significantly correlated species and fatty acids.
-
-```{r cross_association_analysis}
-#| fig-width: 15
-#| fig-height: 15
-
-# Perform cross-association analysis
-res <- testExperimentCrossAssociation(
-    mae_sub,
-    experiment1 = 1,
-    experiment2 = 2,
-    altexp1 = "not_sd_0",
-    altexp2 = "prev_genus",
-    method = "kendall",
-    assay.type1 = "log10",
-    assay.type2 = "clr",
-    mode = "matrix"
-    )
-
-# Create a heatmap and store it
-p <- Heatmap(
-    res$cor,
-    # Print values to cells
-    cell_fun = function(j, i, x, y, width, height, fill) {
-        # If the p-value is under threshold
-        if( !is.na(res$p_adj[i, j]) & res$p_adj[i, j] < 0.05 ){
-            # Print "X"
-          grid.shadowtext(sprintf("%s", "X"), x, y, gp = gpar(fontsize = 10, col = "white"))
-        }
-    },
-    heatmap_legend_param = list(title = "", legend_height = unit(10, "cm"))
-)
-
-draw(p, padding = unit(c(2, 20, 2, 25), "mm"))
-```
 
 ## Principal coordinate analysis (PCoA) of beta-diversity
 
@@ -691,8 +630,71 @@ plots <- lapply(c("MDS_bray", "MDS_aitchison",
 wrap_plots(plots) +
   plot_layout(guides = "collect")
 ```
+
 All four methods demonstrate that features from control and treatment are
 not dissimilar.
+
+## Perform cross-association analysis
+
+Before cross-association analysis, we can filter out all features with low
+standard deviation to exclude potential false positives from cross-association
+analysis. To decide the threshold of filtering, we can use a histogram of standard
+deviations
+
+```{r standard_deviation_hist}
+sd <- as.data.frame(apply(assay(mae_sub[[1]], "log10"), 1, sd))
+colnames(sd) <- c("standard_deviation")
+
+# Histogram of standard deviations
+p <- ggplot(sd, aes(x = standard_deviation)) +
+  geom_histogram(bins = 7) +
+  labs(title = "Standard deviations of log10-transformed fatty acid concentrations")
+p
+```
+A good threshold would be at 0.1. Thus, we can filter out any fatty acid whose
+standard deviation of concentration is below 0.1.
+
+```{r filter_low_sd}
+tse_filter <- mae_sub[[1]][apply(assay(mae_sub[[1]], "log10"), 1, sd) > 0.1, ]
+altExp(mae_sub[[1]], "not_sd_0") <- tse_filter
+```
+
+Now, we can perform cross-association analysis using Kendall method and display
+significantly correlated species and fatty acids.
+
+```{r cross_association_analysis}
+#| fig-width: 15
+#| fig-height: 15
+
+# Perform cross-association analysis
+res <- testExperimentCrossAssociation(
+    mae_sub,
+    experiment1 = 1,
+    experiment2 = 2,
+    altexp1 = "not_sd_0",
+    altexp2 = "prev_genus",
+    method = "kendall",
+    assay.type1 = "log10",
+    assay.type2 = "clr",
+    mode = "matrix"
+    )
+
+# Create a heatmap and store it
+p <- Heatmap(
+    res$cor,
+    # Print values to cells
+    cell_fun = function(j, i, x, y, width, height, fill) {
+        # If the p-value is under threshold
+        if( !is.na(res$p_adj[i, j]) & res$p_adj[i, j] < 0.05 ){
+            # Print "X"
+          grid.shadowtext(sprintf("%s", "X"), x, y, gp = gpar(fontsize = 10, col = "white"))
+        }
+    },
+    heatmap_legend_param = list(title = "", legend_height = unit(10, "cm"))
+)
+
+draw(p, padding = unit(c(2, 20, 2, 25), "mm"))
+```
 
 ## MOFA analysis
 
