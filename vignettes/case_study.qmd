@@ -48,10 +48,10 @@ knitr::opts_chunk$set(
 ```{r setup}
 # List of packages that we need
 packages <- c(
-    "ggplot2", "knitr", "mia", "dplyr", "miaViz", "MOFA2",  "patchwork", "reticulate",
-    "MGnifyR", "reshape2", "GGally", "IntegratedLearner", "SuperLearner",
-    "bartMachine", "mcmcplots", "tidyverse", "shadowtext", "ComplexHeatmap",
-    "stringr", "cowplot", "caret", "scater", "ggsignif"
+    "ggplot2", "knitr", "mia", "dplyr", "miaViz", "MOFA2",  "patchwork",
+    "reticulate", "MGnifyR", "IntegratedLearner", "SuperLearner", "bartMachine",
+    "mcmcplots", "tidyverse", "shadowtext", "ComplexHeatmap", "stringr",
+    "cowplot", "caret", "scater", "ggsignif"
     )
 
 # Get packages that are already installed installed
