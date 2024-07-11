@@ -828,6 +828,7 @@ plot_factor(model,
     )
   )
 ```
+
 ## Plot weights
 
 The next step is to have a deeper look inside the observations we found above.
