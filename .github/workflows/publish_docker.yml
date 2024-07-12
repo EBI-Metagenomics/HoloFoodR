@@ -1,7 +1,7 @@
 name: Publish HoloFoodR case study Docker image
 on:
   push:
-    branches: [docker]
+    branches: [case-study]
 
 env:
   BIOC_VERSION: RELEASE_3_19
