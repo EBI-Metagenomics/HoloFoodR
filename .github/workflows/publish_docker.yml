@@ -42,4 +42,5 @@ jobs:
           push: true
           platforms: linux/amd64
           build-args: BIOC_VERSION=${{ env.BIOC_VERSION }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
