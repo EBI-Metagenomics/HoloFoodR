@@ -20,6 +20,7 @@ let
     biomformat
     chromote
     dplyr
+    devtools
     gbm
     ggplot2
     ggpubr
