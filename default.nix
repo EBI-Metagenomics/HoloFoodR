@@ -19,8 +19,8 @@ let
     basilisk
     biomformat
     chromote
-    dplyr
     devtools
+    dplyr
     gbm
     ggplot2
     ggpubr
