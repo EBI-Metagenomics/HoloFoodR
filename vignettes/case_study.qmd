@@ -46,12 +46,12 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-# List of packages that we need
+# List of packages that we need ############################################################# PUT INTO ALPHABETICAL ORDER
 packages <- c(
     "ggplot2", "knitr", "mia", "dplyr", "miaViz", "MOFA2",  "patchwork",
     "reticulate", "MGnifyR", "IntegratedLearner", "SuperLearner", "bartMachine",
     "mcmcplots", "tidyverse", "shadowtext", "ComplexHeatmap", "stringr",
-    "cowplot", "caret", "scater", "ggsignif"
+    "cowplot", "caret", "scater", "ggsignif", "ggpubr"
     )
 
 # Get packages that are already installed installed
@@ -137,17 +137,25 @@ We can use these accession numbers to fetch the data associated with each
 sample type and store them as `experiments` in a MultiAssayExperiment (MAE) object.
 
 ```{r get_salmon_mae}
+#| label: get_salmon_mae
+
 # Get salmon <- experiments as MAE object
 mae <- HoloFoodR::getResult(
   salmon_sample_ids,
   use.cache = TRUE
 )
 
-# Save salmon MAE
-saveRDS(object = mae, file = "../inst/extdata/salmon_mae_without_mgnify.RDS")
-
 # Rename FATTY ACIDS MG to more readable format
 names(mae)[1] <- tolower(gsub(" ", "_", names(mae)[1]))
+```
+
+```{r}
+#| label: save_salmon_mae
+#| echo: false
+
+# Save salmon MAE This must be named differently
+path <- system.file("extdata", "salmon_mae_without_mgnify.RDS", package = "HoloFoodR")
+saveRDS(object = mae, file = path)
 ```
 
 ### Fetch metagenomic data from MGnify
@@ -181,7 +189,6 @@ salmon_analysis_ids <- searchAnalysis(
 amplicon accession numbers (SAMEAxxxxxx) to their counterparts in MGnify database
 (MGYAxxxxxx).
 
-
 ```{r get_metagenomic}
 # Get metagenomic taxonomic data for salmon from MGnify
 tse <- MGnifyR::getResult(
@@ -189,19 +196,31 @@ tse <- MGnifyR::getResult(
   accession = salmon_analysis_ids,
   get.func = FALSE
 )
+```
 
-# Save salmon metagenomic TSE
-saveRDS(object = tse, file = "../inst/extdata/salmon_metagenomic_tse.RDS")
+```{r}
+#| label: save_metagenomic
+#| echo: false
+
+# Save salmon metagenomic TreeSE
+path <- system.file("extdata", "salmon_metagenomic_tse.RDS", package = "HoloFoodR")
+saveRDS(object = mae, file = path)
+```
+
+```{r}
+#| label: read_metagenomic
+#| echo: false
+
+# Read in salmon metagenomic TreSE object 
+path <- system.file("extdata", "salmon_metagenomic_tse.RDS", package = "HoloFoodR")
+tse <- readRDS(file = path)
 ```
 
 Data fetched from MGnify has MGnify-specific identifiers. We have to first
 rename samples with HoloFood specific ID and then add the data to
 MultiAssayExperiment combining all the data.
 
-
 ```{r add_metagenomic_data}
-# Read in salmon metagenomic TSE object
-tse <- readRDS(file = "../inst/extdata/salmon_metagenomic_tse.RDS")
 
 .add_MGnify <- function(
         mae, tse, holofood.id = "sample_biosample",
@@ -268,7 +287,8 @@ tse <- readRDS(file = "../inst/extdata/salmon_metagenomic_tse.RDS")
 mae <- .add_MGnify(mae, tse)
 
 # Save to merged MAE object to RDS
-saveRDS(object = mae, file = "../inst/extdata/salmon_mae.RDS")
+path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
+saveRDS(object = mae, file = path)
 ```
 
 ## Data preprocess
@@ -281,27 +301,47 @@ In the next steps, we will:
 
 1. Remove unnecessary data
 2. Convert data from string to numeric format
-3. Transform data with logarithmic methods to prepare it for statistical analysis.
-In particular, we will use log10-transformation for fatty acid data and sequential
-transformation from counts to relative abundance to centered log-ratio transformation
-for compositional metagenomic data
-4. Agglomerate metagenomic data by prevalence. We will keep only the species
+3. Agglomerate metagenomic data by prevalence. We will keep only the species
 that are present in more that a specified percentage of samples and are only
 present at certain percentage of relative abundance in each sample. This step
 is important to filter out species that are present in only a small number of
 species and/or at lower abundances.
+4. Transform data with logarithmic methods to prepare it for statistical analysis.
+In particular, we will use log10-transformation for fatty acid data and sequential
+transformation from counts to relative abundance to centered log-ratio transformation
+for compositional metagenomic data
+
+
+### Filter the data
 
 ```{r load_data}
-# path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
-#salmon_mae <- readRDS(path)
-# mae <- readRDS(path)
-mae <- readRDS("../inst/extdata/salmon_mae.RDS")
+#| echo: false
 
-# Fetch only experiments that we need
-mae <- mae[, , c("fatty_acids_mg", "metagenomic_amplicon")]
+path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
+mae <- readRDS(path)
 ```
 
+Below, we see an upset plot that illustrates the overlap between different
+experiments and their corresponding samples.
+
+```{r upset}
+upsetSamples(mae)
+```
+
+For demonstration purposes, we will focus on investigating two experiments
+(`fatty_acids_mg` and `metagenomic_amplicon`) within the trial A performed by
+the HoloFood consortium. This trial the health effects of fermented seaweed added
+to the diet of salmons.
+
 ```{r preprocess1}
+# Fetch only experiments that we need
+mae <- mae[, , c("fatty_acids_mg", "metagenomic_amplicon")]
+# Filter MAE object to include only Trial A
+mae <- mae[ , colData(mae)[["Trial code"]] == "SA", ]
+mae
+```
+
+```{r preprocess2}
 # From metabolomic data, remove organ-fatty acids row because it only contains a
 # string value "muscle"
 tse <- mae[[1]]
@@ -322,63 +362,52 @@ not_empty <- !apply(rowData(mae[[2]]), 1, function(x) all(is.na(x)))
 mae[[2]] <- mae[[2]][not_empty, ]
 ```
 
-For demonstration purposes, we will focus on investigating two experiments
-(`fatty_acids_mg` and `metagenomic_amplicon`) within the trial A performed by
-the HoloFood consortium. This trial the health effects of fermented seaweed added
-to the diet of salmons.
-
-```{r preprocess2}
-# Filter MAE object to include only Trial A
-mae <- mae[ , colData(mae)[["Trial code"]] == "SA", ]
-mae
-```
-
-Before proceeding, we keep the modified version of MultiAssayExperiment object
-intact and only modify its copy.
-
-```{r save_original_mae}
-mae_sub <- mae # Keep original MAE intact
-```
+We need to add a few columns for the subsequent data analysis steps. We are
+interested in investigating potential differences between treatment
+and control. Furthermore, we will only focus on salmons at day 60 because
+these salmons were sampled after experimental period. In contrast, day-0 salmons
+that were sampled immediately in the beginning of the trial.
 
 Then we need to filter out all samples that are not found in both experiments
 since we are interested in multi-omic data analysis.
 
-```{r}
+```{r add_treatment_group2}
+# Subset by taking only samples from day 60
+samples <- colnames(mae[[2]])[ mae[[2]]$trial.timepoint == 60 ]
+mae[[2]] <- mae[[2]][ , samples, ]
+
 # Take those samples that can be found from both experiments
-mae_sub <- intersectColumns(mae_sub)
+mae <- intersectColumns(mae)
 ```
 
-Next, we transform the metagenomic and metabolomic data  to normalize the data,
-especially compositional data, such as metagenomic counts.
 
-We log-transform fatty acid assay.
 
-```{r transformation_fatty_acids}
-# Transform fatty acids in mg with log10
-mae_sub[[1]] <- transformAssay(
-    mae_sub[[1]],
-    assay.type = "counts",
-    MARGIN = "samples",
-    method = "log10",
-    pseudocount = TRUE
+```{r}
+
+colData(mae)[["treatment_group"]] <-
+  ifelse(colData(mae)[["Treatment concentration"]] == 0, "control", "treatment")
+# Add treatment group to btoth experiment's sample metadata
+colData(mae[[1]])[["treatment_group"]] <- colData(mae)[mae[[1]][["animal"]], "treatment_group"]
+colData(mae[[2]])[["treatment_group"]] <- colData(mae)[mae[[2]][["animal"]], "treatment_group"]
+
+# Add salmon host mass to colData
+merged_data <- merge(
+    x = colData(mae), y = colData(mae[[2]])[c("animal", "host.gutted.mass")],
+    all.x = TRUE, by = "animal"
+    )
+rownames(merged_data) <- merged_data[["animal"]]
+colData(mae) <- merged_data
+
+# Add mass categories
+# This number is different from the media for the entire MAE object
+# as this one was filtered to include **only** salmons at day 60
+mass_median <- median(as.numeric(colData(mae)[, "host.gutted.mass"]), na.rm = TRUE)
+colData(mae)[["mass_category"]] <- ifelse(
+  as.numeric(colData(mae)[["host.gutted.mass"]]) > mass_median, "heavy", "light"
 )
 ```
 
-And we transform metagenomic counts first into relative abundances,
-and then use centered log-ratio method to tackle the compositional data (see
-@quinnFieldGuideCompositional2019).
-
-```{r transformation_metagenomics}
-# Transform microbiome with centered log-ratio method
-mae_sub[[2]] <- transformAssay(
-    mae_sub[[2]], method = "relabundance")
-mae_sub[[2]] <- transformAssay(
-    mae_sub[[2]],
-    assay.type = "relabundance",
-    method = "clr",
-    pseudocount = TRUE
-  )
-```
+### Agglomerate data
 
 Next, we can agglomerate features by prevalence to reduce the number of
 low-abundant species.
@@ -388,20 +417,22 @@ prevalence threshold to use. We use 0.01% detection level to filter out
 extremely low-abundant species present in each sample.
 
 ```{r prevalence_histgoram}
-# Remove taxonomy_unparsed column from rowData of metagenomic_amplicon
-rowData(mae_sub[[2]]) <- rowData(mae_sub[[2]])[, 1:(length(rowData(mae_sub[[2]])) - 1)]
+# Add relative transforrmed data
+mae[[2]] <- transformAssay(mae[[2]], method = "relabundance")
 
-prevalence <- getPrevalence(mae_sub[[2]],
-                        rank = "Genus",
-                        assay.type = "relabundance",
-                        na.rm = TRUE,
-                        sort = TRUE,
-                        detection = 0.001)
+prevalence <- getPrevalence(
+    mae[[2]],
+    rank = "Genus",
+    assay.type = "relabundance",
+    na.rm = TRUE,
+    sort = TRUE,
+    detection = 0.001)
 
 # Exclude microbes with 0 prevalence
 prevalence <- prevalence[prevalence != 0]
 
-prevalence |> hist(breaks = 6)
+ggplot(data.frame(prevalence), aes(x = prevalence)) +
+  geom_histogram(bins = 6)
 ```
 
 We can also look at the raw prevalence numbers
@@ -417,27 +448,25 @@ found to be one of the most common in salmon intestine (see @zarkasiPyrosequenci
 ```{r add_treatment_group1}
 # Compare two sets of animal samples in order to add the treatment concentration
 # column to metagenomic data
-setdiff(colData(mae_sub)$animal, colData(mae_sub[[2]])$animal) # No difference
+setdiff(colData(mae)$animal, colData(mae[[2]])$animal) # No difference
 
 # We then can simply add treatment_concentration column to metagenomic data
-colData(mae_sub[[2]])$treatment_concentration <-
-  colData(mae_sub)$`Treatment concentration`
+colData(mae[[2]])$treatment_concentration <-
+  colData(mae)$`Treatment concentration`
 
 # Add treatment_group (control vs. treatment) to metagenomic data
-metagenomic_data <- colData(mae_sub[[2]])
+metagenomic_data <- colData(mae[[2]])
 metagenomic_data$treatment_group <-
   ifelse(metagenomic_data$treatment_concentration == 0, "control", "treatment")
-colData(mae_sub[[2]]) <- metagenomic_data
+colData(mae[[2]]) <- metagenomic_data
 ```
-
-### Agglomerate by prevalence and sort by the number of reads
 
 With a reasonable prevalence of 20%, and relative abundance detection threshold
 of 0.2%, only bacterial genera remain.
 
 ```{r}
 # Agglomerate by prevalence by genus
-altExp(mae_sub[[2]], "prev_genus") <- agglomerateByPrevalence(mae_sub[[2]],
+altExp(mae[[2]], "prev_genus") <- agglomerateByPrevalence(mae[[2]],
     assay.type = "relabundance",
     rank = "Genus",
     na.rm = TRUE,
@@ -446,43 +475,112 @@ altExp(mae_sub[[2]], "prev_genus") <- agglomerateByPrevalence(mae_sub[[2]],
     detection = 0.002
   )
 
-altExp(mae_sub[[2]], "prev_genus")
+altExp(mae[[2]], "prev_genus")
 ```
 
-We now can extract only log10-transformed metabolomic assays because raw
-concentrations are no longer needed.
+From fatty acid data, we select those features that varies.
+To decide the threshold of filtering, we can use a histogram of standard
+deviations
 
-```{r}
-# Extract only transformed metabolomic assays
-assays(mae_sub[[1]]) <- assays(mae_sub[[1]])[names(assays(mae_sub[[1]])) %in% c("log10")]
+```{r standard_deviation_hist}
+# Transform fatty acids in mg with log10
+mae[[1]] <- transformAssay(
+    mae[[1]],
+    assay.type = "counts",
+    MARGIN = "samples",
+    method = "log10",
+    pseudocount = TRUE
+)
 
-# Rename column names to make them more consistent
-names(colData(mae_sub)) <- tolower(gsub(" ", "_", names(colData(mae_sub))))
-
-# Add salmon host mass to colData
-merged_coldata <- merge(x = colData(mae_sub), y = colData(mae_sub[[2]])[c("animal", "host.gutted.mass")], all.x = TRUE, by = "animal")
-rownames(merged_coldata) <- merged_coldata$animal
-colData(mae_sub) <- merged_coldata
+rowData(mae[[1]])[["sd"]] <- apply(assay(mae[[1]], "log10"), 1, sd)
+# Histogram of standard deviations
+p <- ggplot(rowData(mae[[1]]), aes(x = sd)) +
+  geom_histogram(bins = 7) +
+  labs(title = "Standard deviations of log10-transformed fatty acid concentrations")
+p
 ```
 
-We need to add a few columns for the subsequent data analysis steps. We are
-interested in investigating potential differences between treatment
-and control. Furthermore, we will only focus on salmons at day 60 because
-these salmons were sampled after experimental period. In contrast, day-0 salmons
-that were sampled immediately in the beginning of the trial.
+A good threshold would be at 0.1. Thus, we can filter out any fatty acid whose
+standard deviation of concentration is below 0.1.
 
-```{r add_treatment_group2}
-colData(mae_sub)["treatment_group"] <-
-  ifelse(colData(mae_sub)$treatment_concentration == 0, "control", "treatment")
+```{r filter_low_sd}
+altExp(mae[[1]], "not_sd_0") <- mae[[1]][rowData(mae[[1]])[["sd"]] > 0.01, ]
+```
 
-# Extract metagenomic data
-tse <- mae[[2]]
+### Transform data
 
-# Add treatment vs. control into TSE object at day 60
-day60 <- colData(tse)$trial.timepoint == 60
-tse <- tse[, day60]
-colData(tse)$treatment_group <- ifelse(colData(tse)$host.diet.treatment.concentration == 0,
-                                       "control", "treatment")
+Next, we transform the metagenomic and metabolomic data  to normalize the data,
+especially compositional data, such as metagenomic counts.
+
+We log-transform fatty acid assay.
+
+```{r transformation_fatty_acids}
+# Transform fatty acids in mg with log10
+mae[[1]] <- transformAssay(
+    mae[[1]],
+    assay.type = "counts",
+    MARGIN = "samples",
+    method = "log10",
+    pseudocount = TRUE
+)
+mae[[1]] <- transformAssay(
+    mae[[1]],
+    assay.type = "log10",
+    MARGIN = "rows",
+    method = "standardize"
+)
+
+# Wait until bacth transformation PR is ready in mia
+altExp(mae[[1]], "not_sd_0") <- transformAssay(
+    altExp(mae[[1]], "not_sd_0"),
+    assay.type = "counts",
+    MARGIN = "samples",
+    method = "log10",
+    pseudocount = TRUE
+)
+altExp(mae[[1]], "not_sd_0") <- transformAssay(
+    altExp(mae[[1]], "not_sd_0"),
+    assay.type = "log10",
+    MARGIN = "rows",
+    method = "standardize"
+)
+```
+
+And we transform metagenomic counts first into relative abundances,
+and then use centered log-ratio method to tackle the compositional data (see
+@quinnFieldGuideCompositional2019).
+
+```{r transformation_metagenomics}
+# Transform microbiome with centered log-ratio method
+mae[[2]] <- transformAssay(mae[[2]], method = "relabundance", MARGIN = "samples")
+mae[[2]] <- transformAssay(
+    mae[[2]],
+    assay.type = "relabundance",
+    method = "clr",
+    pseudocount = TRUE, MARGIN = "samples"
+  )
+mae[[2]] <- transformAssay(
+    mae[[2]],
+    assay.type = "clr",
+    method = "standardize",
+    MARGIN = "rows"
+  )
+
+# Wait until bacth transformation PR is ready in mia
+altExp(mae[[2]], "prev_genus") <- transformAssay(
+    altExp(mae[[2]], "prev_genus"), method = "relabundance")
+altExp(mae[[2]], "prev_genus") <- transformAssay(
+    altExp(mae[[2]], "prev_genus"),
+    assay.type = "relabundance",
+    method = "clr",
+    pseudocount = TRUE
+  )
+altExp(mae[[2]], "prev_genus") <- transformAssay(
+    altExp(mae[[2]], "prev_genus"),
+    assay.type = "clr",
+    method = "standardize",
+    MARGIN = "rows"
+  )
 ```
 
 ## Data exploration
@@ -501,7 +599,7 @@ we also indicate "control" and "treatment" groups with colors for initial
 assessment of difference between the groups.
 
 ```{r plot_abundance}
-plotAbundanceDensity(altExp(mae_sub[[2]], "prev_genus"), assay.type = "clr", colour_by = "treatment_group") +
+plotAbundanceDensity(altExp(mae[[2]], "prev_genus"), assay.type = "clr", colour_by = "treatment_group") +
   labs(title = "Abundance plot")
 ```
 
@@ -512,66 +610,56 @@ diversity within a sample.
 
 ```{r richness}
 # Estimate (observed) richness
-tse <- mia::estimateRichness(tse, 
-                             assay.type = "counts", 
-                             index = "observed", 
-                             name="observed")
+mae[[2]] <- addAlpha(mae[[2]], assay.type = "counts",  index = c("observed", "shannon"))
 
-plotColData(tse,
-            "observed",
-            "treatment_group")
+plotColData(mae[[2]], "observed", "treatment_group", show_violin  = FALSE, show_box = TRUE)
 ```
+
 To measure the diversity of species in each sample, we will use Shannon
 diversity and compare diversities in control and treatment groups.
 
-
 ```{r shannon_diversity}
-tse <- mia::estimateDiversity(tse, 
-                              assay.type = "counts",
-                              index = "shannon", 
-                              name = "shannon")
+index <- "shannon"
+group_var <- "treatment_group"
 
-df <- as.data.frame(colData(tse))
-df$treatment_group <- factor(df$treatment_group)
+# Calculate p values
+pvals <- pairwise.wilcox.test(mae[[2]][[index]], mae[[2]][[group_var]], p.adjust.method = "fdr")
+# Put them to data.frame format
+pvals <- pvals[["p.value"]] |>
+    as.data.frame()
+varname <- "group1"
+pvals[[varname]] <- rownames(pvals)
+# To long format
+pvals <- reshape(
+    pvals,
+    direction = "long",
+    varying = colnames(pvals)[ !colnames(pvals) %in% varname ],
+    times = colnames(pvals)[ !colnames(pvals) %in% varname ],
+    v.names = "p",
+    timevar = "group2",
+    idvar = "group1"
+    ) |>
+    na.omit()
 
-comb <- split(t(combn(levels(df$treatment_group), 2)), 
-           seq(nrow(t(combn(levels(df$treatment_group), 2)))))
+# Round values
+pvals[["p"]] <- round(pvals[["p"]], 3)
+# Add y-axis position
+pvals[["y.position"]] <- max(mae[[2]][[index]]) + 0.5
 
-ggplot(df, aes(x = treatment_group, y = shannon)) +
-  geom_boxplot(outlier.shape = NA) + 
-  geom_jitter(width = 0.2) + 
-  geom_signif(comparisons = comb,
-              map_signif_level = FALSE) +
-  theme(text = element_text(size = 10))
+# Create a boxplot
+p <- plotColData(
+    mae[[2]], x = group_var, y = index,
+    show_boxplot = TRUE, show_violin = FALSE) +
+    theme(text = element_text(size = 10)) +
+    stat_pvalue_manual(pvals)
+p
 ```
 
 ## Perform cross-association analysis
 
-Before cross-association analysis, we can filter out all features with low
-standard deviation to exclude potential false positives from cross-association
-analysis. To decide the threshold of filtering, we can use a histogram of standard
-deviations
-
-```{r standard_deviation_hist}
-sd <- as.data.frame(apply(assay(mae_sub[[1]], "log10"), 1, sd))
-colnames(sd) <- c("standard_deviation")
-
-# Histogram of standard deviations
-p <- ggplot(sd, aes(x = standard_deviation)) +
-  geom_histogram(bins = 7) +
-  labs(title = "Standard deviations of log10-transformed fatty acid concentrations")
-p
-```
-A good threshold would be at 0.1. Thus, we can filter out any fatty acid whose
-standard deviation of concentration is below 0.1.
-
-```{r filter_low_sd}
-tse_filter <- mae_sub[[1]][apply(assay(mae_sub[[1]], "log10"), 1, sd) > 0.1, ]
-altExp(mae_sub[[1]], "not_sd_0") <- tse_filter
-```
-
-Now, we can perform cross-association analysis using Kendall method and display
-significantly correlated species and fatty acids.
+We can perform cross-association analysis using Kendall method and display
+significantly correlated species and fatty acids. To exclude potential false
+positives from cross-association analysis, we use agglomerated and filtered data.
 
 ```{r cross_association_analysis}
 #| fig-width: 15
@@ -579,7 +667,7 @@ significantly correlated species and fatty acids.
 
 # Perform cross-association analysis
 res <- testExperimentCrossAssociation(
-    mae_sub,
+    mae,
     experiment1 = 1,
     experiment2 = 2,
     altexp1 = "not_sd_0",
@@ -613,34 +701,20 @@ We can perform principle coordinate analysis with multi-dimensional scaling
 based on Bray-Curtis index and visualize the results with explained variances
 on axes.
 
-In the following workflow steps, we will only use salmons at day 60 because, they
-might be differ from each other while salmons at day 0 are more similar to each
-other despite being categorized into "control" and "treatment" groups, although
-they did not have any treatment.
-
-```{r fetch_day60_salmons}
-# Substitute original metagenomic TreeSummarizedExperiment with agglomerated
-# version
-mae_sub[[2]] <- altExp(mae_sub[[2]], "prev_genus")
-
-# Fetch only salmons at day 60
-mae_day_60 <- mae_sub[, colData(mae_sub[[2]])$trial.timepoint == 60]
-```
-
 ```{r pcoa_beta_diversity1}
 # Run PCoA with multi-dimensional scaling and Bray-Curtis index
-tse_pcoa <- runMDS(mae_day_60[["metagenomic_amplicon"]],
-                   FUN = vegan::vegdist,
-                   methods = "bray",
-                   assay.type = "relabundance",
-                   name = "MDS_bray")
+mae[[2]] <- runMDS(
+    mae[[2]],
+    FUN = vegan::vegdist,
+    methods = "bray",
+    assay.type = "relabundance",
+    name = "MDS_bray")
 
 # Display dissimilarity on a plot
-p <- plotReducedDim(tse_pcoa, "MDS_bray",
-                    colour_by = "treatment_group")
+p <- plotReducedDim(mae[[2]], "MDS_bray", colour_by = "treatment_group")
 
 # Calculate explained variance
-e <- attr(reducedDim(tse_pcoa, "MDS_bray"), "eig")
+e <- attr(reducedDim(mae[[2]], "MDS_bray"), "eig")
 rel_eig <- e / sum(e[e > 0])
 
 # Add explained variance for each axis
@@ -659,38 +733,42 @@ results.
 
 ```{r}
 # Run NMDS on relative abundance assay with Bray-Curtis distances
-tse_pcoa <- runNMDS(tse_pcoa,
-               FUN = vegan::vegdist,
-               method = "bray",
-               assay.type = "relabundance",
-               name = "NMDS_bray")
+mae[[2]] <- runNMDS(
+    mae[[2]],
+    FUN = vegan::vegdist,
+    method = "bray",
+    assay.type = "relabundance",
+    name = "NMDS_bray")
 
 # Run MDS on clr assay with Aitchison distances
-tse_pcoa <- runMDS(tse_pcoa,
-              FUN = vegan::vegdist,
-              method = "euclidean",
-              assay.type = "clr",
-              name = "MDS_aitchison")
+mae[[2]] <- runMDS(
+    mae[[2]],
+    FUN = vegan::vegdist,
+    method = "euclidean",
+    assay.type = "clr",
+    name = "MDS_aitchison")
 
 # Run NMDS on clr assay with Euclidean distances
-tse_pcoa <- runNMDS(tse_pcoa,
-               FUN = vegan::vegdist,
-               method = "euclidean",
-               assay.type = "clr",
-               name = "NMDS_aitchison")
+mae[[2]] <- runNMDS(
+    mae[[2]],
+    FUN = vegan::vegdist,
+    method = "euclidean",
+    assay.type = "clr",
+    name = "NMDS_aitchison")
 
 
 
-plots <- lapply(c("MDS_bray", "MDS_aitchison",
-                  "NMDS_bray", "NMDS_aitchison"),
-                plotReducedDim,
-                object = tse_pcoa,
-                colour_by = "treatment_group")
+plots <- lapply(
+    c("MDS_bray", "MDS_aitchison", "NMDS_bray", "NMDS_aitchison"),
+    plotReducedDim,
+    object = mae[[2]],
+    colour_by = "treatment_group")
 
 # Generate multi-panel plot
 wrap_plots(plots) +
   plot_layout(guides = "collect")
 ```
+
 All four methods demonstrate that features from control and treatment are
 not dissimilar.
 
@@ -714,25 +792,20 @@ acids drive the difference in salmon weight.
 
 
 ```{r mofa_fit} 
-# Add mass categories to mae_day_60
-# This number is different from the media for the entire MAE object
-# as this one was filtered to include **only** salmons at day 60
-mass_median <- median(as.numeric(colData(mae_day_60)[, "host.gutted.mass"]), na.rm = TRUE)
-colData(mae_day_60)["mass_category"] <- ifelse(
-  as.numeric(colData(mae_day_60)[, "host.gutted.mass"]) > mass_median, "heavy", "light"
-)
-
+mae_temp <- mae
 # Select only the column we require
 # It is a necessary step for MOFA as it will not run if there are more than one
 # column
-colData(mae_day_60) <- colData(mae_day_60)[ , c("mass_category"), drop = FALSE]
+colData(mae_temp) <- colData(mae_temp)[ , c("mass_category"), drop = FALSE]
 
 # Extract only transformed metagenomic assays for MOFA+ analysis
-assays(mae_day_60[[2]]) <- assays(mae_day_60[[2]])[names(assays(mae_day_60[[2]])) %in% c("clr")]
+
+assays(mae_temp[[1]]) <- assays(mae_temp[[1]])[names(assays(mae_temp[[1]])) %in% c("standardize")]
+assays(mae_temp[[2]]) <- assays(mae_temp[[2]])[names(assays(mae_temp[[2]])) %in% c("standardize")]
 
 # Transform MAE object to MultiAssayExperiment
 model <- create_mofa_from_MultiAssayExperiment(
-    mae_day_60,
+    mae_temp,
     group = "mass_category",
     extract_metadata = TRUE
 )
@@ -954,18 +1027,20 @@ We will be only using data at day 60 after salmons have grown and been subjected
 (treatment) or not (control) to the algae meal. 
 
 ```{r extract_mae_data_day_60}
-# Get colData from MAE object at day 60
-mae_day_60_coldata <- colData(mae_day_60)
+# # Get colData from MAE object at day 60
+# mae_day_60_coldata <- colData(mae_day_60)
+# 
+# # Add treatment_group to colData(mae_day_60) that was removed for MOFA analysis
+# 
+# # Add treatment_group (control vs. treatment) to colData of MAE at day 60
+# mae_day_60_coldata <- merge(colData(mae_sub)["treatment_group"], colData(mae_day_60), by = 0)
+# 
+# # Add host.gutted.weight to colData(mae_day_60)
+# mae_day_60_coldata <- merge(colData(mae_sub)[c("host.gutted.mass", "animal")],
+#                             mae_day_60_coldata,
+#                             by = "animal", by.y = "Row.names")
 
-# Add treatment_group to colData(mae_day_60) that was removed for MOFA analysis
 
-# Add treatment_group (control vs. treatment) to colData of MAE at day 60
-mae_day_60_coldata <- merge(colData(mae_sub)["treatment_group"], colData(mae_day_60), by = 0)
-
-# Add host.gutted.weight to colData(mae_day_60)
-mae_day_60_coldata <- merge(colData(mae_sub)[c("host.gutted.mass", "animal")],
-                            mae_day_60_coldata,
-                            by = "animal", by.y = "Row.names")
 ```
 
 We also need to prepare the data for the IntegratedLearner package. We are
@@ -974,23 +1049,25 @@ can be performed with basic R transformations.
 
 ```{r prepare_data_integrated_learner1}
 # Create feature dataframe for IntegratedLearner
-metabolomics_df <- mae_day_60[["fatty_acids_mg"]] |>
+metabolomics_df <- mae[["fatty_acids_mg"]] |>
   assay("log10") |>
   as.data.frame()
-metagenomics_df <- mae_day_60[["metagenomic_amplicon"]] |>
+metagenomics_df <- mae[["metagenomic_amplicon"]] |>
   assay("clr") |>
+  as.data.frame()
+sample_meta_df <- colData(mae) |>
   as.data.frame()
 
 # Replace "sample" names to animal accession numbers
-names(metabolomics_df) <- colData(mae_day_60[["fatty_acids_mg"]])[, "animal"]
-names(metagenomics_df) <- colData(mae_day_60[["metagenomic_amplicon"]])[, "animal"]
+names(metabolomics_df) <- colData(mae[["fatty_acids_mg"]])[, "animal"]
+names(metagenomics_df) <- colData(mae[["metagenomic_amplicon"]])[, "animal"]
 
 # Join feature tables together
 feature_table <- rbind(metagenomics_df, metabolomics_df)
 
 # Sanity check: are columns from colData the same as rownames of feature table
-all(colnames(metagenomics_df) == rownames(colData(mae_day_60))) # TRUE
-all(colnames(metabolomics_df) == rownames(colData(mae_day_60))) # TRUE
+all(colnames(metagenomics_df) == rownames(colData(mae))) # TRUE
+all(colnames(metabolomics_df) == rownames(colData(mae))) # TRUE
 ```
 
 We also need to retain only features with non-zero variance as these the most
@@ -1033,7 +1110,7 @@ create_sample_metadata <- function(df, Y, subjectID, factor) {
 
 
 ```{r}
-sample_metadata <- create_sample_metadata(df = mae_day_60_coldata,
+sample_metadata <- create_sample_metadata(df = sample_meta_df,
                                           Y = "mass_category",
                                           subjectID = colnames(metabolomics_df),
                                           factor = TRUE)
