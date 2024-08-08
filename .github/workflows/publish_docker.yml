@@ -4,7 +4,7 @@ on:
     branches: [case-study]
 
 env:
-  BIOC_VERSION: RELEASE_3_19
+  BIOC_VERSION: RELEASE_3_19-R-4.4.1
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
