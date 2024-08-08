@@ -15,12 +15,13 @@ RUN Rscript -e 'repos <- BiocManager::repositories(); \
     include_base = TRUE)'
 
 # Istall CRAN packages
-RUN Rscript -e 'install.packages(c("bartMachine", "GGally", "ggplot2", "knitr", \
-    "patchwork", "randomForest", "reticulate", "reshape", "rJava", "shadowtext", "ggsignif"))'
+RUN Rscript -e 'install.packages(c("patchwork", "randomForest", "reticulate", "reshape", "rJava", "shadowtext", "shadowtext", \
+    "scater", "ggsignif", "SuperLearner", "mcmcplots", "stringr", "ggpubr", \
+    "bartMachine", "GGally", "ggplot2", "knitr"))'
 
 # Install Bioconductor packages
 RUN R -e 'BiocManager::install(c("basilisk", "biomformat", \
-    "ComplexHeatmap", "MGnifyR", "mia", "miaViz", "MOFA2"))'
+    "ComplexHeatmap", "MGnifyR", "mia", "miaViz", "MOFA2", "tidyverse"))'
 
 # Install IntegratedLearner
 RUN R -e 'devtools::install_github("himelmallick/IntegratedLearner")'
