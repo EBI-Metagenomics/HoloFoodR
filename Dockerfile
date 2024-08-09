@@ -2,7 +2,7 @@ ARG BIOC_VERSION
 FROM bioconductor/bioconductor_docker:${BIOC_VERSION}
 
 # Copy repository to Docker image
-COPY . /opt/pkg
+COPY --chown=rstudio:rstudio . /opt/pkg
 
 # Install essentials
 RUN apt-get install -y python3 python3-setuptools python3-dev python3-pip
