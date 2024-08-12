@@ -211,9 +211,11 @@ saveRDS(object = mae, file = path)
 #| label: read_metagenomic
 #| echo: false
 
+saveRDS(object = tse, file = "../inst/extdata/salmon_metagenomic_tse.RDS")
+
 # Read in salmon metagenomic TreSE object 
-path <- system.file("extdata", "salmon_metagenomic_tse.RDS", package = "HoloFoodR")
-tse <- readRDS(file = path)
+# path <- system.file("extdata", "salmon_metagenomic_tse.RDS", package = "HoloFoodR")
+# tse <- readRDS(file = path)
 ```
 
 Data fetched from MGnify has MGnify-specific identifiers. We have to first
@@ -221,6 +223,7 @@ rename samples with HoloFood specific ID and then add the data to
 MultiAssayExperiment combining all the data.
 
 ```{r add_metagenomic_data}
+tse <- readRDS(file = "../inst/extdata/salmon_metagenomic_tse.RDS")
 
 .add_MGnify <- function(
         mae, tse, holofood.id = "sample_biosample",
