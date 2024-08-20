@@ -522,7 +522,7 @@ mae[[1]] <- transformAssay(
 mae[[1]] <- transformAssay(
     mae[[1]],
     assay.type = "log10",
-    MARGIN = "rows",
+    MARGIN = "samples",
     method = "standardize"
 )
 
