@@ -19,7 +19,7 @@ vignette: >
 
 [HoloFood database](https://www.holofooddata.org) is a large collection of
 holo-omic and multi-omic data from two animal systems, chicken and salmon. It was
-created by the HoloFood consortium. One of its objectives is to study the 
+created by the HoloFood consortium. One of its objectives is to study the
 interactions between animal systems, their microbiomes, and feed additives
 to optimize the diet strategies of these farm animals.
 For make it easily accessible, the creators provide an Application Programming
@@ -213,7 +213,7 @@ saveRDS(object = mae, file = path)
 
 saveRDS(object = tse, file = "../inst/extdata/salmon_metagenomic_tse.RDS")
 
-# Read in salmon metagenomic TreSE object 
+# Read in salmon metagenomic TreSE object
 # path <- system.file("extdata", "salmon_metagenomic_tse.RDS", package = "HoloFoodR")
 # tse <- readRDS(file = path)
 ```
@@ -322,13 +322,6 @@ for compositional metagenomic data
 
 path <- system.file("extdata", "salmon_mae.RDS", package = "HoloFoodR")
 mae <- readRDS(path)
-```
-
-Below, we see an upset plot that illustrates the overlap between different
-experiments and their corresponding samples.
-
-```{r upset}
-upsetSamples(mae)
 ```
 
 For demonstration purposes, we will focus on investigating two experiments
@@ -794,7 +787,7 @@ treatment groups, we would like to know if any of metagenomic species or fatty
 acids drive the difference in salmon weight.
 
 
-```{r mofa_fit} 
+```{r mofa_fit}
 mae_temp <- mae
 # Select only the column we require
 # It is a necessary step for MOFA as it will not run if there are more than one
@@ -1027,17 +1020,17 @@ we can output the most promising features for the subsquent analyses.
 ### Data preparation
 
 We will be only using data at day 60 after salmons have grown and been subjected
-(treatment) or not (control) to the algae meal. 
+(treatment) or not (control) to the algae meal.
 
 ```{r extract_mae_data_day_60}
 # # Get colData from MAE object at day 60
 # mae_day_60_coldata <- colData(mae_day_60)
-# 
+#
 # # Add treatment_group to colData(mae_day_60) that was removed for MOFA analysis
-# 
+#
 # # Add treatment_group (control vs. treatment) to colData of MAE at day 60
 # mae_day_60_coldata <- merge(colData(mae_sub)["treatment_group"], colData(mae_day_60), by = 0)
-# 
+#
 # # Add host.gutted.weight to colData(mae_day_60)
 # mae_day_60_coldata <- merge(colData(mae_sub)[c("host.gutted.mass", "animal")],
 #                             mae_day_60_coldata,
