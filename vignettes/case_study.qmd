@@ -559,7 +559,7 @@ mae[[2]] <- transformAssay(
     mae[[2]],
     assay.type = "clr",
     method = "standardize",
-    MARGIN = "rows"
+    MARGIN = "samples"
   )
 
 # Wait until bacth transformation PR is ready in mia
@@ -575,7 +575,7 @@ altExp(mae[[2]], "prev_genus") <- transformAssay(
     altExp(mae[[2]], "prev_genus"),
     assay.type = "clr",
     method = "standardize",
-    MARGIN = "rows"
+    MARGIN = "samples"
   )
 ```
 
