@@ -537,7 +537,7 @@ altExp(mae[[1]], "not_sd_0") <- transformAssay(
 altExp(mae[[1]], "not_sd_0") <- transformAssay(
     altExp(mae[[1]], "not_sd_0"),
     assay.type = "log10",
-    MARGIN = "rows",
+    MARGIN = "samples",
     method = "standardize"
 )
 ```
