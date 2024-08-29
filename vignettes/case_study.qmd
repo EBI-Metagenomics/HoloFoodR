@@ -65,31 +65,31 @@ packages <- c(
     "ComplexHeatmap", "dplyr", "ggplot2", "ggpubr", "HoloFoodR", "knitr",
     "latex2exp", "MGnifyR", "mia", "miaViz", "MOFA2", "patchwork", "reticulate",
     "scater", "shadowtext", "stringr"
-    )
+)
 
 # Get packages that are already installed installed
-packages_already_installed <- packages[ packages %in% installed.packages() ]
+packages_already_installed <- packages[packages %in% installed.packages()]
 
 # Get packages that need to be installed
-packages_need_to_install <- setdiff( packages, packages_already_installed )
+packages_need_to_install <- setdiff(packages, packages_already_installed)
 
 # Loads BiocManager into the session. Install it if it not already installed.
-if( !require("BiocManager") ){
+if (!require("BiocManager")) {
     install.packages("BiocManager")
     library("BiocManager")
 }
 
 # If there are packages that need to be installed, installs them with BiocManager
 # Updates old packages
-if( length(packages_need_to_install) > 0 ) {
-   install(packages_need_to_install, ask = FALSE)
+if (length(packages_need_to_install) > 0) {
+    install(packages_need_to_install, ask = FALSE)
 }
 
 # Load all packages into session. Stop if there are packages that were not
 # successfully loaded
 pkgs_not_loaded <- !sapply(packages, require, character.only = TRUE)
-pkgs_not_loaded <- names(pkgs_not_loaded)[ pkgs_not_loaded ]
-if( length(pkgs_not_loaded) > 0 ){
+pkgs_not_loaded <- names(pkgs_not_loaded)[pkgs_not_loaded]
+if (length(pkgs_not_loaded) > 0) {
     stop("Error in loading the following packages into the session: '", paste0(pkgs_not_loaded, collapse = "', '"), "'")
 }
 ```
@@ -114,7 +114,7 @@ salmons <- HoloFoodR::doQuery("animals", system = "salmon", use.cache = TRUE)
 # Get only the data that has both metagenomic amplicion and fatty acid
 # data
 salmons <- salmons |>
-  filter(fatty_acids == TRUE & metagenomic_amplicon == TRUE)
+    filter(fatty_acids == TRUE & metagenomic_amplicon == TRUE)
 
 colnames(salmons)
 ```
@@ -127,9 +127,9 @@ Next, we can retrieve the data associated with each salmon.
 
 # Get salmon data
 salmon_data <- HoloFoodR::getData(
-  accession.type = "animals",
-  accession = salmons[["accession"]],
-  use.cache = TRUE
+    accession.type = "animals",
+    accession = salmons[["accession"]],
+    use.cache = TRUE
 )
 
 # Get salmon samples
@@ -154,8 +154,8 @@ sample type and store them as `experiments` in a MultiAssayExperiment (MAE) obje
 
 # Get salmon <- experiments as MAE object
 mae <- HoloFoodR::getResult(
-  salmon_sample_ids,
-  use.cache = TRUE
+    salmon_sample_ids,
+    use.cache = TRUE
 )
 ```
 
@@ -191,19 +191,19 @@ HoloFoodR, allows simple interaction with MGnify API.
 
 # Create MGnify object
 mg <- MgnifyClient(
-  useCache = TRUE,
-  cacheDir = ".MGnifyR_cache"
+    useCache = TRUE,
+    cacheDir = ".MGnifyR_cache"
 )
 
 # Select only metagenomic_amplicon sample type
 metagenomic_salmon_samples <- salmon_samples |>
-  filter(sample_type = "metagenomic_amplicon")
+    filter(sample_type = "metagenomic_amplicon")
 
 # Search for sample IDs in MGnify database
 salmon_analysis_ids <- searchAnalysis(
-  mg,
-  type = "samples",
-  metagenomic_salmon_samples[["accession"]]
+    mg,
+    type = "samples",
+    metagenomic_salmon_samples[["accession"]]
 )
 ```
 
@@ -217,9 +217,9 @@ amplicon accession numbers (SAMEAxxxxxx) to their counterparts in MGnify databas
 
 # Get metagenomic taxonomic data for salmon from MGnify
 tse <- MGnifyR::getResult(
-  mg,
-  accession = salmon_analysis_ids,
-  get.func = FALSE
+    mg,
+    accession = salmon_analysis_ids,
+    get.func = FALSE
 )
 ```
 
@@ -300,14 +300,14 @@ to the diet of salmons.
 
 # Harmonize experiment names
 names(mae) <- names(mae) |>
-  tolower() |>
-  gsub(pattern = " ", replacement = "_")
+    tolower() |>
+    gsub(pattern = " ", replacement = "_")
 
 # Fetch only experiments that we need
 mae <- mae[, , c("fatty_acids_mg", "metagenomic")]
 names(mae) <- c("fatty_acids", "metagenomic")
 # Filter MAE object to include only Trial A
-mae <- mae[ , colData(mae)[["Trial code"]] == "SA", ]
+mae <- mae[, colData(mae)[["Trial code"]] == "SA", ]
 ```
 
 Some values of fatty acids are under detection thresholds. We assume them to be
@@ -332,7 +332,7 @@ assay <- apply(assay, c(1, 2), function(x) as.numeric(gsub(",", ".", x)))
 assay(mae[[1]], "counts") <- assay
 
 # Drop fatty acids that are not observed
-mae[[1]] <- mae[[1]][ rowSums(assay(mae[[1]], "counts")) != 0, ]
+mae[[1]] <- mae[[1]][rowSums(assay(mae[[1]], "counts")) != 0, ]
 ```
 
 Moreover, we need to add a few columns for the subsequent data analysis steps.
@@ -344,17 +344,17 @@ and control, and how treatment is related to mass.
 
 # Add treatment group
 colData(mae)[["treatment_group"]] <-
-  ifelse(colData(mae)[["Treatment concentration"]] == 0, "control", "treatment")
+    ifelse(colData(mae)[["Treatment concentration"]] == 0, "control", "treatment")
 
 # Add salmon host mass to MAE colData
 colData(mae[[2]])[["host.gutted.mass"]] <- as.numeric(colData(mae[[2]])[["host.gutted.mass"]])
 merged_data <- merge(
     x = colData(mae), y = colData(mae[[2]])[, c("animal", "host.gutted.mass")],
     all.x = TRUE, by = "animal"
-    )
+)
 rownames(merged_data) <- merged_data[["animal"]]
 # Order and add back
-colData(mae) <- merged_data[ match(colData(mae)[["animal"]], merged_data[["animal"]]), ]
+colData(mae) <- merged_data[match(colData(mae)[["animal"]], merged_data[["animal"]]), ]
 
 # Add animal metadata to separate experiments
 mae[[1]] <- getWithColData(mae, 1)
@@ -372,9 +372,9 @@ since we are interested in multi-omic data analysis.
 #| label: preprocess3
 
 # Subset by taking only samples from day 60
-samples <- colnames(mae[[2]])[ mae[[2]]$trial.timepoint == 60 ]
+samples <- colnames(mae[[2]])[mae[[2]]$trial.timepoint == 60]
 mae_sub <- mae
-mae_sub[[2]] <- mae_sub[[2]][ , samples, ]
+mae_sub[[2]] <- mae_sub[[2]][, samples, ]
 
 # Take those samples that can be found from both experiments
 mae <- intersectColumns(mae)
@@ -421,8 +421,8 @@ prevalence <- getPrevalence(
     assay.type = "relabundance",
     na.rm = TRUE,
     sort = TRUE,
-    detection = 0.1/100
-    )
+    detection = 0.1 / 100
+)
 
 # Exclude microbes with 0 prevalence
 prevalence <- prevalence[prevalence != 0]
@@ -454,7 +454,7 @@ altExp(mae[[2]], "prev_genus") <- agglomerateByPrevalence(
     rank = "Genus",
     prevalence = 20 / 100,
     detection = 0.1 / 100
-  )
+)
 
 # Agglomerate by prevalence by genus
 altExp(mae[[4]], "prev_genus") <- agglomerateByPrevalence(
@@ -463,7 +463,7 @@ altExp(mae[[4]], "prev_genus") <- agglomerateByPrevalence(
     rank = "Genus",
     prevalence = 20 / 100,
     detection = 0.1 / 100
-  )
+)
 
 altExp(mae[[2]], "prev_genus")
 ```
@@ -530,18 +530,20 @@ mae[[2]] <- transformAssay(
     method = "clr",
     pseudocount = TRUE,
     MARGIN = "cols"
-  )
+)
 
 # Wait until batch transformation PR is ready in mia
 altExp(mae[[2]], "prev_genus") <- transformAssay(
-    altExp(mae[[2]], "prev_genus"), method = "relabundance")
+    altExp(mae[[2]], "prev_genus"),
+    method = "relabundance"
+)
 altExp(mae[[2]], "prev_genus") <- transformAssay(
     altExp(mae[[2]], "prev_genus"),
     assay.type = "relabundance",
     method = "clr",
     pseudocount = TRUE,
     MARGIN = "cols"
-  )
+)
 
 # Transform microbiome with centered log-ratio method
 mae[[4]] <- transformAssay(mae[[4]], method = "relabundance", MARGIN = "cols")
@@ -551,18 +553,20 @@ mae[[4]] <- transformAssay(
     method = "clr",
     pseudocount = TRUE,
     MARGIN = "cols"
-  )
+)
 
 # Wait until batch transformation PR is ready in mia
 altExp(mae[[4]], "prev_genus") <- transformAssay(
-    altExp(mae[[4]], "prev_genus"), method = "relabundance")
+    altExp(mae[[4]], "prev_genus"),
+    method = "relabundance"
+)
 altExp(mae[[4]], "prev_genus") <- transformAssay(
     altExp(mae[[4]], "prev_genus"),
     assay.type = "relabundance",
     method = "clr",
     pseudocount = TRUE,
     MARGIN = "cols"
-  )
+)
 ```
 
 ## Data analysis
@@ -579,22 +583,22 @@ assessment of difference between the groups.
 #| label: plot_abundance
 
 p1 <- plotAbundanceDensity(
-  altExp(mae[[2]], "prev_genus"),
-  assay.type = "clr",
-  colour_by = "Treatment concentration"
-  )
+    altExp(mae[[2]], "prev_genus"),
+    assay.type = "clr",
+    colour_by = "Treatment concentration"
+)
 
 p2 <- plotAbundanceDensity(
-  altExp(mae[[2]], "prev_genus"),
-  assay.type = "clr",
-  colour_by = "mass"
-  ) + scale_fill_gradient2(
+    altExp(mae[[2]], "prev_genus"),
+    assay.type = "clr",
+    colour_by = "mass"
+) + scale_fill_gradient2(
     name = "mass",
     low = "blue",
     mid = "white",
     high = "red",
     midpoint = 0
-    )
+)
 
 p1 + p2
 ```
@@ -626,12 +630,12 @@ pvals[[varname]] <- rownames(pvals)
 pvals <- reshape(
     pvals,
     direction = "long",
-    varying = colnames(pvals)[ !colnames(pvals) %in% varname ],
-    times = colnames(pvals)[ !colnames(pvals) %in% varname ],
+    varying = colnames(pvals)[!colnames(pvals) %in% varname],
+    times = colnames(pvals)[!colnames(pvals) %in% varname],
     v.names = "p",
     timevar = "group2",
     idvar = "group1"
-    ) |>
+) |>
     na.omit()
 
 # Round values
@@ -641,10 +645,12 @@ pvals[["y.position"]] <- max(mae[[2]][[index]]) + 0.5
 
 # Create a plot
 p <- plotColData(
-        mae[[2]], x = "treatment_group", y = index, colour_by = "mass",
-        show_boxplot = TRUE, show_violin = FALSE) +
-        theme(text = element_text(size = 10)) +
-        stat_pvalue_manual(pvals)
+    mae[[2]],
+    x = "treatment_group", y = index, colour_by = "mass",
+    show_boxplot = TRUE, show_violin = FALSE
+) +
+    theme(text = element_text(size = 10)) +
+    stat_pvalue_manual(pvals)
 p
 ```
 
@@ -667,7 +673,8 @@ mae[[2]] <- runMDS(
     mae[[2]],
     FUN = getDissimilarity,
     method = "bray",
-    assay.type = "relabundance")
+    assay.type = "relabundance"
+)
 
 # Display dissimilarity on a plot
 p <- plotReducedDim(mae[[2]], "MDS", colour_by = "mass", shape_by = "treatment_group", point_size = 4)
@@ -680,7 +687,7 @@ rel_eig <- e / sum(e[e > 0])
 p <- p + labs(
     x = paste("PCoA 1 (", round(100 * rel_eig[[1]], 1), "%", ")", sep = ""),
     y = paste("PCoA 2 (", round(100 * rel_eig[[2]], 1), "%", ")", sep = "")
-    )
+)
 
 p
 ```
@@ -713,7 +720,7 @@ res <- getCrossAssociation(
     assay.type2 = "clr",
     mode = "matrix",
     test.signif = TRUE
-    )
+)
 
 # Create a heatmap and store it
 p <- Heatmap(
@@ -721,9 +728,9 @@ p <- Heatmap(
     # Print values to cells
     cell_fun = function(j, i, x, y, width, height, fill) {
         # If the p-value is under threshold
-        if( !is.na(res$p_adj[i, j]) & res$p_adj[i, j] < 0.05 ){
+        if (!is.na(res$p_adj[i, j]) & res$p_adj[i, j] < 0.05) {
             # Print "X"
-          grid.shadowtext(sprintf("%s", "X"), x, y, gp = gpar(fontsize = 10, col = "white"))
+            grid.shadowtext(sprintf("%s", "X"), x, y, gp = gpar(fontsize = 10, col = "white"))
         }
     },
     heatmap_legend_param = list(title = TeX("Kendall's $\\tau$"))
@@ -754,9 +761,11 @@ mae_temp[[2]] <- altExp(mae_temp[[2]], "prev_genus")
 
 # Extract only transformed metagenomic assays for MOFA+ analysis
 assays(mae_temp[[1]]) <- assays(mae_temp[[1]])[
-  names(assays(mae_temp[[1]])) %in% c("standardize")]
+    names(assays(mae_temp[[1]])) %in% c("standardize")
+]
 assays(mae_temp[[2]]) <- assays(mae_temp[[2]])[
-  names(assays(mae_temp[[2]])) %in% c("counts")]
+    names(assays(mae_temp[[2]])) %in% c("counts")
+]
 
 # Transform MAE object to MOFA model
 model <- create_mofa_from_MultiAssayExperiment(mae_temp)
@@ -773,9 +782,9 @@ train_opts$convergence_mode <- "slow"
 
 # Prepare MOFA model
 model <- prepare_mofa(
-  object = model,
-  model_options = model_opts,
-  training_options = train_opts
+    object = model,
+    model_options = model_opts,
+    training_options = train_opts
 )
 
 # Train model
@@ -788,12 +797,12 @@ For sanity check, we expect factors to be uncorrelated.
 #| label: check_fit
 
 plot_factor_cor(
-  model,
-  method = "pearson",
-  cl.ratio = 0.2,
-  tl.srt = 0,
-  title = "Pearson correlation between factors",
-  mar=c(0, 0, 2, 0),
+    model,
+    method = "pearson",
+    cl.ratio = 0.2,
+    tl.srt = 0,
+    title = "Pearson correlation between factors",
+    mar = c(0, 0, 2, 0),
 )
 ```
 
@@ -823,7 +832,7 @@ custom_plotter <- function(name, factor) {
         factors = factor,
         nfeatures = 15
     ) +
-    labs(title = paste0("Top weights of the ", name, " assay for factor ", factor))
+        labs(title = paste0("Top weights of the ", name, " assay for factor ", factor))
     return(p)
 }
 
