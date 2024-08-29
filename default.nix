@@ -40,7 +40,7 @@
 #  > commit = "008e3d1ac579cbcd4de3b9a2315635c652b687bd"),
 #  > list(package_name = "HoloFoodR",
 #  > repo_url = "https://github.com/EBI-Metagenomics/HoloFoodR",
-#  > commit = "815071128cdd8e099fbee032dd56fc12a14bfd00"),
+#  > commit = "cb26f00d43a060c0cac24f9a339edb27d36ecf85"),
 #  > list(package_name = "mia",
 #  > repo_url = "https://github.com/microbiome/mia",
 #  > commit = "dcaa110131162d48d82081d1da3a74da18268a3b")),
@@ -51,10 +51,6 @@
 # It uses nixpkgs' revision a6292e34000dc93d43bccf78338770c1c5ec8a99 for reproducibility purposes
 # which will install R version latest.
 # Report any issues to https://github.com/b-rodrigues/rix
-
-### NOTE ###
-# HoloFoodR included R as a dependency, which fails the build process
-# because R is not an R package. Thus, this dependency was removed manually
 let
   pkgs =
     import
@@ -122,8 +118,8 @@ let
       name = "HoloFoodR";
       src = pkgs.fetchgit {
         url = "https://github.com/EBI-Metagenomics/HoloFoodR";
-        rev = "815071128cdd8e099fbee032dd56fc12a14bfd00";
-        sha256 = "sha256-Kwi/2RODbWDcQrHtGTPKox5Nv/LIWBUiTtwMRJjR4Xw=";
+        rev = "cb26f00d43a060c0cac24f9a339edb27d36ecf85";
+        sha256 = "sha256-svS7cuRO2Yz3oAjn97RTl0eHolG8w5tJ1qkqBspgEWw=";
       };
       propagatedBuildInputs = builtins.attrValues {
         inherit (pkgs.rPackages)
