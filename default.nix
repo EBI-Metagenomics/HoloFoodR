@@ -63,6 +63,7 @@ let
       BiocManager
       BiocVersion
       ComplexHeatmap
+      MOFA2
       FSA
       GGally
       MGnifyR
