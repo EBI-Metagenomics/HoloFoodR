@@ -2,27 +2,27 @@
 # with following call:
 # >rix(r_ver = "a6292e34000dc93d43bccf78338770c1c5ec8a99",
 #  > r_pkgs = c("ALDEx2",
-#  > "BiocManager",
-#  > "BiocVersion",
-#  > "ComplexHeatmap",
-#  > "MOFA2",
-#  > "FSA",
-#  > "GGally",
-#  > "MGnifyR",
-#  > "UpSetR",
 #  > "bartMachine",
 #  > "basilisk",
+#  > "BiocManager",
+#  > "BiocVersion",
 #  > "biomformat",
 #  > "chromote",
+#  > "ComplexHeatmap",
 #  > "devtools",
 #  > "dplyr",
+#  > "FSA",
 #  > "gbp",
+#  > "GGally",
 #  > "ggplot2",
 #  > "ggpubr",
 #  > "glmnet",
 #  > "knitr",
+#  > "latex2exp",
+#  > "MGnifyR",
 #  > "miaViz",
 #  > "miniUI",
+#  > "MOFA2",
 #  > "multiview",
 #  > "patchwork",
 #  > "pheatmap",
@@ -33,6 +33,7 @@
 #  > "rmarkdown",
 #  > "shadowtext",
 #  > "styler",
+#  > "UpSetR",
 #  > "vegan",
 #  > "xgboost"),
 #  > system_pkgs = c("quarto"),
@@ -61,27 +62,27 @@ let
   rpkgs = builtins.attrValues {
     inherit (pkgs.rPackages)
       ALDEx2
-      BiocManager
-      BiocVersion
-      ComplexHeatmap
-      MOFA2
-      FSA
-      GGally
-      MGnifyR
-      UpSetR
       bartMachine
       basilisk
+      BiocManager
+      BiocVersion
       biomformat
       chromote
+      ComplexHeatmap
       devtools
       dplyr
+      FSA
       gbp
+      GGally
       ggplot2
       ggpubr
       glmnet
       knitr
+      latex2exp
+      MGnifyR
       miaViz
       miniUI
+      MOFA2
       multiview
       patchwork
       pheatmap
@@ -92,6 +93,7 @@ let
       rmarkdown
       shadowtext
       styler
+      UpSetR
       vegan
       xgboost
       languageserver
