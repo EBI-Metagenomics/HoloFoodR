@@ -36,7 +36,7 @@
 #  > "UpSetR",
 #  > "vegan",
 #  > "xgboost"),
-#  > system_pkgs = c("quarto"),
+#  > system_pkgs = NULL,
 #  > git_pkgs = list(list(package_name = "rix",
 #  >      repo_url = "https://github.com/b-rodrigues/rix/",
 #  > commit = "008e3d1ac579cbcd4de3b9a2315635c652b687bd"),
@@ -180,7 +180,6 @@ let
 
   system_packages = builtins.attrValues {
     inherit (pkgs)
-      quarto
       R
       glibcLocales
       nix
