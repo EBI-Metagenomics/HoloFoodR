@@ -15,16 +15,12 @@ RUN Rscript -e 'repos <- BiocManager::repositories(); \
     include_base = TRUE)'
 
 # Istall CRAN packages
-RUN Rscript -e 'install.packages(c("patchwork", "randomForest", "reticulate", "reshape", "rJava", "shadowtext", "shadowtext", \
-    "scater", "ggsignif", "SuperLearner", "mcmcplots", "stringr", "ggpubr", \
-    "bartMachine", "GGally", "ggplot2", "knitr"))'
+RUN Rscript -e 'install.packages(c("patchwork", "reticulate", "reshape", "shadowtext", "shadowtext", \
+    "scater", "ggsignif", "stringr", "ggpubr", "GGally", "ggplot2", "knitr", "latex2exp"))'
 
 # Install Bioconductor packages
 RUN R -e 'BiocManager::install(c("basilisk", "biomformat", \
     "ComplexHeatmap", "MGnifyR", "mia", "miaViz", "MOFA2", "tidyverse"))'
-
-# Install IntegratedLearner
-RUN R -e 'devtools::install_github("himelmallick/IntegratedLearner")'
 
 # Install mofapy2
 RUN python3 -m pip install 'https://github.com/bioFAM/mofapy2/tarball/master'
