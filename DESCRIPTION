@@ -17,7 +17,7 @@ biocViews: Software, Infrastructure, DataImport
 License: Artistic-2.0 | file LICENSE
 Encoding: UTF-8
 Depends:
-    R(>= 4.4.0),
+    R (>= 4.4.0),
     TreeSummarizedExperiment,
     MultiAssayExperiment
 Imports:
