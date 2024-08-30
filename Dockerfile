@@ -7,22 +7,22 @@ COPY --chown=rstudio:rstudio . /opt/pkg
 # Install essentials
 RUN apt-get install -y python3 python3-setuptools python3-dev python3-pip
 
-# Install HoloFoodR
+# Install HoloFoodR dependencies
 RUN Rscript -e 'repos <- BiocManager::repositories(); \
     remotes::install_local(path = "/opt/pkg/", repos=repos, \
     dependencies=TRUE, build_vignettes=FALSE, upgrade=TRUE); \
     sessioninfo::session_info(installed.packages()[,"Package"], \
     include_base = TRUE)'
 
-# Istall CRAN packages
+# Istall CRAN packages for case study
 RUN Rscript -e 'install.packages(c("patchwork", "reticulate", "reshape", "shadowtext", "shadowtext", \
     "scater", "ggsignif", "stringr", "ggpubr", "GGally", "ggplot2", "knitr", "latex2exp"))'
 
-# Install Bioconductor packages
-RUN R -e 'BiocManager::install(c("basilisk", "biomformat", \
+# Install Bioconductor packages for case study
+RUN R -e 'BiocManager::install(c("basilisk", "biomformat", "HoloFoodR", \
     "ComplexHeatmap", "MGnifyR", "mia", "miaViz", "MOFA2", "tidyverse"))'
 
-# Install mofapy2
+# Install mofapy2 for case study
 RUN python3 -m pip install 'https://github.com/bioFAM/mofapy2/tarball/master'
 
 # Internal port for RStudio server is 8787
