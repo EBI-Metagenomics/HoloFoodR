@@ -4,7 +4,7 @@ on:
     branches: [case-study]
 
 env:
-  BIOC_VERSION: RELEASE_3_19-R-4.4.1
+  BIOC_VERSION: devel
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
@@ -36,7 +36,7 @@ jobs:
 
       - name: Build and push Docker image
         id: push
-        uses:  docker/build-push-action@v6
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
