@@ -174,8 +174,9 @@ saveRDS(object = mae, file = path)
 #| echo: false
 
 # Read MAE to avoid retrieval
-path <- system.file("extdata", "salmon_mae_without_mgnify.RDS", package = "HoloFoodR")
-mae <- readRDS(file = path)
+# path <- system.file("extdata", "salmon_mae_without_mgnify.RDS", package = "HoloFoodR")
+# mae <- readRDS(file = path)
+mae <- readRDS(file = "../inst/extdata/salmon_mae_without_mgnify.RDS")
 ```
 
 ### Fetch metagenomic data from MGnify
@@ -229,20 +230,19 @@ tse <- MGnifyR::getResult(
 #| echo: false
 
 # Save salmon metagenomic TreeSE
-path <- system.file("extdata", "salmon_metagenomic_tse.RDS", package = "HoloFoodR")
-saveRDS(object = mae, file = path)
+# path <- system.file("extdata", "salmon_metagenomic_tse.RDS", package = "HoloFoodR")
+# saveRDS(object = mae, file = path)
+saveRDS(object = mae, file = "../inst/extdata/salmon_metagenomic_tse.RDS")
 ```
 
 
 ```{r}
 #| label: read_metagenomic
 #| echo: false
-
-# saveRDS(object = tse, file = "../inst/extdata/salmon_metagenomic_tse.RDS")
-
 # Read in salmon metagenomic TreSE object
-path <- system.file("extdata", "salmon_metagenomic_tse.RDS", package = "HoloFoodR")
-tse <- readRDS(file = path)
+# path <- system.file("extdata", "salmon_metagenomic_tse.RDS", package = "HoloFoodR")
+# tse <- readRDS(file = path)
+tse <- readRDS(file = "../inst/extdata/salmon_metagenomic_tse.RDS")
 ```
 
 Data fetched from MGnify has MGnify-specific identifiers. We have to first
