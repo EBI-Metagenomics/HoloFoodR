@@ -53,3 +53,8 @@ docs
 # Environment
 renv/
 .Rprofile
+
+# direnv stuff
+.envrc
+.direnv
+
