@@ -812,7 +812,10 @@ Next, we will plot the variances explained by each factor.
 
 ```{r}
 #| label: var_factor1
-plot_variance_explained(model)
+p <- plot_variance_explained(model) +
+    labs(title = "Captured variance of fatty acid and metagenomic\ndatasets across 5 factors") +
+    theme(plot.title.position = "plot")
+p
 ```
 
 Factor 1 captures the majority of the variance in the metagenomics data,
