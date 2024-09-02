@@ -16,7 +16,7 @@ RUN Rscript -e 'repos <- BiocManager::repositories(); \
 
 # Istall CRAN packages for case study
 RUN Rscript -e 'install.packages(c("patchwork", "reticulate", "reshape", "shadowtext", "shadowtext", \
-    "scater", "ggsignif", "stringr", "ggpubr", "GGally", "ggplot2", "knitr", "latex2exp"))'
+    "scater", "ggsignif", "stringr", "ggpubr", "GGally", "ggplot2", "knitr", "latex2exp", "UpSetR"))'
 
 # Install Bioconductor packages for case study
 RUN R -e 'BiocManager::install(c("basilisk", "biomformat", \
