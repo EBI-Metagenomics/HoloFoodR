@@ -124,8 +124,8 @@ let
       name = "HoloFoodR";
       src = pkgs.fetchgit {
         url = "https://github.com/EBI-Metagenomics/HoloFoodR";
-        rev = "cb26f00d43a060c0cac24f9a339edb27d36ecf85";
-        sha256 = "sha256-svS7cuRO2Yz3oAjn97RTl0eHolG8w5tJ1qkqBspgEWw=";
+        rev = "4440bdf1ed9f25acfc9cc72075b6ae5b08ea9efc";
+        sha256 = "sha256-EYqlW/AKb1/7I5krRb+d7H0gjuIXDNhcGyYw9lTX46g=";
       };
       propagatedBuildInputs = builtins.attrValues {
         inherit (pkgs.rPackages)
@@ -143,8 +143,8 @@ let
       name = "mia";
       src = pkgs.fetchgit {
         url = "https://github.com/microbiome/mia";
-        rev = "dcaa110131162d48d82081d1da3a74da18268a3b";
-        sha256 = "sha256-fPtt+mdz+2AFYvbRhlOFjRIA/oeTjZIEyV6X0T8NKRc=";
+        rev = "52d2a236449206f66e8b03ad21e7abe40313c2cf";
+        sha256 = "sha256-Y40PB8/rFwite7cvRTbz6qbjj3wEli+M0oFt/qI4Q5E=";
       };
       propagatedBuildInputs = builtins.attrValues {
         inherit (pkgs.rPackages)
