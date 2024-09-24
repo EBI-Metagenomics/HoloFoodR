@@ -103,10 +103,10 @@ getMetaboLightsFile <- function(study.id, file, ...){
 # This function retrieves metabolomic data from MetaboLights database for single
 # URL address
 #' @importFrom dplyr left_join
-.get_metabolomic_data <- function(study.id, ...){
+.get_metabolomic_data <- function(url, ...){
     # In MetaboLight, the study IDs are different than in HoloFood. Get
     # Info about the study that corresponds to this particular HoloFood study.
-    study_info <- .get_study_info(study.id, ...)
+    study_info <- .get_study_info(url, ...)
     # Get study metadata
     study_id <- study_info[["identifier"]]
     file_name <- study_info[["filename"]]
