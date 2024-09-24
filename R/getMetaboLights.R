@@ -13,6 +13,9 @@
 #'
 #' @param study.id \code{character vector} specifying the study identifier of
 #' data that is going to be fetched from the MetaboLights database.
+#' 
+#' @param file \code{character vector} specifying the files that are being
+#' fetched.
 #'
 #' @param ... optional arguments:
 #' \itemize{

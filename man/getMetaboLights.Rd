@@ -23,6 +23,9 @@ data that is going to be fetched from the MetaboLights database.}
    in seconds for loading the file. (Default: \code{5*60})
   
 }}
+
+\item{file}{\code{character vector} specifying the files that are being
+fetched.}
 }
 \value{
 \code{list}
