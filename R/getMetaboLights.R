@@ -10,6 +10,11 @@
 #' for study metadata,
 #' assay metadata, and assay. The metadata includes the file names of raw
 #' spectra data. Those files can be loaded with \code{getMetaboLightsFile}.
+#' 
+#' Alternatively, you can use follow this
+#' [vignette](https://rformassspectrometry.github.io/MsIO/articles/MsIO.html#loading-data-from-metabolights)
+#' to load data directly to \code{MsExperiment} object tailored for
+#' metabolomics data.
 #'
 #' @param study.id \code{character vector} specifying the study identifier of
 #' data that is going to be fetched from the MetaboLights database.
