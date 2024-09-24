@@ -13,7 +13,7 @@
 #' 
 #' Alternatively, you can follow this
 #' [vignette](https://rformassspectrometry.github.io/MsIO/articles/MsIO.html#loading-data-from-metabolights)
-#' to load data directly to \code{MsExperiment} object tailored for
+#' to load data directly to \code{MsExperiment} object, tailored for
 #' metabolomics data.
 #'
 #' @param study.id \code{character vector} specifying the study identifier of

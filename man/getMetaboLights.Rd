@@ -46,7 +46,7 @@ spectra data. Those files can be loaded with \code{getMetaboLightsFile}.
 
 Alternatively, you can follow this
 [vignette](https://rformassspectrometry.github.io/MsIO/articles/MsIO.html#loading-data-from-metabolights)
-to load data directly to \code{MsExperiment} object tailored for
+to load data directly to \code{MsExperiment} object, tailored for
 metabolomics data.
 }
 \examples{
