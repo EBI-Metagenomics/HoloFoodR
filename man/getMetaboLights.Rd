@@ -2,19 +2,25 @@
 % Please edit documentation in R/getMetaboLights.R
 \name{getMetaboLights}
 \alias{getMetaboLights}
+\alias{getMetaboLightsFile}
 \title{Get metabolomic data from MetaboLights database}
 \usage{
-getMetaboLights(url, ...)
+getMetaboLights(study.id, ...)
+
+getMetaboLightsFile(study.id, file, ...)
 }
 \arguments{
-\item{url}{\code{character vector} specifying the URL address of study in
-MetaboLights database.}
+\item{study.id}{\code{character vector} specifying the study identifier of
+data that is going to be fetched from the MetaboLights database.}
 
 \item{...}{optional arguments:
 \itemize{
   
   \item \strong{cache.dir} \code{Character scalar} specifying directory
   where downloaded file is stored. (Default: \code{tempdir()})
+  
+  \item \strong{timeout} \code{Integer scalar} specifying timeout
+   in seconds for loading the file. (Default: \code{5*60})
   
 }}
 }
@@ -28,20 +34,22 @@ Get metabolomic data from MetaboLights database
 The HoloFood database primarily comprises targeted metabolomic data,
 omitting non-targeted metabolomic information. Nonetheless, it features URLs
 linking to studies within the MetaboLights database. This functionality
-enables users to access non-targeted metabolomic data. The function returns
-a structured list encompassing data frames for study metadata,
-assay metadata, and assay.
+enables users to access non-targeted metabolomic data. The
+\code{getMetaboLights} function returns
+a structured list encompassing processed data in \code{data.frame} format
+for study metadata,
+assay metadata, and assay. The metadata includes the file names of raw
+spectra data. Those files can be loaded with \code{getMetaboLightsFile}.
 }
 \examples{
 
 # This example is not run, because the server fails to respond sometimes.
-
-url <- "https://www.ebi.ac.uk/metabolights/ws/studies/MTBLS4381"
-
 if( FALSE ){
-    res <- getMetaboLights(url)
-    names(res)
-    head(res[["feat_meta"]])
+    res <- getMetaboLights("MTBLS4381")
+    file_paths <- getMetaLightsFile(
+        study.id = "MTBLS4381",
+        file = res[["assay_meta"]][["Raw Spectral Data File"]]
+        )
 }
 
 }
