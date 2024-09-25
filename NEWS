@@ -1,5 +1,5 @@
 Version: 0.99.9
-Date: 2024-09-24
+Date: 2024-09-25
 + Fixed bug in getMetaboLights
 + Added support for loading spectra files from MetaboLights.
 
