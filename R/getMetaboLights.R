@@ -9,10 +9,9 @@
 #' a structured list encompassing processed data in \code{data.frame} format
 #' for study metadata, assay metadata, and assay.
 #' 
-#' The metadata includes the
-#' file names of spectra data. Those files can be loaded with
-#' \code{getMetaboLightsFile}. Alternatively, once you've identified the study
-#' and files to fetch, you can refer to this
+#' The metadata includes the file names of spectra data. Those files can be
+#' loaded with \code{getMetaboLightsFile}. Alternatively, once you've identified
+#' the study and files to fetch, you can refer to this
 #' [vignette](https://rformassspectrometry.github.io/MsIO/articles/MsIO.html#loading-data-from-metabolights)
 #' for instructions on loading the data directly into an \code{MsExperiment}
 #' object, specifically designed for metabolomics spectra data.
@@ -126,16 +125,14 @@ getMetaboLightsFile <- function(study.id, file, ...){
         # Get metadata on assays
         file_names <- unique(assay_info[["filename"]])
         assay_metadata <- lapply(file_names, function(file_name){
-            temp <- .get_metabolights_file(study_id, file_name, ...)
-            return(temp)
+            .get_metabolights_file(study_id, file_name, ...)
         })
         # Bind tables together
         assay_metadata <- .full_join_list(assay_metadata)
         # Get metabolomics data, the abundance table
         file_names <- unique(assay_metadata[["Metabolite Assignment File"]])
         assay <- lapply(file_names, function(file_name){
-            temp <- .get_metabolights_file(study_id, file_name, ...)
-            return(temp)
+            .get_metabolights_file(study_id, file_name, ...)
         })
         # Bind tables together
         assay <- .full_join_list(assay)

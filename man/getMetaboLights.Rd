@@ -42,10 +42,9 @@ enables users to access non-targeted metabolomic data. The
 a structured list encompassing processed data in \code{data.frame} format
 for study metadata, assay metadata, and assay.
 
-The metadata includes the
-file names of spectra data. Those files can be loaded with
-\code{getMetaboLightsFile}. Alternatively, once you've identified the study
-and files to fetch, you can refer to this
+The metadata includes the file names of spectra data. Those files can be
+loaded with \code{getMetaboLightsFile}. Alternatively, once you've identified
+the study and files to fetch, you can refer to this
 [vignette](https://rformassspectrometry.github.io/MsIO/articles/MsIO.html#loading-data-from-metabolights)
 for instructions on loading the data directly into an \code{MsExperiment}
 object, specifically designed for metabolomics spectra data.
