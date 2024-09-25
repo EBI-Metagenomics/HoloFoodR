@@ -10,10 +10,11 @@
 #' animals. These columns are linked with individual samples that are stored in
 #' \code{TreeSummarizedExperiment} objects.
 #' 
-#' The HoloFood database lacks non-targeted metabolomic data but fetched from
-#' MetaboLights resource. The function \code{getResult} facilitates the
-#' automatic retrieval of metabolomic data and its integration with other
-#' datasets from HoloFood.
+#' The HoloFood database lacks non-targeted metabolomic data but they can be
+#' fetched from MetaboLights resource. Certain datasets include processed
+#' features. Those datasets can be retrieved with the function
+#' \code{getResult} which integrates metabolomic data with other datasets from
+#' HoloFood.
 #' 
 #' Furthermore, while the HoloFoodR database does not include metagenomic
 #' assembly data, users can access such data from the MGnify database. The
@@ -26,9 +27,6 @@
 #'
 #' @param accession \code{Character vector} specifying the
 #' accession IDs of type samples.
-#' 
-#' @param get.metabolomic \code{Logical scalar} specifying whether to retrieve
-#' metabolomic data from MetaboLights database. (Default: \code{FALSE})
 #'
 #' @param ... optional arguments:
 #' \itemize{
@@ -48,6 +46,12 @@
 #'   \item \strong{assay.type} \code{Character scalar} specifying the name of
 #'   assay in resulting \code{TreeSummarizedExperiment} object.
 #'   (Default: \code{"counts"}) 
+#'   
+#'   \item \strong{get.metabolomic} \code{Logical scalar} specifying whether to
+#'   retrieve processed metabolomic data from MetaboLights database. For
+#'   retrieving spectra data, refer to
+#'   \code{\link[HoloFoodR:getMetaboLights]{getMetaboLights}} documentation.
+#'   (Default: \code{FALSE})
 #'   
 #' }
 #'
@@ -73,11 +77,9 @@ NULL
 
 #' @rdname getResult
 #' @export
-getResult <- function(accession, get.metabolomic = FALSE, ...){
+getResult <- function(accession, ...){
     # Check accession
     temp <- .check_input(accession, list("character vector"))
-    # Check get.metabolomic
-    temp <- .check_input(get.metabolomic, list("logical scalar"))
     #
     # If user tries to feed accession.type or type, disable them
     args <- list(...)
@@ -104,14 +106,7 @@ getResult <- function(accession, get.metabolomic = FALSE, ...){
     # If user wants to get metabolites data and retrieved sample IDs include
     # metabolite samples. It requires loading files from MetaboLights which
     # is why there is an option for not loading the data.
-    metabolomics_url <- sample_metadata[["metabolomics_url"]]
-    metabolomics_url <- metabolomics_url[ !is.na(metabolomics_url) ]
-    if( get.metabolomic && length(metabolomics_url) > 0 ){
-        # Get metabolomic data
-        se_metabolomic <- .construct_metabolomic_SE(metabolomics_url, ...)
-        # Add it to MAE
-        mae <- .add_metabolomic_data_to_MAE(mae, se_metabolomic, accession)
-    }
+    mae <- .fetch_metabolomic(mae, sample_metadata, ...)
     
     # If there are samples that user wanted to include but are not present in
     # the data (they do not have data in HoloFood database), give warning.
@@ -182,6 +177,25 @@ getResult <- function(accession, get.metabolomic = FALSE, ...){
 }
 
 ################################ HELP FUNCTIONS ################################
+
+# This function makes sure that untargeted metabolomic data is added if user
+# has specified so.
+.fetch_metabolomic <- function(
+        mae, sample_metadata, get.metabolomic = FALSE, ...){
+    # Check get.metabolomic
+    temp <- .check_input(get.metabolomic, list("logical scalar"))
+    #
+    # Check if metabolomic data is available
+    metabolomics_url <- sample_metadata[["metabolomics_url"]]
+    metabolomics_url <- metabolomics_url[ !is.na(metabolomics_url) ]
+    if( get.metabolomic && length(metabolomics_url) > 0 ){
+        # Get metabolomic data
+        se_metabolomic <- .construct_metabolomic_SE(metabolomics_url, ...)
+        # Add it to MAE
+        mae <- .add_metabolomic_data_to_MAE(mae, se_metabolomic, accession)
+    }
+    return(mae)
+}
 
 # If accession cannot be found, animal metadata is not included for that
 # accession in MAE. Since user wanted to get the data for that also, add empty

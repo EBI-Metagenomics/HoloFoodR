@@ -11,8 +11,8 @@ test_that("getMetaboLigths", {
     skip_if_offline(host = "ebi.ac.uk")
     
     # Get the data
-    url <- "https://www.ebi.ac.uk/metabolights/ws/studies/MTBLS4381"
-    res <- getMetaboLights(url)
+    study_id <- "MTBLS4381"
+    res <- getMetaboLights(study_id)
     
     # There should be certain named data.frames
     expect_true( all(c("assay", "feat_meta", "sample_meta") %in% names(res)) )
