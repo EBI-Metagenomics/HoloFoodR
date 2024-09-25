@@ -101,7 +101,7 @@ test_that("getResult", {
     assay_ref <- ref[["assay"]]
     assay_meta_ref <- ref[["assay_meta"]]
     study_meta_ref <- ref[["study_meta"]]
-    # getResult mofifies the data so that sample meta and study meta are
+    # getResult modifies the data so that sample meta and study meta are
     # combined and feature metadata and abundance table are splitted
     # Split assay to abundance table and feature metadata
     assay_cols <- colnames(assay_ref) %in% assay_meta_ref[["Sample Name"]]

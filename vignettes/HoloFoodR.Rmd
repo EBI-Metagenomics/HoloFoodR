@@ -122,9 +122,7 @@ sample_ids <- unique(samples[["accession"]])
 ### Get data on samples
 
 To get data on samples, we can utilize `getResult()` function. It returns the
-data in `r BiocStyle::Biocpkg("MultiAssayExperiment")` (`MAE`) format. By
-specifying `get.metabolomic = TRUE`, we can fetch also non-targeted metabolomic
-data.
+data in `r BiocStyle::Biocpkg("MultiAssayExperiment")` (`MAE`) format.
 
 ```{r get_mae}
 mae <- getResult(sample_ids)
@@ -219,7 +217,9 @@ containers seamlessly.
 The HoloFood database exclusively contains targeted metabolomic data. However,
 it provides URL addresses linking to the MetaboLights database, where untargeted
 metabolomics data can be accessed. To retrieve this data, you can utilize the
-getMetaboLights() function or preferably getResult(). Below, we retrieve all the
+getMetaboLights() function to retrieve information on available data. Moreover,
+it returns processed metabolomic data (for processed data, you can also use
+`getReturn(x, get.metabolomic=TRUE)`). Below, we retrieve all the
 metabolomic data associated with HoloFood.
 
 ```{r get_metabolomics, eval=FALSE}
@@ -237,6 +237,12 @@ The result is a list that includes three data.frames:
     - study metadata
     - assay metadata
     - assay that includes abundance table and feature metadata
+
+For raw spectra data, you can either fetch the files with
+`getMetaboLightsFile()` or refer to this
+[vignette](https://rformassspectrometry.github.io/MsIO/articles/MsIO.html#loading-data-from-metabolights)
+for instructions on loading the data directly into an \code{MsExperiment}
+object, specifically designed for metabolomics spectra data.
 
 ## Session info
 

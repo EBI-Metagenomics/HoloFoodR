@@ -20,7 +20,7 @@ data that is going to be fetched from the MetaboLights database.}
   where downloaded file is stored. (Default: \code{tempdir()})
   
   \item \strong{timeout} \code{Integer scalar} specifying timeout
-   in seconds for loading the file. (Default: \code{5*60})
+  in seconds for loading a file. (Default: \code{5*60})
   
 }}
 
@@ -40,14 +40,15 @@ linking to studies within the MetaboLights database. This functionality
 enables users to access non-targeted metabolomic data. The
 \code{getMetaboLights} function returns
 a structured list encompassing processed data in \code{data.frame} format
-for study metadata,
-assay metadata, and assay. The metadata includes the file names of raw
-spectra data. Those files can be loaded with \code{getMetaboLightsFile}.
+for study metadata, assay metadata, and assay.
 
-Alternatively, you can follow this
+The metadata includes the
+file names of spectra data. Those files can be loaded with
+\code{getMetaboLightsFile}. Alternatively, once you've identified the study
+and files to fetch, you can refer to this
 [vignette](https://rformassspectrometry.github.io/MsIO/articles/MsIO.html#loading-data-from-metabolights)
-to load data directly to \code{MsExperiment} object, tailored for
-metabolomics data.
+for instructions on loading the data directly into an \code{MsExperiment}
+object, specifically designed for metabolomics spectra data.
 }
 \examples{
 

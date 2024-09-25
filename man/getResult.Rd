@@ -4,14 +4,11 @@
 \alias{getResult}
 \title{Get data on samples from HoloFood database}
 \usage{
-getResult(accession, get.metabolomic = FALSE, ...)
+getResult(accession, ...)
 }
 \arguments{
 \item{accession}{\code{Character vector} specifying the
 accession IDs of type samples.}
-
-\item{get.metabolomic}{\code{Logical scalar} specifying whether to retrieve
-metabolomic data from MetaboLights database. (Default: \code{FALSE})}
 
 \item{...}{optional arguments:
 \itemize{
@@ -32,6 +29,12 @@ metabolomic data from MetaboLights database. (Default: \code{FALSE})}
   assay in resulting \code{TreeSummarizedExperiment} object.
   (Default: \code{"counts"}) 
   
+  \item \strong{get.metabolomic} \code{Logical scalar} specifying whether to
+  retrieve processed metabolomic data from MetaboLights database. For
+  retrieving spectra data, refer to
+  \code{\link[HoloFoodR:getMetaboLights]{getMetaboLights}} documentation.
+  (Default: \code{FALSE})
+  
 }}
 }
 \value{
@@ -50,10 +53,11 @@ analytics. Columns of returned \code{MultiAssayExperiment} are individual
 animals. These columns are linked with individual samples that are stored in
 \code{TreeSummarizedExperiment} objects.
 
-The HoloFood database lacks non-targeted metabolomic data but fetched from
-MetaboLights resource. The function \code{getResult} facilitates the
-automatic retrieval of metabolomic data and its integration with other
-datasets from HoloFood.
+The HoloFood database lacks non-targeted metabolomic data but they can be
+fetched from MetaboLights resource. Certain datasets include processed
+features. Those datasets can be retrieved with the function
+\code{getResult} which integrates metabolomic data with other datasets from
+HoloFood.
 
 Furthermore, while the HoloFoodR database does not include metagenomic
 assembly data, users can access such data from the MGnify database. The
