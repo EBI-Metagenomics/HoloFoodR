@@ -238,11 +238,11 @@ The result is a list that includes three data.frames:
     - assay metadata
     - assay that includes abundance table and feature metadata
 
-For raw spectra data, you can either fetch the files with
-`getMetaboLightsFile()` or refer to this
+For spectra data, you can either fetch files using `getMetaboLightsFile()`,
+or follow this
 [vignette](https://rformassspectrometry.github.io/MsIO/articles/MsIO.html#loading-data-from-metabolights)
-for instructions on loading the data directly into an \code{MsExperiment}
-object, specifically designed for metabolomics spectra data.
+for guidance on loading data directly into an \code{MsExperiment} object,
+which is tailored for metabolomics spectra data.
 
 ## Session info
 
