@@ -39,7 +39,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">getResult</span><span class="op">(</span><span class="va">accession</span>, get.metabolomic <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">getResult</span><span class="op">(</span><span class="va">accession</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -49,11 +49,6 @@
 <dl><dt id="arg-accession">accession<a class="anchor" aria-label="anchor" href="#arg-accession"></a></dt>
 <dd><p><code>Character vector</code> specifying the
 accession IDs of type samples.</p></dd>
-
-
-<dt id="arg-get-metabolomic">get.metabolomic<a class="anchor" aria-label="anchor" href="#arg-get-metabolomic"></a></dt>
-<dd><p><code>Logical scalar</code> specifying whether to retrieve
-metabolomic data from MetaboLights database. (Default: <code>FALSE</code>)</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -69,6 +64,11 @@ metabolomic data from MetaboLights database. (Default: <code>FALSE</code>)</p></
 <li><p><strong>assay.type</strong> <code>Character scalar</code> specifying the name of
   assay in resulting <code>TreeSummarizedExperiment</code> object.
   (Default: <code>"counts"</code>)</p></li>
+<li><p><strong>get.metabolomic</strong> <code>Logical scalar</code> specifying whether to
+  retrieve processed metabolomic data from MetaboLights database. For
+  retrieving spectra data, refer to
+  <code><a href="getMetaboLights.html">getMetaboLights</a></code> documentation.
+  (Default: <code>FALSE</code>)</p></li>
 </ul></dd>
 
 </dl></div>
@@ -86,10 +86,11 @@ fetching the samples data because it converts the data to
 analytics. Columns of returned <code>MultiAssayExperiment</code> are individual
 animals. These columns are linked with individual samples that are stored in
 <code>TreeSummarizedExperiment</code> objects.</p>
-<p>The HoloFood database lacks non-targeted metabolomic data but fetched from
-MetaboLights resource. The function <code>getResult</code> facilitates the
-automatic retrieval of metabolomic data and its integration with other
-datasets from HoloFood.</p>
+<p>The HoloFood database lacks non-targeted metabolomic data but they can be
+fetched from MetaboLights resource. Certain datasets include processed
+features. Those datasets can be retrieved with the function
+<code>getResult</code> which integrates metabolomic data with other datasets from
+HoloFood.</p>
 <p>Furthermore, while the HoloFoodR database does not include metagenomic
 assembly data, users can access such data from the MGnify database. The
 MGnifyR package provides a convenient interface for accessing this database.

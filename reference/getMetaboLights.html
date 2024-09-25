@@ -57,7 +57,7 @@ data that is going to be fetched from the MetaboLights database.</p></dd>
 <dd><p>optional arguments:</p><ul><li><p><strong>cache.dir</strong> <code>Character scalar</code> specifying directory
   where downloaded file is stored. (Default: <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>)</p></li>
 <li><p><strong>timeout</strong> <code>Integer scalar</code> specifying timeout
-   in seconds for loading the file. (Default: <code>5*60</code>)</p></li>
+  in seconds for loading a file. (Default: <code>5*60</code>)</p></li>
 </ul></dd>
 
 
@@ -78,13 +78,14 @@ linking to studies within the MetaboLights database. This functionality
 enables users to access non-targeted metabolomic data. The
 <code>getMetaboLights</code> function returns
 a structured list encompassing processed data in <code>data.frame</code> format
-for study metadata,
-assay metadata, and assay. The metadata includes the file names of raw
-spectra data. Those files can be loaded with <code>getMetaboLightsFile</code>.</p>
-<p>Alternatively, you can follow this
+for study metadata, assay metadata, and assay.</p>
+<p>The metadata includes the
+file names of spectra data. Those files can be loaded with
+<code>getMetaboLightsFile</code>. Alternatively, once you've identified the study
+and files to fetch, you can refer to this
 [vignette](https://rformassspectrometry.github.io/MsIO/articles/MsIO.html#loading-data-from-metabolights)
-to load data directly to <code>MsExperiment</code> object, tailored for
-metabolomics data.</p>
+for instructions on loading the data directly into an <code>MsExperiment</code>
+object, specifically designed for metabolomics spectra data.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
