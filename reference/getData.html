@@ -134,6 +134,7 @@ for information on filters. You can find help on customizing queries from
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">getData</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    type <span class="op">=</span> <span class="st">"genomes"</span>, accession.type <span class="op">=</span> <span class="st">"genome-catalogues"</span>,</span></span>
 <span class="r-in"><span>    accession <span class="op">=</span> <span class="va">catalogues</span><span class="op">[</span><span class="fl">1</span>, <span class="st">"id"</span><span class="op">]</span>, max.hits <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># See the data.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       accession cluster_representative</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 MGYG000307500          MGYG000307500</span>
@@ -219,6 +220,42 @@ for information on filters. You can find help on customizing queries from
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4                  20                   0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5                   2                   0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6                   2                   0</span>
+<span class="r-in"><span><span class="co"># It includes for instance summary of the CAZy</span></span></span>
+<span class="r-in"><span><span class="co"># (Carbohydrate-Active enZymes) annotations as a counts per category</span></span></span>
+<span class="r-in"><span><span class="va">cazy</span> <span class="op">&lt;-</span> <span class="va">res</span><span class="op">[</span> , <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"annotations.cazy"</span>, <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span><span class="op">)</span>, drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">cazy</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   annotations.cazy.GH annotations.cazy.PL annotations.cazy.CE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                   7                   0                   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                  24                   0                   3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3                  24                   0                   3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4                  27                   0                   1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5                   0                   0                   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6                   0                   0                   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   annotations.cazy.AA annotations.cazy.CB annotations.cazy.GT</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                   0                   1                   7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                   1                   4                  34</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3                   1                   4                  34</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4                   1                   6                  20</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5                   0                   0                   2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6                   0                   0                   2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   annotations.cazy.CL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3                   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4                   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5                   0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6                   0</span>
+<span class="r-in"><span><span class="co"># Moreover, it includes a sample list. This sample list represents a </span></span></span>
+<span class="r-in"><span><span class="co"># collection of samples where the MAG was identified. Thr data has also the</span></span></span>
+<span class="r-in"><span><span class="co"># completeness of MAG in a sample.</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">res</span><span class="op">[</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"metadata.Sample_accession"</span>, <span class="st">"metadata.Completeness"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   metadata.Sample_accession metadata.Completeness</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1            SAMEA112246717                 85.79</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2            SAMEA112246686                 98.37</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3            SAMEA112246683                 68.36</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4            SAMEA112246713                 58.95</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5            SAMEA112264417                 96.02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6            SAMEA112264472                 95.25</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
