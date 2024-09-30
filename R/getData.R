@@ -62,6 +62,8 @@
 #' res <- getData(
 #'     type = "genomes", accession.type = "genome-catalogues",
 #'     accession = catalogues[1, "id"], max.hits = 100)
+#' # See the data. It includes for instance summary of the CAZy
+#' # (Carbohydrate-Active enZymes) annotations as a counts per category
 #' head(res)
 #'
 #' @seealso
