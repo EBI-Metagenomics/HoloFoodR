@@ -123,9 +123,26 @@ let
     })
   ];
 
+  R = with pkgs; [
+    (rWrapper.override {
+      packages = [
+        rpkgs
+        git_archive_pkgs
+      ];
+    })
+  ];
+
+  rstudio = with pkgs; [
+    (rstudioWrapper.override {
+      packages = [
+        rpkgs
+        git_archive_pkgs
+      ];
+    })
+  ];
+
   system_packages = builtins.attrValues {
     inherit (pkgs)
-      R
       glibcLocales
       nix
       ;
@@ -144,8 +161,8 @@ pkgs.mkShell {
   LC_MEASUREMENT = "en_US.UTF-8";
 
   buildInputs = [
-    git_archive_pkgs
-    rpkgs
+    R
+    rstudio
     system_packages
   ];
 
