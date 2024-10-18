@@ -67,8 +67,8 @@ let
       name = "HoloFoodR";
       src = pkgs.fetchgit {
         url = "https://github.com/EBI-Metagenomics/HoloFoodR";
-        rev = "4440bdf1ed9f25acfc9cc72075b6ae5b08ea9efc";
-        sha256 = "sha256-EYqlW/AKb1/7I5krRb+d7H0gjuIXDNhcGyYw9lTX46g=";
+        rev = "93728e327ac50f950a01fdf8af359ccccf70d890";
+        sha256 = "sha256-hXWDpICPCZ33jgX3ntAy2wnhyVFptaOGkWHzQaHgQuY=";
       };
       propagatedBuildInputs = builtins.attrValues {
         inherit (pkgs.rPackages)
