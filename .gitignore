@@ -58,3 +58,6 @@ renv/
 .envrc
 .direnv
 
+# Additional files from vignette
+vignettes/*.html
+vignettes/*/*/*.png
