@@ -1,3 +1,8 @@
+Version: 0.99.9
+Date: 2024-09-25
++ Fixed bug in getMetaboLights
++ Added support for loading spectra files from MetaboLights.
+
 Version: 0.99.0
 Date: 2024-03-20
 + Final polishing for Bioconductor submission

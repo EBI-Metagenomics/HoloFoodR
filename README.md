@@ -135,7 +135,7 @@ genomes <- getData(
     accession = catalogues)
 
 # Fetch data on untargeted metabolites
-metabolites <- getMetaboLights(url)
+metabolites <- getMetaboLights(study_id)
 
 # Fetch data as MultiAssayExperiment
 samples <- c("ACCESSION_ID")
