@@ -64,35 +64,17 @@ knitr::opts_chunk$set(
 
 # List of packages that we need
 packages <- c(
-    "ComplexHeatmap", "dplyr", "DT", "ggplot2", "ggpubr", "ggsignif", "HoloFoodR", "knitr",
-    "latex2exp", "MGnifyR", "mia", "miaViz", "MOFA2", "patchwork", "reticulate",
-    "scater", "shadowtext", "stringr"
+    "dplyr", "DT", "ggsignif", "HoloFoodR", "MGnifyR", "mia", "miaViz", "MOFA2",
+    "patchwork", "reticulate", "scater"
 )
-
-# Get packages that are already installed installed
-packages_already_installed <- packages[packages %in% installed.packages()]
-
-# Get packages that need to be installed
-packages_need_to_install <- setdiff(packages, packages_already_installed)
-
-# Loads BiocManager into the session. Install it if it not already installed.
-if (!require("BiocManager")) {
-    install.packages("BiocManager")
-    library("BiocManager")
-}
-
-# If there are packages that need to be installed, installs them with
-# BiocManager Updates old packages
-if (length(packages_need_to_install) > 0) {
-    install(packages_need_to_install, ask = FALSE)
-}
 
 # Load all packages into session. Stop if there are packages that were not
 # successfully loaded
 pkgs_not_loaded <- !sapply(packages, require, character.only = TRUE)
 pkgs_not_loaded <- names(pkgs_not_loaded)[pkgs_not_loaded]
 if (length(pkgs_not_loaded) > 0) {
-    stop("Error in loading the following packages into the session: '", paste0(pkgs_not_loaded, collapse = "', '"), "'")
+    stop("Error in loading the following packages into the session: '",
+        paste0(pkgs_not_loaded, collapse = "', '"), "'")
 }
 ```
 
@@ -151,7 +133,7 @@ or genomic sample, such as
 [SAMEA9068691](https://www.holofooddata.org/sample/SAMEA9068691).
 
 We can use these accession numbers to fetch the data associated with each
-sample type and store them as `experiments` in a MultiAssayExperiment (MAE)
+sample type and store them as `experiments` in a `MultiAssayExperiment` (`MAE`)
 object.
 
 ```{r}
@@ -171,7 +153,8 @@ mae <- HoloFoodR::getResult(
 #| eval: false
 
 # Save salmon MAE This must be named differently
-path <- system.file("extdata", "salmon_mae_without_mgnify.RDS", package = "HoloFoodR")
+path <- system.file(
+  "extdata", "salmon_mae_without_mgnify.RDS", package = "HoloFoodR")
 saveRDS(object = mae, file = path)
 ```
 
@@ -180,9 +163,9 @@ saveRDS(object = mae, file = path)
 #| echo: false
 
 # Read MAE to avoid retrieval
-# path <- system.file("extdata", "salmon_mae_without_mgnify.RDS", package = "HoloFoodR")
-# mae <- readRDS(file = path)
-mae <- readRDS(file = "../inst/extdata/salmon_mae_without_mgnify.RDS")
+path <- system.file(
+  "extdata", "salmon_mae_without_mgnify.RDS", package = "HoloFoodR")
+mae <- readRDS(file = path)
 ```
 
 ### Fetch metagenomic data from MGnify
@@ -236,24 +219,25 @@ tse <- MGnifyR::getResult(
 #| echo: false
 
 # Save salmon metagenomic TreeSE
-# path <- system.file("extdata", "salmon_metagenomic_tse.RDS", package = "HoloFoodR")
-# saveRDS(object = mae, file = path)
-saveRDS(object = mae, file = "../inst/extdata/salmon_metagenomic_tse.RDS")
+path <- system.file(
+  "extdata", "salmon_metagenomic_tse.RDS", package = "HoloFoodR")
+saveRDS(object = mae, file = path)
 ```
 
 
 ```{r}
 #| label: read_metagenomic
 #| echo: false
-# Read in salmon metagenomic TreSE object
-# path <- system.file("extdata", "salmon_metagenomic_tse.RDS", package = "HoloFoodR")
-# tse <- readRDS(file = path)
-tse <- readRDS(file = "../inst/extdata/salmon_metagenomic_tse.RDS")
+
+# Read in salmon metagenomic TreeSE object
+path <- system.file(
+  "extdata", "salmon_metagenomic_tse.RDS", package = "HoloFoodR")
+tse <- readRDS(file = path)
 ```
 
 Data fetched from MGnify has MGnify-specific identifiers. We have to first
 rename samples with HoloFood specific ID and then add the data to
-MultiAssayExperiment combining all the data.
+`MultiAssayExperiment` combining all the data.
 
 ```{r}
 #| label: add_metagenomic_data
@@ -272,15 +256,15 @@ assays, and agglomerate the data.
 
 In the next steps, we will:
 
-1. Remove unnecessary data
+1. Filter data
 2. Ensure that the data is in correct format for analysis
 3. Agglomerate data
 4. Transform data
 
 ### Wrangle the data
 
-Below we see upset plot that summarizes the available experiments and how samples
-overlap between them.
+Below we see upset plot that summarizes the available experiments and how
+samples overlap between them.
 
 ```{r}
 #| label: upsetplot
@@ -309,7 +293,9 @@ mae <- mae[, colData(mae)[["Trial code"]] == "SA", ]
 ```
 
 Some values of fatty acids are under detection thresholds. We assume them to be
-zeroes.
+zeroes. Moreover, the data includes feature that just states from where the
+fatty acids where collected. We remove this feature so that the assay contains
+only numeric values.
 
 ```{r}
 #| label: preprocess2
@@ -357,7 +343,7 @@ mae[[1]] <- getWithColData(mae, 1)
 mae[[2]] <- getWithColData(mae, 2)
 ```
 
-Furthermore, as we want to analyze the effect of treatment, we must analyze
+As we want to analyze the effect of treatment, we must analyze
 salmons at day 60 because these salmons were sampled after experimental period.
 In contrast, day-0 salmons that were sampled immediately in the beginning of
 the trial.
@@ -382,9 +368,9 @@ microbiota data and fatty acid data.
 Next, we can agglomerate features by prevalence to reduce the number of
 low-abundant taxa and contaminants.
 
-First, we visualize prevalence distribution with a histogram to decide the
-prevalence threshold to use. We use 0.1% detection level to filter out
-extremely low-abundant taxa present in each sample.
+First, we visualize prevalence distribution of taxa with a histogram to decide
+the prevalence threshold to use. We use 0.1% detection level to filter out
+extremely low-abundant genera.
 
 ```{r}
 #| label: prevalence_histgoram
@@ -434,7 +420,7 @@ altExp(mae[[2]], "prev_genus") <- agglomerateByPrevalence(
 )
 ```
 
-Moreover, we agglomerate the data to phylum level.
+Moreover, we agglomerate the data to include only 19 most abundant genera.
 
 ```{r}
 #| label: select_core
@@ -446,9 +432,9 @@ core_names <- rownames(tse)
 core_names[ !core_names %in% core ] <- "other"
 # Agglomerate based on core taxa
 rowData(tse)[["core"]] <- core_names
-altExp(mae[[2]], "core_genus") <- agglomerateByVariable(tse, by = "rows", group = "core")
+altExp(mae[[2]], "core_genus") <- agglomerateByVariable(
+  tse, by = "rows", group = "core")
 ```
-
 
 Due to the limited number of samples, we also filter the fatty acid data to
 include only those fatty acids that show variation within the dataset. The
@@ -494,8 +480,9 @@ altExp(mae[[1]], "relevant") <- mae[[1]][
 
 ### Transformation
 
-We transform metagenomic counts first with centered log-ratio method to tackle
-the compositional data (see @quinnFieldGuideCompositional2019).
+We transform metagenomic counts with relative transformation and
+centered log-ratio method to tackle the compositional data
+(see @quinnFieldGuideCompositional2019).
 
 ```{r}
 #| label: transformation_metagenomics
@@ -579,14 +566,13 @@ salmon is associated with variations in fatty acid levels.
 # Calculate correlation
 res <- getCrossAssociation(
     mae, experiment1 = 1, experiment2 = 1, altexp1 = "relevant",
-    assay.type1 = "counts", col.var2 = "host.gutted.mass",
-    test.signif = TRUE, method = "spearman"
+    assay.type1 = "standardize", col.var2 = "host.gutted.mass",
+    test.signif = TRUE, method = "pearson"
 )
 res
 ```
 
-Although the p-values do not fall below the commonly accepted threshold of 0.05,
-there appears to be a notable effect: larger salmon seem to have higher
+There appears to be a notable effect: larger salmon seem to have slightly higher
 concentrations of fatty acids. This trend can be further illustrated through
 plots.
 
@@ -599,7 +585,8 @@ p <- plotExpression(
     x = "host.gutted.mass",
     assay.type = "counts",
     scales = "free"
-    )
+    ) +
+  geom_smooth(method = "lm")
 p
 ```
 
@@ -611,8 +598,8 @@ concentrations, although this association is not statistically significant.
 
 ### Microbial composition
 
-As a first step in analysing microbiota data, we summarize the microbial composition
-with relative abundance barplot.
+As a first step in analysing microbiota data, we summarize the microbial
+composition with relative abundance barplot.
 
 ```{r}
 #| label: abundance_plot
@@ -674,7 +661,7 @@ p
 It seems that there are handful of samples that differ from others. However,
 this effect seems not to be associated with the treatment group.
 
-## Multi-omic integration
+## Multi-omics integration
 
 Multi-omic factor analysis (MOFA) allows us to discover latent factors that
 underlie the biological differences by taking in consideration 2 or more omic
@@ -695,7 +682,7 @@ mae_temp[[2]] <- altExp(mae_temp[[2]], "prev_genus")
 
 # Extract only transformed metagenomic assays for MOFA analysis
 assays(mae_temp[[1]]) <- assays(mae_temp[[1]])[
-    names(assays(mae_temp[[1]])) %in% c("log10")
+    names(assays(mae_temp[[1]])) %in% c("standardize")
 ]
 assays(mae_temp[[2]]) <- assays(mae_temp[[2]])[
     names(assays(mae_temp[[2]])) %in% c("counts")
@@ -725,38 +712,23 @@ model <- prepare_mofa(
 model <- run_mofa(model, use_basilisk = TRUE)
 ```
 
-For sanity check, we expect factors to be uncorrelated.
-
-```{r}
-#| label: check_fit
-
-plot_factor_cor(
-    model,
-    method = "pearson",
-    cl.ratio = 0.2,
-    tl.srt = 0,
-    title = "Pearson correlation between factors",
-    mar = c(0, 0, 2, 0),
-)
-```
-
-Overall, we do not observe highly correlated factors which is the a good sign.
-
 Next, we will plot the variances explained by each factor.
 
 ```{r}
 #| label: var_factor1
 
 p <- plot_variance_explained(model) +
-    labs(title = "Captured variance of fatty acid and metagenomic\ndatasets across 5 factors") +
+    labs(title = "Captured variance of fatty acid and metagenomic\n",
+        "datasets across 5 factors") +
     theme(plot.title.position = "plot")
 p
 ```
 
-Factor 1 captures the majority of the variance in the metagenomics data,
-although some variability remains to be captured by other factors. Factor 2
-captures the shared variability between the metagenomics and fatty acid
-data.
+Factor 1 captures mostly the variance in the metagenomics data.
+Factor 2 captures the shared variability between the metagenomics and fatty acid
+data. While the first factor captures the highest amount of variability in
+metagenomics data, almost as much variability remains to be captured by the
+second factor.
 
 Before exploring the shared variability, we first examine which taxa's
 variability is captured by Factor 1.
@@ -766,10 +738,10 @@ variability is captured by Factor 1.
 #| fig-width: 10
 #| fig-height: 8
 
-p1 <- plot_top_weights(model, view = "metagenomic", factors = 1, nfeatures = 25) +
-  labs(title = "Microbiota")
-p2 <- plot_top_weights(model, view = "fatty_acids", factors = 1, nfeatures = 25) +
+p1 <- plot_top_weights(model, view = 1, factors = 1, nfeatures = 25) +
   labs(title = "Fatty acids")
+p2 <- plot_top_weights(model, view = 2, factors = 1, nfeatures = 25) +
+  labs(title = "Microbiota")
 
 p1 + p2
 ```
@@ -782,21 +754,20 @@ variability in _Mycoplasma_.
 #| fig-width: 10
 #| fig-height: 8
 
-p1 <- plot_top_weights(model, view = "metagenomic", factors = 2, nfeatures = 25) +
-  labs(title = "Microbiota")
-p2 <- plot_top_weights(model, view = "fatty_acids", factors = 2, nfeatures = 25) +
+p1 <- plot_top_weights(model, view = 1, factors = 2, nfeatures = 25) +
   labs(title = "Fatty acids")
+p2 <- plot_top_weights(model, view = 2, factors = 2, nfeatures = 25) +
+  labs(title = "Microbiota")
 
 p1 + p2
 ```
 
-From the microbes, especially Photobacterium, has a positive association with
-Factor 2. Many fatty acids also show significant weights, with Oleic acid
-18:1n-9 and Linoleic acid 18:2n-6 having
-psoitive weights, among others. This indicates that as the abundance of
-Photobacterium increases, there is a corresponding increase in pentadecyclic
-acid and a decrease in vaccenic acid.
-
+From the microbes, especially _Photobacterium_, has a positive association with
+Factor 2. Many fatty acids also show significant weights, with Linoleic acid
+18:2n-6 and sum of omega-6 fatty acids having
+positive weights, among others. This indicates that as the abundance of
+Photobacterium increases, there is a corresponding increase in levels of
+these aforementioned fatty acids.
 
 ## Conclusions
 
