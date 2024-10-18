@@ -1,7 +1,7 @@
 let
   pkgs =
     import
-      (fetchTarball "https://github.com/rstats-on-nix/nixpkgs/archive/b5cd423a3684307faf822b875cd186e4d7173a10.tar.gz")
+      (fetchTarball "https://github.com/rstats-on-nix/nixpkgs/archive/35097b60acd597bcbb34698b6691dd5be2e39e3c.tar.gz")
       { };
 
   rpkgs = builtins.attrValues {
