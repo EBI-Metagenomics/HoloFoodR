@@ -329,8 +329,11 @@ colData(mae)[["treatment_group"]] <- ifelse(
 # Add salmon host mass to MAE colData
 colData(mae[[2]])[["host.gutted.mass"]] <- as.numeric(
     colData(mae[[2]])[["host.gutted.mass"]])
+colData(mae[[2]])[["mass_scaled"]] <- scale(
+  colData(mae[[2]])[["host.gutted.mass"]])
 merged_data <- merge(
-    x = colData(mae), y = colData(mae[[2]])[, c("animal", "host.gutted.mass")],
+    x = colData(mae),
+    y = colData(mae[[2]])[, c("animal", "host.gutted.mass", "mass_scaled")],
     all.x = TRUE, by = "animal"
 )
 rownames(merged_data) <- merged_data[["animal"]]
@@ -566,7 +569,7 @@ salmon is associated with variations in fatty acid levels.
 # Calculate correlation
 res <- getCrossAssociation(
     mae, experiment1 = 1, experiment2 = 1, altexp1 = "relevant",
-    assay.type1 = "standardize", col.var2 = "host.gutted.mass",
+    assay.type1 = "standardize", col.var2 = "mass_scaled",
     test.signif = TRUE, method = "pearson"
 )
 res
@@ -582,7 +585,7 @@ plots.
 p <- plotExpression(
     altExp(mae[[1]], "relevant"),
     features = rownames(altExp(mae[[1]], "relevant")),
-    x = "host.gutted.mass",
+    x = "mass_scaled",
     assay.type = "counts",
     scales = "free"
     ) +
@@ -628,7 +631,8 @@ test whether diversity is associated with both size and treatment.
 mae[[2]] <- addAlpha(mae[[2]])
 
 # Plot with metadata
-p1 <- plotColData(mae[[2]], x = "host.gutted.mass", y = "shannon_diversity")
+p1 <- plotColData(mae[[2]], x = "mass_scaled", y = "shannon_diversity") +
+  geom_smooth(method = "lm")
 p2 <- plotColData(mae[[2]], x = "treatment_group", y = "shannon_diversity") +
     geom_signif(comparisons = list(c("control", "treatment")), )
 
