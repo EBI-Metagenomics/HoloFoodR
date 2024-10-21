@@ -269,7 +269,8 @@ samples overlap between them.
 ```{r}
 #| label: upsetplot
 
-upsetSamples(mae)
+upset_plot <- upsetSamples(mae)
+upset_plot
 ```
 
 For demonstration purposes, we will focus on investigating fatty acids and
@@ -393,7 +394,8 @@ prevalence <- getPrevalence(
 # Exclude microbes with 0 prevalence
 prevalence <- prevalence[prevalence != 0]
 
-hist(prevalence)
+hist(prevalence, main = "Prevalence of microbial taxa",
+     xlab = "Prevalence")
 ```
 
 We can also look at the raw prevalence numbers
@@ -442,17 +444,23 @@ altExp(mae[[2]], "core_genus") <- agglomerateByVariable(
 Due to the limited number of samples, we also filter the fatty acid data to
 include only those fatty acids that show variation within the dataset. The
 rationale is that if a fatty acid does not vary, it cannot exhibit differences
-between groups.
+between groups. We can find out a good threshold for the cut-off with a
+histogram of standard deviations of fatty acid abundances.
 
 ```{r}
 #| label: filter_fatty1
 
 rowData(mae[[1]])[["sd"]] <- rowSds(assay(mae[[1]], "counts"), na.rm = TRUE)
-hist(rowData(mae[[1]])[["sd"]])
+hist(rowData(mae[[1]])[["sd"]],
+    main = "Standard deviation distribution of fatty acid abundances",
+    xlab = "Standard deviation",
+    breaks = 20)
 ```
 
-We apply a filtering threshold of 0.15 to exclude fatty acids that do not
-exhibit sufficient variation in the dataset.
+We apply a filtering threshold of 0.5 to exclude fatty acids that do not
+exhibit sufficient variation in the dataset. Since most standard deviations
+are below 1, it is a reasonable number if we do not want to exclude too many
+fatty acids.
 
 ```{r}
 #| label: filter_fatty2
@@ -468,13 +476,13 @@ well-established biological relevance. These include 22:6n-3, 20:5n-3, 18:3n-3,
 #| label: filter_fatty3
 
 relevant_fatty_acids <- c(
-  "Docosahexaenoic acid 22:6n-3 (DHA)", 
-  "Eicosapentaenoic acid 20:5n-3 (EPA)", 
-  "Alpha-Linolenic acid 18:3n-3", 
-  "Arachidonic acid 20:4n-6 (ARA)", 
-  "Linoleic acid 18:2n-6", 
-  "Oleic acid 18:1n-9", 
-  "Palmitic acid 16:0", 
+  "Docosahexaenoic acid 22:6n-3 (DHA)",
+  "Eicosapentaenoic acid 20:5n-3 (EPA)",
+  "Alpha-Linolenic acid 18:3n-3",
+  "Arachidonic acid 20:4n-6 (ARA)",
+  "Linoleic acid 18:2n-6",
+  "Oleic acid 18:1n-9",
+  "Palmitic acid 16:0",
   "Stearic acid 18:0"
 )
 altExp(mae[[1]], "relevant") <- mae[[1]][
@@ -632,9 +640,13 @@ mae[[2]] <- addAlpha(mae[[2]])
 
 # Plot with metadata
 p1 <- plotColData(mae[[2]], x = "mass_scaled", y = "shannon_diversity") +
-  geom_smooth(method = "lm")
+  geom_smooth(method = "lm") +
+  ggtitle("Shannon diversity association\nwith body mass") +
+  xlab("Scaled body mass") + ylab("Shannon diversity index")
 p2 <- plotColData(mae[[2]], x = "treatment_group", y = "shannon_diversity") +
-    geom_signif(comparisons = list(c("control", "treatment")), )
+    geom_signif(comparisons = list(c("control", "treatment")), ) +
+  ggtitle("Shannon diversity association\nwith treatment") +
+  xlab("Treatment group") + ylab("Shannon diversity index")
 
 p1 + p2
 ```
@@ -658,7 +670,8 @@ mae[[2]] <- runMDS(
 )
 
 # Display dissimilarity on a plot
-p <- plotReducedDim(mae[[2]], "MDS", colour_by = "treatment_group")
+p <- plotReducedDim(mae[[2]], "MDS", colour_by = "treatment_group") +
+  ggtitle("PCoA plot of Bray-Curtis dissimilarity by treatment group")
 p
 ```
 
@@ -667,7 +680,7 @@ this effect seems not to be associated with the treatment group.
 
 ## Multi-omics integration
 
-Multi-omic factor analysis (MOFA) allows us to discover latent factors that
+Multi-omic factor analysis (MOFA) (see @Argelaguet2020).  allows us to discover latent factors that
 underlie the biological differences by taking in consideration 2 or more omic
 assays. To cite the original authors, "MOFA can be viewed as a statistically
 rigorous generalization of (sparse) principal component analysis (PCA) to
