@@ -61,6 +61,7 @@ knitr::opts_chunk$set(
 
 ```{r}
 #| label: setup
+#| output: false
 
 # List of packages that we need
 packages <- c(
@@ -594,7 +595,7 @@ p <- plotExpression(
     altExp(mae[[1]], "relevant"),
     features = rownames(altExp(mae[[1]], "relevant")),
     x = "mass_scaled",
-    assay.type = "counts",
+    assay.type = "standardize",
     scales = "free"
     ) +
   geom_smooth(method = "lm")
