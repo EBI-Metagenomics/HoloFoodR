@@ -187,7 +187,7 @@ mg <- MgnifyClient(
 
 # Select only metagenomic_amplicon sample type
 metagenomic_salmon_samples <- salmon_samples |>
-    filter(sample_type = "metagenomic_amplicon")
+    filter(sample_type == "metagenomic_amplicon")
 
 # Search for sample IDs in MGnify database
 salmon_analysis_ids <- searchAnalysis(
