@@ -43,6 +43,7 @@ let
       vegan
       xgboost
       languageserver
+      jsonlite
       ;
   };
 
