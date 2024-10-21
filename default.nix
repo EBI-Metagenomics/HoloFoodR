@@ -16,6 +16,7 @@ let
       ComplexHeatmap
       devtools
       dplyr
+      DT
       FSA
       gbp
       GGally
