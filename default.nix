@@ -58,7 +58,7 @@
 let
   pkgs =
     import
-      (fetchTarball "https://github.com/rstats-on-nix/nixpkgs/archive/898b1c1fa0ce00b834fe47a83b5db84b043c4ad8.tar.gz")
+      (fetchTarball "https://github.com/rstats-on-nix/nixpkgs/archive/c2a9a8c6b785e80d0188c29f2dc9f1870c95b812.tar.gz")
       { };
 
   rpkgs = builtins.attrValues {
@@ -124,8 +124,8 @@ let
       name = "HoloFoodR";
       src = pkgs.fetchgit {
         url = "https://github.com/EBI-Metagenomics/HoloFoodR";
-        rev = "4440bdf1ed9f25acfc9cc72075b6ae5b08ea9efc";
-        sha256 = "sha256-EYqlW/AKb1/7I5krRb+d7H0gjuIXDNhcGyYw9lTX46g=";
+        rev = "93728e327ac50f950a01fdf8af359ccccf70d890";
+        sha256 = "sha256-hXWDpICPCZ33jgX3ntAy2wnhyVFptaOGkWHzQaHgQuY=";
       };
       propagatedBuildInputs = builtins.attrValues {
         inherit (pkgs.rPackages)
@@ -143,8 +143,8 @@ let
       name = "mia";
       src = pkgs.fetchgit {
         url = "https://github.com/microbiome/mia";
-        rev = "52d2a236449206f66e8b03ad21e7abe40313c2cf";
-        sha256 = "sha256-Y40PB8/rFwite7cvRTbz6qbjj3wEli+M0oFt/qI4Q5E=";
+        rev = "5d64263e54e97dd3432e55cab9c19650a5380fe1";
+        sha256 = "sha256-Nf+OPm6zYCuqBpFw9B6KsFrJsVGY2t1wxbGtBIGnCcQ=";
       };
       propagatedBuildInputs = builtins.attrValues {
         inherit (pkgs.rPackages)
