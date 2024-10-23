@@ -7,7 +7,7 @@
 #' metadata as some data is located in HoloFood and some in MGnify.
 #'
 #'
-#'#' @param x \code{SummarizedExperiment}. Results from
+#' @param x \code{SummarizedExperiment}. Results from
 #' \code{MGnifyR::getResult()}.
 #' 
 #' @param y \code{MultiAssayExperiment} or \code{SummarizedExperiment} or
