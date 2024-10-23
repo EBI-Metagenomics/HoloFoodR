@@ -5,7 +5,10 @@ Authors@R:
     c(person(given = "Tuomas", family = "Borman", role = c("aut", "cre"),
              email = "tuomas.v.borman@utu.fi",
              comment = c(ORCID = "0000-0002-8563-8884")),
-      person(given = "Leo", family = "Lahti", role = c("aut"),
+    person(given = "Artur", family = "Sannikov", role = c("aut", "cre"),
+            email = "arsann@utu.fi",
+            comment = c(ORCID = "0000-0001-7765-123X")
+    person(given = "Leo", family = "Lahti", role = c("aut"),
              email = "leo.lahti@iki.fi",
              comment = c(ORCID = "0000-0001-5537-637X")))
 Title: R interface to EBI HoloFood resource
