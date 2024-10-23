@@ -10,8 +10,8 @@ output:
         toc_depth: 2
         number_sections: true
 vignette: >
-    %\VignetteIndexEntry{HoloFoodR}
-    %\VignetteEngine{knitr::rmarkdown}
+    %\VignetteIndexEntry{Vignette's Title}
+    %\VignetteEngine{quarto::html}
     %\VignetteEncoding{UTF-8}
 ---
 
