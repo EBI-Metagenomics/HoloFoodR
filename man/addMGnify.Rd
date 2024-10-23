@@ -57,20 +57,42 @@ from \code{colData(y[[exp.name2]])} that includes HoloFood identifiers.
 Add results from MGnifyR to HoloFoodR results
 }
 \details{
-Metagenomic data is located in MGnify instead of HoloFoodR. However, the
-databases use different sample identifiers. With this function, you can
-replace sample IDs of your MGnify data with sample IDs found in HoloFood
-database. For this, the function needs information on this sample ID
-mapping.
+Metagenomic data is found in MGnify rather than HoloFoodR, and the two
+databases use different sample identifiers. However, MGnify's sample
+metadata includes references to the identifiers used in the HoloFood
+database, making it straightforward to convert sample IDs for alignment
+with HoloFood data. Despite this, HoloFood contains additional metadata
+not available in MGnify. Moreover, integrating data into a
+\code{MultiAssayExperiment} while maintaining accurate sample and system
+matches can be challenging.
 
-When you fetch data from with \code{HoloFoodR::getResult()}, the resulting
-\code{MultiAssayExperiment} object includes an experiment for metagenomic
-data. However, this experiment does not have any abundance data but just
-metadata on samples. In addition to replacing sample IDs, this function
-combines metadata from HoloFood and MGnify databases.
+This function is designed to simplify these
+tasks, enabling seamless integration of MGnify data with HoloFood data after
+retrieval from the database. You need only to input the returned data from
+\code{MGnifyR::getResult()} and \code{HoloFoodR::getResult()} functions.
 }
 \examples{
 
-# mae <- addMGnify(tse, mae)
+\dontrun{
+# Get data from HoloFood database
+mae <- HoloFoodR::getResult(
+    salmon_sample_ids,
+    use.cache = TRUE
+)
+
+# Get data from MGnify database
+mg <- MgnifyClient(
+    useCache = TRUE,
+    cacheDir = ".MGnifyR_cache"
+)
+tse <- MGnifyR::getResult(
+    mg,
+    accession = mgnify_analyses_ids,
+    get.func = FALSE
+)
+
+# Add MGnify data to HoloFood data
+mae <- addMGnify(tse, mae)
+}
 
 }

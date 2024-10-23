@@ -45,8 +45,28 @@
 #' @return \code{MultiAssayExperiment}
 #'
 #' @examples
-#'
-#' # mae <- addMGnify(tse, mae)
+#' 
+#' \dontrun{
+#' # Get data from HoloFood database
+#' mae <- HoloFoodR::getResult(
+#'     salmon_sample_ids,
+#'     use.cache = TRUE
+#' )
+#' 
+#' # Get data from MGnify database
+#' mg <- MgnifyClient(
+#'     useCache = TRUE,
+#'     cacheDir = ".MGnifyR_cache"
+#' )
+#' tse <- MGnifyR::getResult(
+#'     mg,
+#'     accession = mgnify_analyses_ids,
+#'     get.func = FALSE
+#' )
+#' 
+#' # Add MGnify data to HoloFood data
+#' mae <- addMGnify(tse, mae)
+#' }
 #'
 #' @name addMGnify
 NULL
