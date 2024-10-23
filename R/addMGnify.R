@@ -18,8 +18,8 @@
 #' that will be added to \code{y}. (Default: \code{"metagenomic"})
 #' 
 #' @param exp.name2 \code{Character scalar}. Specifies the name of experiment
-#' from HoloFoodR results. This experiment is used to match IDs with MGnify data.
-#' (Default: \code{"metagenomic_amplicon"})
+#' from HoloFoodR results. This experiment is used to match IDs with MGnify
+#' data. (Default: \code{"metagenomic_amplicon"})
 #' 
 #' @param id.col1 \code{Character scalar}. Specifies the name of column from
 #' \code{colData(x)} that includes HoloFood identifiers.
@@ -106,7 +106,7 @@ setMethod(
             id.col2, list("character scalar"),
             supported_values = colnames(y))
         if( !( is.character(colData(x)[[id.col1]]) ||
-               is.factor(colData(x)[[id.col1]]) ) ){
+                is.factor(colData(x)[[id.col1]]) ) ){
             stop("'id.col1' must specify IDs from 'x'.", call. = FALSE)
         }
         if( !( is.character(y[[id.col2]]) || is.factor(y[[id.col2]]) ) ){
