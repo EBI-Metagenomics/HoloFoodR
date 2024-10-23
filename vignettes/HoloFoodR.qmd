@@ -15,7 +15,10 @@ vignette: >
     %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+```{r}
+#| label: setup
+#| include: false
+
 library(knitr)
 knitr::opts_chunk$set(
     collapse = TRUE,
@@ -42,7 +45,10 @@ integration of data and enhancing accessibility.
 `HoloFoodR` is hosted on Bioconductor, and can be installed using via
 `BiocManager`.
 
-```{r install, eval=FALSE}
+```{r}
+#| label: install
+#| eval: false
+
 BiocManager::install("HoloFoodR")
 ```
 
@@ -50,7 +56,9 @@ BiocManager::install("HoloFoodR")
 
 Once installed, `HoloFoodR` is made available in the usual way.
 
-```{r load_package}
+```{r}
+#| label: load_package
+
 library(HoloFoodR)
 ```
 
@@ -80,7 +88,9 @@ Here we search animals, and subset them based on whether they include
 histological samples. Note that this same can be done also by using query
 filters.
 
-```{r search_animals}
+```{r}
+#| label: search_animals
+
 animals <- doQuery("animals", max.hits = 100)
 animals <- animals[ animals[["histological"]], ]
 
@@ -95,7 +105,9 @@ searched.
 Now we have information on which animal has histological samples. Let's get
 data on those animals to know the sample IDs to fetch.
 
-```{r get_animal_data}
+```{r}
+#| label: get_animal_data
+
 animal_data <- getData(
     accession.type = "animals", accession = animals[["accession"]])
 ```
@@ -104,7 +116,9 @@ The returned value of `getData()` function is a `list`. We can have the data
 also as a `data.frame` when we specify `flatten = TRUE`. The data has
 information on animals including samples that have been drawn from them. 
 
-```{r get_samples1}
+```{r}
+#| label: get_samples1
+
 samples <- animal_data[["samples"]]
 
 colnames(samples) |> head()
@@ -115,7 +129,9 @@ contains information on samples drawn from animals that were specified in input.
 
 Now we can collect sample IDs.
 
-```{r get_samples2}
+```{r}
+#| label: get_samples2
+
 sample_ids <- unique(samples[["accession"]])
 ```
 
@@ -124,7 +140,9 @@ sample_ids <- unique(samples[["accession"]])
 To get data on samples, we can utilize `getResult()` function. It returns the
 data in `r BiocStyle::Biocpkg("MultiAssayExperiment")` (`MAE`) format.
 
-```{r get_mae}
+```{r}
+#| label: get_mae
+
 mae <- getResult(sample_ids)
 mae
 ```
@@ -132,7 +150,9 @@ mae
 `MAE` object stores individual omics as
 `r BiocStyle::Biocpkg("TreeSummarizedExperiment")` (`TreeSE`) objects.
 
-```{r show_mae}
+```{r}
+#| label: show_mae
+
 mae[[1]]
 ```
 
@@ -145,7 +165,10 @@ MGnify database. From the `MGnifyR` package, we can use
 `MGnifyR::searchAnalysis()` function to search analyses based on sample IDs
 that we have.
 
-```{r search_analyses1, eval = FALSE}
+```{r}
+#| label: search_analyses1
+#| eval: false
+
 library(MGnifyR)
 
 mg <- MgnifyClient(useCache = TRUE)
@@ -159,27 +182,40 @@ analysis_ids <- searchAnalysis(
     mg, type = "samples", metagenomic_samples[["accession"]])
 ```
 
-```{r search_analyses2, include = FALSE}
+```{r}
+#| label: search_analyses2
+#| include: false
+
 path <- system.file("extdata", "analysis_ids.rds", package = "HoloFoodR")
 analysis_ids <- readRDS(path)
 ```
 
-```{r search_analyses3}
+```{r}
+#| label: search_analyses3
+
 head(analysis_ids)
 ```
 
 Then we can fetch data based on accession IDs.
 
-```{r get_metagenomic_data1, eval = FALSE}
+```{r}
+#| label: get_metageomic_data1
+#| eval: false
+
 mae_metagenomic <- MGnifyR::getResult(mg, analysis_ids)
 ```
 
-```{r get_metagenomic_data2, include = FALSE}
+```{r}
+#| label: get_metageomic_data2
+#| include: false
+
 path <- system.file("extdata", "mae_metagenomic.rds", package = "HoloFoodR")
 mae_metagenomic <- readRDS(path)
 ```
 
-```{r get_metagenomic_data3}
+```{r}
+#| label: get_metageomic_data3
+
 mae_metagenomic
 ```
 
@@ -188,7 +224,10 @@ metagenomic data points to individual analyses instead of samples. We can
 harmonize the data by replacing analysis IDs with sample IDs, and then we can
 combine the data to single `MAE`.
 
-```{r combine_data, eval = FALSE}
+```{r}
+#| label: combine_data
+#| eval: false
+
 # Get experiments from metagenomic data
 exps <- experiments(mae_metagenomic)
 # Convert analysis names to sample names
@@ -219,10 +258,13 @@ it provides URL addresses linking to the MetaboLights database, where untargeted
 metabolomics data can be accessed. To retrieve this data, you can utilize the
 getMetaboLights() function to retrieve information on available data. Moreover,
 it returns processed metabolomic data (for processed data, you can also use
-`getReturn(x, get.metabolomic=TRUE)`). Below, we retrieve all the
-metabolomic data associated with HoloFood.
+`getReturn(x, get.metabolomic=TRUE)`). Below, we retrieve all the processed
+(mapped) metabolomic data associated with HoloFood.
 
-```{r get_metabolomics, eval=FALSE}
+```{r}
+#| label: get_metabolomics
+#| eval: false
+
 # Get untargeted metabolomic samples
 samples <- doQuery("samples", sample_type = "metabolomic")
 # Get the data
@@ -246,6 +288,8 @@ which is tailored for metabolomics spectra data.
 
 ## Session info
 
-```{r session_info}
+```{r}
+#| label: session_info
+
 sessionInfo()
 ```
