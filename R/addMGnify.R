@@ -3,9 +3,15 @@
 #' @details
 #' Metagenomic data is located in MGnify instead of HoloFoodR. However, the
 #' databases use different sample identifiers. With this function, you can
-#' merge MGnify results to your HoloFoodR results. The function combined sample
-#' metadata as some data is located in HoloFood and some in MGnify.
-#'
+#' replace sample IDs of your MGnify data with sample IDs found in HoloFood
+#' database. For this, the function needs information on this sample ID
+#' mapping.
+#' 
+#' When you fetch data from with \code{HoloFoodR::getResult()}, the resulting
+#' \code{MultiAssayExperiment} object includes an experiment for metagenomic
+#' data. However, this experiment does not have any abundance data but just
+#' metadata on samples. In addition to replacing sample IDs, this function
+#' combines metadata from HoloFood and MGnify databases.
 #'
 #' @param x \code{SummarizedExperiment}. Results from
 #' \code{MGnifyR::getResult()}.
