@@ -124,6 +124,9 @@
     if( "data.frame" %in% classes_char && is.data.frame(variable) ){
         input_correct <- TRUE
     }
+    if( "DFrame" %in% classes_char && is(variable, "DFrame") ){
+        input_correct <- TRUE
+    }
     if( "matrix" %in% classes_char && is.matrix(variable) ){
         input_correct <- TRUE
     }
