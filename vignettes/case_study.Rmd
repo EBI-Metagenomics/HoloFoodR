@@ -1,6 +1,7 @@
 ---
 title: "HoloFoodR R package — case study"
 date: "`r Sys.Date()`"
+package: HoloFoodR
 bibliography: HoloFoodR.bib
 output:
    BiocStyle::html_document:
