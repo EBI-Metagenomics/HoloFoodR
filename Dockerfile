@@ -23,7 +23,7 @@ RUN R -e 'BiocManager::install(c("basilisk", "biomformat", \
     "ComplexHeatmap", "MGnifyR", "mia", "miaViz", "MOFA2", "tidyverse"))'
 
 # Install latest development version of HoloFoodR
-RUN R -e 'remotes::install_github("EBI-Metagenomics/HoloFoodR'
+RUN R -e 'remotes::install_github("EBI-Metagenomics/HoloFoodR")'
 
 # Install mofapy2 for case study
 RUN python3 -m pip install 'https://github.com/bioFAM/mofapy2/tarball/master'
