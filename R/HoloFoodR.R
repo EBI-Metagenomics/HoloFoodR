@@ -12,6 +12,7 @@
 #' @seealso
 #' \link[TreeSummarizedExperiment:TreeSummarizedExperiment-class]{TreeSummarizedExperiment}
 #' \link[MultiAssayExperiment:MultiAssayExperiment-class]{MultiAssayExperiment}
+"_PACKAGE"
 NULL
 
 #' @import TreeSummarizedExperiment

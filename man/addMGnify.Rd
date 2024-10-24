@@ -23,6 +23,9 @@ addMGnify(x, y, ...)
 \S4method{addMGnify}{SummarizedExperiment,ANY}(x, y, id.col1 = "sample_biosample", id.col2 = "accession", ...)
 }
 \arguments{
+\item{x}{\code{SummarizedExperiment}. Results from
+\code{MGnifyR::getResult()}.}
+
 \item{y}{\code{MultiAssayExperiment} or \code{SummarizedExperiment} or
 \code{data.frame}-like table. Results from \code{HoloFoodR::getResult()} or
 sample metadata from it.}
@@ -33,8 +36,8 @@ sample metadata from it.}
 that will be added to \code{y}. (Default: \code{"metagenomic"})}
 
 \item{exp.name2}{\code{Character scalar}. Specifies the name of experiment
-from HoloFoodR results. This experiment is used to match IDs with MGnify data.
-(Default: \code{"metagenomic_amplicon"})}
+from HoloFoodR results. This experiment is used to match IDs with MGnify
+data. (Default: \code{"metagenomic_amplicon"})}
 
 \item{replace}{\code{Logical scalar}. Whether to replace the template
 experiment. (Default: \code{TRUE})}
@@ -54,17 +57,42 @@ from \code{colData(y[[exp.name2]])} that includes HoloFood identifiers.
 Add results from MGnifyR to HoloFoodR results
 }
 \details{
-Metagenomic data is located in MGnify instead of HoloFoodR. However, the
-databases use different sample identifiers. With this function, you can
-merge MGnify results to your HoloFoodR results. The function combined sample
-metadata as some data is located in HoloFood and some in MGnify.
+Metagenomic data is found in MGnify rather than HoloFoodR, and the two
+databases use different sample identifiers. However, MGnify's sample
+metadata includes references to the identifiers used in the HoloFood
+database, making it straightforward to convert sample IDs for alignment
+with HoloFood data. Despite this, HoloFood contains additional metadata
+not available in MGnify. Moreover, integrating data into a
+\code{MultiAssayExperiment} while maintaining accurate sample and system
+matches can be challenging.
 
-
-#' @param x \code{SummarizedExperiment}. Results from
-\code{MGnifyR::getResult()}.
+This function is designed to simplify these
+tasks, enabling seamless integration of MGnify data with HoloFood data after
+retrieval from the database. You need only to input the returned data from
+\code{MGnifyR::getResult()} and \code{HoloFoodR::getResult()} functions.
 }
 \examples{
 
-# mae <- addMGnify(tse, mae)
+\dontrun{
+# Get data from HoloFood database
+mae <- HoloFoodR::getResult(
+    salmon_sample_ids,
+    use.cache = TRUE
+)
+
+# Get data from MGnify database
+mg <- MgnifyClient(
+    useCache = TRUE,
+    cacheDir = ".MGnifyR_cache"
+)
+tse <- MGnifyR::getResult(
+    mg,
+    accession = mgnify_analyses_ids,
+    get.func = FALSE
+)
+
+# Add MGnify data to HoloFood data
+mae <- addMGnify(tse, mae)
+}
 
 }

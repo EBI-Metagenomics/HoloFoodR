@@ -1,3 +1,7 @@
+Version: 0.x.x
+Date: 2024-10-24
++ Add addMGnify function
+
 Version: 0.99.9
 Date: 2024-09-25
 + Fixed bug in getMetaboLights
