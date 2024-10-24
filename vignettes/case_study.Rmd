@@ -1,6 +1,7 @@
 ---
 title: "HoloFoodR R package — case study"
 date: "`r Sys.Date()`"
+package: HoloFoodR
 bibliography: HoloFoodR.bib
 output:
    BiocStyle::html_document:
@@ -10,8 +11,8 @@ output:
        toc_depth: 2
        number_sections: true
 vignette: >
-  %\VignetteIndexEntry{HoloFoodR}
-  %\VignetteEngine{quarto::html}
+  %\VignetteIndexEntry{Case study}
+  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 

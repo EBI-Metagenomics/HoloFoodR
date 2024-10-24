@@ -21,8 +21,8 @@ License: Artistic-2.0 | file LICENSE
 Encoding: UTF-8
 Depends:
     R(>= 4.4.0),
-    TreeSummarizedExperiment,
-    MultiAssayExperiment
+    MultiAssayExperiment,
+    TreeSummarizedExperiment
 Imports:
     dplyr,
     httr2,
@@ -31,11 +31,21 @@ Imports:
     stats,
     utils
 Suggests:
-    testthat,
+    BiocStyle,
+    DT,
+    ggsignif,
     knitr,
+    MGnifyR,
+    mia,
+    miaViz,
+    MOFA2,
+    patchwork,
+    reticulate,
     rmarkdown,
-    BiocStyle
+    scater,
+    testthat,
+    UpSetR
 URL: https://github.com/EBI-Metagenomics/HoloFoodR
 BugReports: https://github.com/EBI-Metagenomics/HoloFoodR/issues
-VignetteBuilder: quarto
+VignetteBuilder: knitr
 RoxygenNote: 7.3.2
