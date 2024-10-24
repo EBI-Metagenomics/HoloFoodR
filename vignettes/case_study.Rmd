@@ -10,7 +10,7 @@ output:
        toc_depth: 2
        number_sections: true
 vignette: >
-  %\VignetteIndexEntry{HoloFoodR}
+  %\VignetteIndexEntry{Case study}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
