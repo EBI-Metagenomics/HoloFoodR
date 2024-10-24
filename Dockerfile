@@ -21,14 +21,10 @@ RUN Rscript -e 'repos <- BiocManager::repositories(); \
 RUN Rscript -e 'install.packages(c("dplyr", "DT", "ggpubr", "ggsignif", "latex2exp", "patchwork", "shadowtext", "reticulate"))'
 
 # Install Bioconductor packages for case study
-# RUN R -e 'BiocManager::install(c("basilisk", "biomformat", \
-#     "ComplexHeatmap", "MGnifyR", "mia", "miaViz", "MOFA2", "tidyverse"))'
-
 RUN R -e 'BiocManager::install(c("BiocStyle", "ComplexHeatmap", "MGnifyR", "mia", "miaViz", "MOFA2", "scater"))'
 
-
-# Install latest development version of HoloFoodR
-RUN R -e 'remotes::install_github("EBI-Metagenomics/HoloFoodR")'
+# Install HoloFoodR locally
+RUN R -e 'devtools::install_local()'
 
 # Install mofapy2 for case study
 # RUN python3 -m pip install 'https://github.com/bioFAM/mofapy2/tarball/master'
