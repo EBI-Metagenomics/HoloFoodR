@@ -31,7 +31,7 @@ Imports:
     stats,
     utils
 Suggests:
-    BiocStyle
+    BiocStyle,
     knitr,
     quarto,
     rmarkdown,
