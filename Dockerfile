@@ -15,18 +15,23 @@ RUN Rscript -e 'repos <- BiocManager::repositories(); \
     include_base = TRUE)'
 
 # Istall CRAN packages for case study
-RUN Rscript -e 'install.packages(c("DT", "patchwork", "reticulate", "reshape", "shadowtext", "shadowtext", \
-    "scater", "ggsignif", "stringr", "ggpubr", "GGally", "ggplot2", "knitr", "latex2exp", "UpSetR"))'
+# RUN Rscript -e 'install.packages(c("DT", "patchwork", "reticulate", "reshape", "shadowtext", "shadowtext", \
+#     "scater", "ggsignif", "stringr", "ggpubr", "GGally", "ggplot2", "knitr", "latex2exp", "UpSetR"))'
+
+RUN Rscript -e 'install.packages(c("dplyr", "DT", "ggpubr", "ggsignif", "latex2exp", "patchwork", "shadowtext", "reticulate"))'
 
 # Install Bioconductor packages for case study
-RUN R -e 'BiocManager::install(c("basilisk", "biomformat", \
-    "ComplexHeatmap", "MGnifyR", "mia", "miaViz", "MOFA2", "tidyverse"))'
+# RUN R -e 'BiocManager::install(c("basilisk", "biomformat", \
+#     "ComplexHeatmap", "MGnifyR", "mia", "miaViz", "MOFA2", "tidyverse"))'
+
+RUN R -e 'BiocManager::install(c("BiocStyle", "ComplexHeatmap", "MGnifyR", "mia", "miaViz", "MOFA2", "scater"))'
+
 
 # Install latest development version of HoloFoodR
 RUN R -e 'remotes::install_github("EBI-Metagenomics/HoloFoodR")'
 
 # Install mofapy2 for case study
-RUN python3 -m pip install 'https://github.com/bioFAM/mofapy2/tarball/master'
+# RUN python3 -m pip install 'https://github.com/bioFAM/mofapy2/tarball/master'
 
 # Internal port for RStudio server is 8787
 EXPOSE 8787
