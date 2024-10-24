@@ -2,6 +2,7 @@ name: rworkflows
 "on":
   push:
     branches:
+      - case-study
       - master
       - main
       - devel
