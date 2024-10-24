@@ -61,7 +61,7 @@ knitr::opts_chunk$set(
 
 # List of packages that we need
 packages <- c(
-    "dplyr", "DT", "ggsignif", "HoloFoodR", "MGnifyR", "mia", "miaViz", "MOFA2",
+    "dplyr", "DT", "ggpubr",  "ggsignif", "HoloFoodR", "MGnifyR", "mia", "miaViz", "MOFA2",
     "patchwork", "reticulate", "scater"
 )
 
