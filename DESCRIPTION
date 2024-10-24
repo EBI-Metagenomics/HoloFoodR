@@ -45,6 +45,8 @@ Suggests:
     scater,
     testthat,
     UpSetR
+Remotes:
+    github::microbiome/miaViz@plotabundance_mods
 URL: https://github.com/EBI-Metagenomics/HoloFoodR
 BugReports: https://github.com/EBI-Metagenomics/HoloFoodR/issues
 VignetteBuilder: knitr
