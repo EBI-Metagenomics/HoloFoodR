@@ -32,9 +32,18 @@ Imports:
     utils
 Suggests:
     BiocStyle,
+    DT,
+    ggsignif,
     knitr,
+    MGnifyR,
+    mia,
+    miaViz,
+    MOFA2,
+    patchwork,
     quarto,
+    reticulate,
     rmarkdown,
+    scater,
     testthat
 URL: https://github.com/EBI-Metagenomics/HoloFoodR
 BugReports: https://github.com/EBI-Metagenomics/HoloFoodR/issues
