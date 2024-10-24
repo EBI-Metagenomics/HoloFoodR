@@ -37,7 +37,6 @@ Suggests:
     knitr,
     MGnifyR,
     mia,
-    miaViz,
     MOFA2,
     patchwork,
     reticulate,
