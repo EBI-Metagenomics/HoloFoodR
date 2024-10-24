@@ -11,7 +11,7 @@ output:
        number_sections: true
 vignette: >
   %\VignetteIndexEntry{HoloFoodR}
-  %\VignetteEngine{quarto::html}
+  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 

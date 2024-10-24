@@ -40,7 +40,6 @@ Suggests:
     miaViz,
     MOFA2,
     patchwork,
-    quarto,
     reticulate,
     rmarkdown,
     scater,
@@ -48,5 +47,5 @@ Suggests:
     UpSetR
 URL: https://github.com/EBI-Metagenomics/HoloFoodR
 BugReports: https://github.com/EBI-Metagenomics/HoloFoodR/issues
-VignetteBuilder: quarto
+VignetteBuilder: knitr
 RoxygenNote: 7.3.2
