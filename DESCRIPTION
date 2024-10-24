@@ -44,7 +44,8 @@ Suggests:
     reticulate,
     rmarkdown,
     scater,
-    testthat
+    testthat,
+    UpSetR
 URL: https://github.com/EBI-Metagenomics/HoloFoodR
 BugReports: https://github.com/EBI-Metagenomics/HoloFoodR/issues
 VignetteBuilder: quarto
