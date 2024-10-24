@@ -27,12 +27,12 @@ between hosts and their microbiomes.
 ## HoloFood <img src="man/figures/holofood_logo.png" align="right" width="60" />
 
 HoloFood, a project funded under EU's Horizon 2020 programme, employed a
-holistic, "hologenomic", approach to enhance the efficiency of food production 
-systems. This involved exploring the biomolecular and physiological processes 
+holistic, "hologenomic", approach to enhance the efficiency of food production
+systems. This involved exploring the biomolecular and physiological processes
 triggered by the incorporation of feed additives and novel sustainable feeds in
 farmed animals.
 
-The HoloFood database, hosted by European Bioinformatics Institute (EMBL-EBI), 
+The HoloFood database, hosted by European Bioinformatics Institute (EMBL-EBI),
 houses data gathered during the project, encompassing multiple omics, including
 metabolomics and various other biomolecular measurements. Notably, it does not
 include data on metagenomic and  untargeted metabolomic analyses. However,
@@ -47,7 +47,7 @@ explore available datasets in HoloFood, you can utilize the API browser.
 
 ## MGnify <img src="man/figures/mgnify_logo.jpg" align="right" width="60" />
 
-EMBL-EBI's MGnify serves as a repository for microbiome data, offering a wide array
+EMBL-EBI's  MGnify serves as a repository for microbiome data, offering a wide array
 of analyses encompassing metabarcoding, metatranscriptomic, and metagenomic
 datasets from diverse environments. This platform provides comprehensive
 taxonomic assignments and functional annotations for these datasets. The data

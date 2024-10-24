@@ -21,9 +21,9 @@
 # RStudio files
 .Rproj.user/
 *.Rproj
+.Rprofile
 
 # produced vignettes
-vignettes/*.html
 vignettes/*.pdf
 
 # OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
@@ -49,3 +49,21 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 docs
+
+# Environment
+renv/
+.Rprofile
+
+# direnv stuff
+.envrc
+.direnv
+
+# Additional files from vignette
+vignettes/*.html
+vignettes/*/*/*.png
+
+# Nix
+default.nix
+shell.nix
+flake.nix
+

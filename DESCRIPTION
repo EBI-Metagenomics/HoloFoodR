@@ -1,11 +1,14 @@
 Package: HoloFoodR
 Type: Package
-Version: 0.99.9
+Version: 0.99.11
 Authors@R:
     c(person(given = "Tuomas", family = "Borman", role = c("aut", "cre"),
              email = "tuomas.v.borman@utu.fi",
              comment = c(ORCID = "0000-0002-8563-8884")),
-      person(given = "Leo", family = "Lahti", role = c("aut"),
+    person(given = "Artur", family = "Sannikov", role = c("aut"),
+            email = "arsann@utu.fi",
+            comment = c(ORCID = "0000-0001-7765-123X")),
+    person(given = "Leo", family = "Lahti", role = c("aut"),
              email = "leo.lahti@iki.fi",
              comment = c(ORCID = "0000-0001-5537-637X")))
 Title: R interface to EBI HoloFood resource
@@ -18,8 +21,8 @@ License: Artistic-2.0 | file LICENSE
 Encoding: UTF-8
 Depends:
     R(>= 4.4.0),
-    TreeSummarizedExperiment,
-    MultiAssayExperiment
+    MultiAssayExperiment,
+    TreeSummarizedExperiment
 Imports:
     dplyr,
     httr2,
@@ -28,10 +31,22 @@ Imports:
     stats,
     utils
 Suggests:
-    testthat,
+    BiocStyle,
+    DT,
+    ggsignif,
     knitr,
+    MGnifyR,
+    mia,
+    miaViz,
+    MOFA2,
+    patchwork,
+    reticulate,
     rmarkdown,
-    BiocStyle
+    scater,
+    testthat,
+    UpSetR
+Remotes:
+    github::microbiome/miaViz@plotabundance_mods
 URL: https://github.com/EBI-Metagenomics/HoloFoodR
 BugReports: https://github.com/EBI-Metagenomics/HoloFoodR/issues
 VignetteBuilder: knitr
