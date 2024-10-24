@@ -688,7 +688,7 @@ By applying MOFA analysis, our goal is to determine whether metagenomics and
 fatty acids exhibit shared variability, ultimately assessing whether the
 microbial community is associated with fatty acid composition.
 
-```{r}
+```{r, results = FALSE}
 #| label: fit_mofa
 #| output: false
 
