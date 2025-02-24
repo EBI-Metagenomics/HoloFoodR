@@ -46,7 +46,7 @@
 #' @examples
 #'
 #' # Find animals results. The maximum amount of results is 100. Use filter
-#' # so that only chicken is searched.
+#' # so that only chicken is searched. (See details on customizing queries)
 #' res <- doQuery("animals", max.hits = 100, system = "chicken")
 #' head(res)
 #'
