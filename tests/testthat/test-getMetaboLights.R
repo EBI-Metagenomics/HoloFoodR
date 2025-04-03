@@ -15,11 +15,24 @@ test_that("getMetaboLigths", {
     res <- getMetaboLights(study_id)
     
     # There should be certain named data.frames
-    expect_true( all(c("assay", "feat_meta", "sample_meta") %in% names(res)) )
-    # The feature names and sample names should match
-    expect_equal(res[["assay"]][["feat_ID"]], res[["feat_meta"]][["feat_ID"]])
-    test_names <- colnames(res[["assay"]])
-    ref_names <- c(res[["sample_meta"]][["Sample Name"]], "feat_ID")
-    expect_true(
-        all(test_names %in% ref_names) && all(ref_names %in% test_names))
+    expect_true( all(c("assay", "assay_meta", "study_meta") %in% names(res)) )
+    # Expect that all sample names are shared between sampple meta and study
+    # meta and assay
+    expect_true(all(
+        res[["assay_meta"]][["Sample Name"]] %in%
+        res[["study_meta"]][["Sample Name"]]))
+    expect_true(all(
+        res[["assay_meta"]][["Sample Name"]] %in% colnames(res[["assay"]])))
+    
+    # Get data in SE format
+    res2 <- getMetaboLights(study_id, output = "SE")
+    expect_s4_class(res2, "SummarizedExperiment")
+    expect_equal(rownames(res2), res[[1L]][["feat_ID"]])
+    
+    # Get data in TreeSE format
+    res3 <- getMetaboLights(study_id, output = "TreeSE")
+    expect_s4_class(res3, "TreeSummarizedExperiment")
+    mat <- assay(res3)
+    ref <- res[[1]][, colnames(mat)] |> as.matrix()
+    expect_equal(mat, ref, check.attributes = FALSE)
 })

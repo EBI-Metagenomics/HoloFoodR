@@ -92,7 +92,7 @@ test_that("getResult", {
     
     # Check that data from MetaboLights is correct
     samples <- c("SAMEA112952704", "SAMEA112952705")
-    res <- getResult(samples)
+    res <- getResult(samples, get.metabolomic = TRUE) |> suppressWarnings()
     # The data must be MAE that have SEs inside
     expect_s4_class(res, "MultiAssayExperiment")
     expect_s4_class(res[[1]], "TreeSummarizedExperiment")

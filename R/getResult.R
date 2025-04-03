@@ -106,7 +106,7 @@ getResult <- function(accession, ...){
     # If user wants to get metabolites data and retrieved sample IDs include
     # metabolite samples. It requires loading files from MetaboLights which
     # is why there is an option for not loading the data.
-    mae <- .fetch_metabolomic(mae, sample_metadata, ...)
+    mae <- .fetch_metabolomic(mae, sample_metadata, accession, ...)
     
     # If there are samples that user wanted to include but are not present in
     # the data (they do not have data in HoloFood database), give warning.
@@ -130,7 +130,7 @@ getResult <- function(accession, ...){
             } else{
                 msg_temp2 <- "The sample types are"
             }
-            msg <- paste0(msg, " ", msg_temp2, " ", msg_temp, ".")
+            msg <- paste0(msg, " ", msg_temp2, " ", msg_temp, "")
             # If metagenomic assembly was one of the samples that user wanted,
             # give information that it can be found from MGnify database.
             if( "metagenomic_assembly" %in% type_names ){
@@ -181,7 +181,7 @@ getResult <- function(accession, ...){
 # This function makes sure that untargeted metabolomic data is added if user
 # has specified so.
 .fetch_metabolomic <- function(
-        mae, sample_metadata, get.metabolomic = FALSE, ...){
+        mae, sample_metadata, accession, get.metabolomic = FALSE, ...){
     # Check get.metabolomic
     temp <- .check_input(get.metabolomic, list("logical scalar"))
     #
@@ -190,7 +190,14 @@ getResult <- function(accession, ...){
     metabolomics_url <- metabolomics_url[ !is.na(metabolomics_url) ]
     if( get.metabolomic && length(metabolomics_url) > 0 ){
         # Get metabolomic data
-        se_metabolomic <- .construct_metabolomic_SE(metabolomics_url, ...)
+        args <- list(...)
+        args[["study.id"]] <- metabolomics_url
+        args[["output"]] <- "TreeSE"
+        se_metabolomic <- do.call(getMetaboLights, args)
+        # The data still has sample names from MetaboLights and not from
+        # HoloFood replace them.
+        colnames(se_metabolomic) <- colData(se_metabolomic)[[
+            "Comment[BioSamples accession]"]]
         # Add it to MAE
         mae <- .add_metabolomic_data_to_MAE(mae, se_metabolomic, accession)
     }
@@ -238,56 +245,6 @@ getResult <- function(accession, ...){
     experiment_list <- c(experiments(mae), experiment_list)
     res <- MultiAssayExperiment(experiment_list)
     return(res)
-}
-
-# This function retrieves metabolomic data and constructs SE from it
-.construct_metabolomic_SE <- function(urls, assay.type = "counts", ...){
-    # Check assay.type
-    temp <- .check_input(assay.type, list("character scalar"))
-    #
-    # Get unique urls
-    urls <- unique(urls)
-    # Get data from MetaboLigths
-    res <- getMetaboLights(urls, ...)
-    assay <- res[["assay"]]
-    assay_meta <- res[["assay_meta"]]
-    study_meta <- res[["study_meta"]]
-    
-    # Split assay to abundance table and feature metadata
-    assay_cols <- colnames(assay) %in% assay_meta[["Sample Name"]]
-    feat_meta <- assay[ , !assay_cols, drop = FALSE]
-    feat_meta[["feat_ID"]] <- as.character(feat_meta[["feat_ID"]])
-    assay <- assay[ , assay_cols, drop = FALSE]
-    assay[["feat_ID"]] <- feat_meta[["feat_ID"]]
-
-    # Combine assay and study metadata to metadata on samples
-    common_cols <- intersect(colnames(study_meta), colnames(assay_meta))
-    sample_meta <- left_join(study_meta, assay_meta, by = common_cols)
-
-    # Add rownames to tables
-    rownames(assay) <- assay[["feat_ID"]]
-    assay[["feat_ID"]] <- NULL
-    rownames(feat_meta) <- feat_meta[["Sample Name"]]
-    
-    # Order metadatas based on assay
-    feat_meta <- feat_meta[match(rownames(assay), feat_meta[["feat_ID"]]), ]
-    sample_meta <- sample_meta[
-        match(colnames(assay), sample_meta[["Sample Name"]]), ]
-    
-    # Convert to classes supported by SE
-    assay <- as.matrix(assay)
-    assays <- SimpleList(assay)
-    names(assays) <- assay.type
-    feat_meta <- DataFrame(feat_meta, check.names = FALSE)
-    sample_meta <- DataFrame(sample_meta, check.names = FALSE)
-    # Create TreeSummarizedExperiment
-    se <- TreeSummarizedExperiment(
-        assays = assays, rowData = feat_meta, colData = sample_meta)
-    
-    # The data still has sample names from MetaboLights and not from HoloFood
-    # replace them.
-    colnames(se) <- colData(se)[["Comment[BioSamples accession]"]]
-    return(se)
 }
 
 # This function replaces query_accession with accession --> this is to ensure
