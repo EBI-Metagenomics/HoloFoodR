@@ -20,8 +20,8 @@
 #' data that is going to be fetched from the MetaboLights database.
 #' 
 #' @param output \code{character scalar} specifying output format. Must be
-#' \code{"list"}, \code{"TreeSE"} (TreeSummarizedExperiment) or \code{"SE"}
-#' (SummarizedExperiment). (Default: \code{"list"})
+#' \code{"list"}, \code{"TreeSE"} (\code{TreeSummarizedExperiment}) or
+#' \code{"SE"} (\code{SummarizedExperiment}). (Default: \code{"list"})
 #' 
 #' @param file \code{character vector} specifying the files that are being
 #' fetched.
@@ -45,7 +45,7 @@
 #' # This example is not run, because the server fails to respond sometimes.
 #' if( FALSE ){
 #'     res <- getMetaboLights("MTBLS4381")
-#'     file_paths <- getMetaLightsFile(
+#'     file_paths <- getMetaboLightsFile(
 #'         study.id = "MTBLS4381",
 #'         file = res[["assay_meta"]][["Raw Spectral Data File"]]
 #'         )
@@ -186,15 +186,13 @@ getMetaboLightsFile <- function(study.id, file, ...){
 }
 
 # This function fetches info about a study
-#' @importFrom httr2 url_parse
 .get_study_info <- function(
         url,
         study.search.url = "https://www.ebi.ac.uk/metabolights/ws/studies",
         ...){
     # Check if study.id is already a url address. If it is not, create url
     # from study.id and base.url
-    parsed_url <- url_parse(url)
-    if( !(!is.null(parsed_url$scheme) && !is.null(parsed_url$hostname)) ){
+    if( !grepl("https://www.ebi.ac.uk", url, ignore.case = TRUE) ){
         url <- paste0(study.search.url, "/", url)
     }
     # From the metabolights database, find associated study. Which study
@@ -212,7 +210,6 @@ getMetaboLightsFile <- function(study.id, file, ...){
 
 # This is a common function for downloading a file from MetaboLights database
 #' @importFrom utils download.file read.delim
-#' @importFrom httr2 url_parse
 .get_metabolights_file <- function(
         study.id, file.name, cache.dir = tempdir(), unique.cols = TRUE,
         timeout = 5*60, return.table = TRUE,
@@ -233,12 +230,10 @@ getMetaboLightsFile <- function(study.id, file, ...){
     # Check return.table
     temp <- .check_input(return.table, list("logical scalar"))
     #
-    # If the study.id is url, get the study.id from the url
-    parsed_url <- url_parse(study.id)
-    if( !is.null(parsed_url$scheme) && !is.null(parsed_url$hostname) ){
-        temp <- strsplit(study.id, "/")[[1]]
-        study.id <- temp[length(temp)]
-    }
+    # If the study.id is url, get the study.id from the url. This works also
+    # even if just study ID was provided without url.
+    temp <- strsplit(study.id, "/")[[1]]
+    study.id <- temp[length(temp)]
     # Create url
     url <- paste0( metabolights.base.url, "/", study.id, "/", file.name)
     # Create a directory path

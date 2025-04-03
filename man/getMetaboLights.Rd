@@ -14,8 +14,8 @@ getMetaboLightsFile(study.id, file, ...)
 data that is going to be fetched from the MetaboLights database.}
 
 \item{output}{\code{character scalar} specifying output format. Must be
-\code{"list"}, \code{"TreeSE"} (TreeSummarizedExperiment) or \code{"SE"}
-(SummarizedExperiment). (Default: \code{"list"})}
+\code{"list"}, \code{"TreeSE"} (\code{TreeSummarizedExperiment}) or
+\code{"SE"} (\code{SummarizedExperiment}). (Default: \code{"list"})}
 
 \item{...}{optional arguments:
 \itemize{
@@ -59,7 +59,7 @@ object, specifically designed for metabolomics spectra data.
 # This example is not run, because the server fails to respond sometimes.
 if( FALSE ){
     res <- getMetaboLights("MTBLS4381")
-    file_paths <- getMetaLightsFile(
+    file_paths <- getMetaboLightsFile(
         study.id = "MTBLS4381",
         file = res[["assay_meta"]][["Raw Spectral Data File"]]
         )
