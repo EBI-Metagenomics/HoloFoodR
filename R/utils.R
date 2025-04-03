@@ -35,7 +35,6 @@
 
 # This function unifies input testing. The message will always be in same format
 # also it makes the code simpler in main function since testing is done here.
-#' @importFrom methods is
 .check_input <- function(
         variable, supported_class, supported_values = NULL, limits = NULL,
         variable_name = .get_name_in_parent(variable)){

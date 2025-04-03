@@ -45,7 +45,6 @@ Suggests:
     ggh4x,
     ggsignif,
     knitr,
-    methods,
     MGnifyR,
     mia,
     miaViz,
