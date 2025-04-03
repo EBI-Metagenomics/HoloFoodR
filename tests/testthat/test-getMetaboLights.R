@@ -6,6 +6,7 @@ test_that("getMetaboLigths", {
     expect_error( getMetaboLigths(TRUE) )
     expect_error( getMetaboLigths(c(1, TRUE)) )
     expect_error( getMetaboLigths(NULL) )
+    expect_error( getMetaboLigths("MTBLS4381", output = "test") )
     
     # Require internet access
     skip_if_offline(host = "ebi.ac.uk")
