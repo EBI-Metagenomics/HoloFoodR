@@ -210,7 +210,6 @@ getMetaboLightsFile <- function(study.id, file, ...){
 
 # This is a common function for downloading a file from MetaboLights database
 #' @importFrom utils download.file read.delim
-#' @importFrom httr2 url_parse
 .get_metabolights_file <- function(
         study.id, file.name, cache.dir = tempdir(), unique.cols = TRUE,
         timeout = 5*60, return.table = TRUE,
