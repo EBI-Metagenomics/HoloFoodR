@@ -37,7 +37,8 @@
 #'   
 #' }
 #'
-#' @return \code{list}
+#' @return \code{list}, \code{SummarizedExperiment} or
+#' \code{TreeSummarizedExperiment}
 #'
 #' @examples
 #' 
@@ -48,6 +49,8 @@
 #'         study.id = "MTBLS4381",
 #'         file = res[["assay_meta"]][["Raw Spectral Data File"]]
 #'         )
+#'     # Get data as SummarizedExperiment
+#'     se <- getMetaboLights("MTBLS3540", output = "SE")
 #' }
 #' 
 #' @seealso
