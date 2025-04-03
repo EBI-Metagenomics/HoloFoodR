@@ -404,6 +404,14 @@
         df <- Reduce(function(df1, df2){
             # Get common columns
             common_cols <- intersect(colnames(df1), colnames(df2))
+            # Ensure common columns are of the same type (convert to character
+            # only if necessary)
+            for( col in common_cols ){
+                if( class(df1[[col]]) != class(df2[[col]]) ){
+                    df1[[col]] <- as.character(df1[[col]])
+                    df2[[col]] <- as.character(df2[[col]])
+                }
+            }
             # Merge based on common columns
             temp <- full_join(df1, df2, by = common_cols)
             return(temp)

@@ -19,6 +19,10 @@
 #' @param study.id \code{character vector} specifying the study identifier of
 #' data that is going to be fetched from the MetaboLights database.
 #' 
+#' @param output \code{character scalar} specifying output format. Must be
+#' \code{"list"}, \code{"TreeSE"} (TreeSummarizedExperiment) or \code{"SE"}
+#' (SummarizedExperiment). (Default: \code{"list"})
+#' 
 #' @param file \code{character vector} specifying the files that are being
 #' fetched.
 #'
@@ -33,7 +37,8 @@
 #'   
 #' }
 #'
-#' @return \code{list}
+#' @return \code{list}, \code{SummarizedExperiment} or
+#' \code{TreeSummarizedExperiment}
 #'
 #' @examples
 #' 
@@ -44,6 +49,8 @@
 #'         study.id = "MTBLS4381",
 #'         file = res[["assay_meta"]][["Raw Spectral Data File"]]
 #'         )
+#'     # Get data as SummarizedExperiment
+#'     se <- getMetaboLights("MTBLS3540", output = "SE")
 #' }
 #' 
 #' @seealso
@@ -56,10 +63,55 @@ NULL
 #' 
 #' @rdname getMetaboLights
 #' @export
-getMetaboLights <- function(study.id, ...){
+getMetaboLights <- function(study.id, output = "list", ...){
+    # Check study.id and output
+    temp <- .check_input(study.id, list("character vector"))
+    temp <- .check_input(
+        output, list("character scalar"),
+        supported_values = c("list", "TreeSE", "SE"))
+    #
+    # Remove trailing spaces from study.id
+    study.id <- study.id |> trimws()
+    # Retrieve data as list
+    res <- .retrieve_metabolights_data(study.id, ...)
+    # If user wants to convert the data into SE or TreeSE
+    if( output %in% c("TreeSE", "SE") ){
+        res <- .construct_metabolomic_SE(res, output, ...)
+    }
+    return(res)
+}
+
+#' @rdname getMetaboLights
+#' @export
+getMetaboLightsFile <- function(study.id, file, ...){
     # Check study.id
     temp <- .check_input(study.id, list("character vector"))
+    # Check files
+    temp <- .check_input(file, list("character vector"))
+    # Check that their dimensions are correct
+    if( !(length(study.id) == 1 || length(study.id) == length(file)) ){
+        stop("The length of 'study.id' must be 1 or equal to length of 'file'.",
+            call. = FALSE)
+    }
     #
+    # Remove trailing spaces from study.id
+    study.id <- study.id |> trimws()
+    # Create a df that stores teh study.id and file
+    fetch_df <- data.frame(study_id = study.id, file = file)
+    # Get unique and put each instance to columns
+    fetch_df <- unique(fetch_df) |> t() |> as.data.frame()
+    # Loop through files and load them
+    res <- lapply(fetch_df, function(col){
+        .get_metabolights_file(col[[1]], col[[2]], return.table = FALSE, ...)
+    })
+    res <- res |> unlist() |> unname()
+    return(res)
+}
+
+################################ HELP FUNCTIONS ################################
+
+# This function facilitates retrieval of files from MetaboLights
+.retrieve_metabolights_data <- function(study.id, ...){
     # Get unique urls
     study.id <- unique(study.id)
     # Loop through those unique url addresses
@@ -80,33 +132,6 @@ getMetaboLights <- function(study.id, ...){
     res <- list(assay = assay, assay_meta = assay_meta, study_meta = study_meta)
     return(res)
 }
-
-#' @rdname getMetaboLights
-#' @export
-getMetaboLightsFile <- function(study.id, file, ...){
-    # Check study.id
-    temp <- .check_input(study.id, list("character vector"))
-    # Check files
-    temp <- .check_input(file, list("character vector"))
-    # Check that their dimensions are correct
-    if( !(length(study.id) == 1 || length(study.id) == length(file)) ){
-        stop("The length of 'study.id' must be 1 or equal to length of 'file'.",
-            call. = FALSE)
-    }
-    #
-    # Create a df that stores teh study.id and file
-    fetch_df <- data.frame(study_id = study.id, file = file)
-    # Get unique and put each instance to columns
-    fetch_df <- unique(fetch_df) |> t() |> as.data.frame()
-    # Loop through files and load them
-    res <- lapply(fetch_df, function(col){
-        .get_metabolights_file(col[[1]], col[[2]], return.table = FALSE, ...)
-    })
-    res <- res |> unlist() |> unname()
-    return(res)
-}
-
-################################ HELP FUNCTIONS ################################
 
 # This function retrieves metabolomic data from MetaboLights database for single
 # URL address
@@ -131,6 +156,7 @@ getMetaboLightsFile <- function(study.id, file, ...){
         assay_metadata <- .full_join_list(assay_metadata)
         # Get metabolomics data, the abundance table
         file_names <- unique(assay_metadata[["Metabolite Assignment File"]])
+        file_names <- file_names[ !file_names %in% c("", NA, " ") ]
         assay <- lapply(file_names, function(file_name){
             .get_metabolights_file(study_id, file_name, ...)
         })
@@ -174,6 +200,11 @@ getMetaboLightsFile <- function(study.id, file, ...){
     # From the metabolights database, find associated study. Which study
     # represents this HoloFood study?
     res <- .perform_single_query(path = "metabolight", full.url = url, ...)
+    # Check if data was found
+    if( is.null(res) ){
+        stop("No data was found for the following URL: '", url, "'",
+            call. = FALSE)
+    }
     # Get only relevant info
     study_info <- res[["isaInvestigation"]][["studies"]]
     return(study_info)
@@ -233,7 +264,7 @@ getMetaboLightsFile <- function(study.id, file, ...){
     # do not want to return them.
     if( return.table ){
         # Read the local file
-        df <- read.delim(file_path, check.name = FALSE)
+        df <- read.delim(file_path, check.name = FALSE, row.names = NULL)
         # Make column names unique if specified
         if( anyDuplicated(colnames(df)) && unique.cols ){
             colnames(df) <- make.unique(colnames(df))
@@ -242,4 +273,110 @@ getMetaboLightsFile <- function(study.id, file, ...){
         df <- file_path
     }
     return(df)
+}
+
+# This function constucts TreeSE object from retrieved MetaboLights data
+#' @importFrom SummarizedExperiment SummarizedExperiment
+.construct_metabolomic_SE <- function(res, output, assay.type = "conc", ...){
+    # Check assay.type
+    temp <- .check_input(assay.type, list("character scalar"))
+    
+    # Get tables from result list
+    assay <- res[["assay"]]
+    assay_meta <- res[["assay_meta"]]
+    study_meta <- res[["study_meta"]]
+    
+    # Split assay to abundance table and feature metadata
+    assay_cols <- colnames(assay) %in% assay_meta[["Sample Name"]]
+    feat_meta <- assay[ , !assay_cols, drop = FALSE]
+    assay <- assay[ , assay_cols, drop = FALSE]
+    
+    # Some datasets do not have abundance table so we cannot create SE object.
+    if( is.null(assay) || nrow(assay) == 0L || ncol(assay) == 0L ){
+        stop("No abundance table found.", call. = FALSE)
+    }
+    
+    # Check which column has feature identifier
+    cols <- c(
+        "feat_ID",
+        "metabolite_identification",
+        "metabolite identification"
+    )
+    feature_id <- vapply(cols, function(name){
+        any(grepl(name, colnames(feat_meta), ignore.case = TRUE))
+    }, logical(1L))
+    if( !any(feature_id) ){
+        stop("No feature ID column found.", call. = FALSE)
+    }
+    # Assign feature IDs to assay
+    feature_id <- names(feature_id[feature_id])[[1L]]
+    feat_meta[[feature_id]] <- as.character(feat_meta[[feature_id]])
+    assay[[feature_id]] <- feat_meta[[feature_id]]
+    
+    # Add feature names to rownames of rowData and assay
+    feat_names <- assay[[feature_id]]
+    # Sometimes feature IDs are missing. Replace them with random number
+    if( any(feat_names %in% c(NA, "", " ")) ){
+        warning("Some features do not have IDs. Please check the data for ",
+                "errors.", call. = FALSE)
+        feat_names[ feat_names %in% c(NA, "", " ") ] <- "feature"
+    }
+    rownames(feat_meta) <- rownames(assay) <- feat_names |> make.unique()
+    assay[[feature_id]] <- NULL
+    
+    # Combine assay and study metadata to metadata on samples
+    common_cols <- intersect(colnames(study_meta), colnames(assay_meta))
+    sample_meta <- left_join(study_meta, assay_meta, by = common_cols)
+    
+    # Determine which column in sample metadata includes sample names
+    cols <- c("Sample Name", "sample_name", "sample id", "sample_id")
+    sample_id <- vapply(cols, function(name){
+        any(grepl(name, colnames(sample_meta), ignore.case = TRUE))
+    }, logical(1L))
+    if( !any(sample_id) ){
+        stop("No sample ID column found.", call. = FALSE)
+    }
+    sample_id <- names(sample_id[sample_id])[[1L]]
+    sample_names <- sample_meta[[sample_id]]
+    # Give warning if there are duplicated sample identifiers
+    if( anyDuplicated(sample_names) ){
+        warning("Non-unique sample identifiers found. Please check the data ",
+                "for errors.", call. = FALSE)
+    }
+    # Sometimes feature IDs are missing. Replace them with random number
+    if( any(sample_names %in% c(NA, "", " ") ) ){
+        warning("Some samples do not have IDs. Please check the data for ",
+                "errors.", call. = FALSE)
+        sample_names[ sample_names %in% c(NA, "", " ") ] <- "sample"
+    }
+    # Add rownames to sample metadata
+    rownames(sample_meta) <- sample_names |> make.unique()
+    
+    # Order metadatas based on assay
+    feat_meta <- feat_meta[
+        match(rownames(assay), rownames(feat_meta)), , drop = FALSE]
+    sample_meta <- sample_meta[
+        match(colnames(assay), rownames(sample_meta)), , drop = FALSE]
+    
+    # Abundance values might be in character format, and there might be trailing
+    # spaces etc. Trim the values and convert to numeric.
+    assay <- lapply(assay, function(x){
+        if( is.character(x) ){
+            x <- x |> trimws()
+        }
+        x <- x |> as.numeric() |> suppressWarnings()
+        return(x)
+        })
+    assay <- do.call(cbind, assay)
+    # Convert to classes supported by SE
+    assay <- as.matrix(assay)
+    assays <- SimpleList(assay)
+    names(assays) <- assay.type
+    feat_meta <- DataFrame(feat_meta, check.names = FALSE)
+    sample_meta <- DataFrame(sample_meta, check.names = FALSE)
+    # Create TreeSummarizedExperiment
+    FUN <- if( output == "SE") SummarizedExperiment else
+        TreeSummarizedExperiment
+    se <- FUN(assays = assays, rowData = feat_meta, colData = sample_meta)
+    return(se)
 }

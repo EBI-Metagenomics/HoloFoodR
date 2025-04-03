@@ -5,13 +5,17 @@
 \alias{getMetaboLightsFile}
 \title{Get metabolomic data from MetaboLights database}
 \usage{
-getMetaboLights(study.id, ...)
+getMetaboLights(study.id, output = "list", ...)
 
 getMetaboLightsFile(study.id, file, ...)
 }
 \arguments{
 \item{study.id}{\code{character vector} specifying the study identifier of
 data that is going to be fetched from the MetaboLights database.}
+
+\item{output}{\code{character scalar} specifying output format. Must be
+\code{"list"}, \code{"TreeSE"} (TreeSummarizedExperiment) or \code{"SE"}
+(SummarizedExperiment). (Default: \code{"list"})}
 
 \item{...}{optional arguments:
 \itemize{
@@ -28,7 +32,8 @@ data that is going to be fetched from the MetaboLights database.}
 fetched.}
 }
 \value{
-\code{list}
+\code{list}, \code{SummarizedExperiment} or
+\code{TreeSummarizedExperiment}
 }
 \description{
 Get metabolomic data from MetaboLights database
@@ -58,6 +63,8 @@ if( FALSE ){
         study.id = "MTBLS4381",
         file = res[["assay_meta"]][["Raw Spectral Data File"]]
         )
+    # Get data as SummarizedExperiment
+    se <- getMetaboLights("MTBLS3540", output = "SE")
 }
 
 }
