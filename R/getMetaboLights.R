@@ -299,15 +299,14 @@ getMetaboLightsFile <- function(study.id, file, ...){
         "metabolite_identification",
         "metabolite identification"
     )
-    feature_id <- vapply(colnames(feat_meta), function(name){
-        any(grepl(name, cols, ignore.case = TRUE))
+    feature_id <- vapply(cols, function(name){
+        any(grepl(name, colnames(feat_meta), ignore.case = TRUE))
     }, logical(1L))
     if( !any(feature_id) ){
         stop("No feature ID column found.", call. = FALSE)
     }
     # Assign feature IDs to assay
-    feature_id <- names(feature_id[feature_id])
-    feature_id <- feature_id[match(feature_id, cols)][[1L]]
+    feature_id <- names(feature_id[feature_id])[[1L]]
     feat_meta[[feature_id]] <- as.character(feat_meta[[feature_id]])
     assay[[feature_id]] <- feat_meta[[feature_id]]
     
@@ -328,14 +327,13 @@ getMetaboLightsFile <- function(study.id, file, ...){
     
     # Determine which column in sample metadata includes sample names
     cols <- c("Sample Name", "sample_name", "sample id", "sample_id")
-    sample_id <- vapply(colnames(sample_meta), function(name){
-        any(grepl(name, cols, ignore.case = TRUE))
+    sample_id <- vapply(cols, function(name){
+        any(grepl(name, colnames(sample_meta), ignore.case = TRUE))
     }, logical(1L))
     if( !any(sample_id) ){
         stop("No sample ID column found.", call. = FALSE)
     }
-    sample_id <- names(sample_id[sample_id])
-    sample_id <- sample_id[match(sample_id, cols)][[1L]]
+    sample_id <- names(sample_id[sample_id])[[1L]]
     sample_names <- sample_meta[[sample_id]]
     # Give warning if there are duplicated sample identifiers
     if( anyDuplicated(sample_names) ){
