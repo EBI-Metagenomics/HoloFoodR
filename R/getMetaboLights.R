@@ -34,6 +34,12 @@
 #'   
 #'   \item \strong{timeout} \code{Integer scalar} specifying timeout
 #'   in seconds for loading a file. (Default: \code{5*60})
+#'
+#'   \item \strong{ion.mode} \code{Character scalar} specifying metabolite
+#'   assignment files to fetch. If \code{"positive"} only positive ions are
+#'   fetched. Similarly \code{"negative"} means that negative ions are fetched
+#'   if such data exists. By selecting \code{"both"}, one can fetch both
+#'   positive and negative ions. (Default: \code{"both"})
 #'   
 #' }
 #'
@@ -136,7 +142,11 @@ getMetaboLightsFile <- function(study.id, file, ...){
 # This function retrieves metabolomic data from MetaboLights database for single
 # URL address
 #' @importFrom dplyr left_join
-.get_metabolomic_data <- function(url, ...){
+.get_metabolomic_data <- function(url, ion.mode = "both", ...){
+    # ion.mode specifies whether to fetch positive or negative ions or both
+    temp <- .check_input(
+        ion.mode, list("character scalar"),
+        list("both", "positive", "negative"))
     # In MetaboLight, the study IDs are different than in HoloFood. Get
     # Info about the study that corresponds to this particular HoloFood study.
     study_info <- .get_study_info(url, ...)
@@ -157,6 +167,11 @@ getMetaboLightsFile <- function(study.id, file, ...){
         # Get metabolomics data, the abundance table
         file_names <- unique(assay_metadata[["Metabolite Assignment File"]])
         file_names <- file_names[ !file_names %in% c("", NA, " ") ]
+        # If user specified pattern to fetch by, check which file names match.
+        if( ion.mode != "both" ){
+            file_names <- file_names[ grepl(
+                ion.mode, file_names, ignore.case = TRUE) ]
+        }
         assay <- lapply(file_names, function(file_name){
             .get_metabolights_file(study_id, file_name, ...)
         })
@@ -264,10 +279,28 @@ getMetaboLightsFile <- function(study.id, file, ...){
         if( anyDuplicated(colnames(df)) && unique.cols ){
             colnames(df) <- make.unique(colnames(df))
         }
+        # Add info from which file the data comes from
+        df[["metabolights_url"]] <- url
+        # If the file is metabolite assignment file, add information whether the
+        # metabolite is positive or negative ion.
+        if( grepl("^m_.*maf.*\\.tsv$", file.name) ){
+            df[["ion_mode"]] <- .get_ion_mode(file.name)
+        }
     } else{
         df <- file_path
     }
     return(df)
+}
+
+# Identify ion mode based on filename
+.get_ion_mode <- function(filename){
+    res <- "unknown"
+    if( grepl("LC-MS_positive", filename, ignore.case = TRUE) ){
+        res <- "positive"
+    } else if( grepl("LC-MS_negative", filename, ignore.case = TRUE) ){
+        res <- "negative"
+    }
+    return(res)
 }
 
 # This function constucts TreeSE object from retrieved MetaboLights data
