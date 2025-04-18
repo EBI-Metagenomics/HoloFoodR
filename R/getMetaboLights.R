@@ -295,9 +295,9 @@ getMetaboLightsFile <- function(study.id, file, ...){
 # Identify ion mode based on filename
 .get_ion_mode <- function(filename){
     res <- "unknown"
-    if( grepl("LC-MS_positive", filename, ignore.case = TRUE) ){
+    if( grepl("MS_positive", filename, ignore.case = TRUE) ){
         res <- "positive"
-    } else if( grepl("LC-MS_negative", filename, ignore.case = TRUE) ){
+    } else if( grepl("MS_negative", filename, ignore.case = TRUE) ){
         res <- "negative"
     }
     return(res)
