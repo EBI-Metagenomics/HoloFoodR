@@ -281,6 +281,7 @@ getMetaboLightsFile <- function(study.id, file, ...){
         }
         # Add info from which file the data comes from
         df[["metabolights_url"]] <- url
+        df[["file_name"]] <- basename(url)
         # If the file is metabolite assignment file, add information whether the
         # metabolite is positive or negative ion.
         if( grepl("^m_.*maf.*\\.tsv$", file.name) ){
