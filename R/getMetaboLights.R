@@ -224,7 +224,7 @@ getMetaboLightsFile <- function(study.id, file, ...){
 }
 
 # This is a common function for downloading a file from MetaboLights database
-#' @importFrom utils download.file read.delim
+#' @importFrom utils download.file read.delim URLencode
 .get_metabolights_file <- function(
         study.id, file.name, cache.dir = tempdir(), unique.cols = TRUE,
         timeout = 5*60, return.table = TRUE,
@@ -250,7 +250,9 @@ getMetaboLightsFile <- function(study.id, file, ...){
     temp <- strsplit(study.id, "/")[[1]]
     study.id <- temp[length(temp)]
     # Create url
-    url <- paste0( metabolights.base.url, "/", study.id, "/", file.name)
+    url <- paste0(metabolights.base.url, "/", study.id, "/", file.name)
+    # Some file names have spaces. Replace them with accepted character
+    url <- URLencode(url)
     # Create a directory path
     cache_dir <- file.path(cache.dir, "HoloFoodR_cache")
     # Create a file path
