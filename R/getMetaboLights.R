@@ -349,7 +349,7 @@ getMetaboLightsFile <- function(study.id, file, ...){
     # Sometimes feature IDs are missing. Replace them with random number
     if( any(feat_names %in% c(NA, "", " ")) ){
         warning("Some features do not have IDs. Please check the data for ",
-                "errors.", call. = FALSE)
+                "errors.\n", paste0("'", paste0(unique(res[["assay"]][["file_name"]]), collapse = "', '"), "'"), call. = FALSE)
         feat_names[ feat_names %in% c(NA, "", " ") ] <- "feature"
     }
     rownames(feat_meta) <- rownames(assay) <- feat_names |> make.unique()
@@ -372,12 +372,12 @@ getMetaboLightsFile <- function(study.id, file, ...){
     # Give warning if there are duplicated sample identifiers
     if( anyDuplicated(sample_names) ){
         warning("Non-unique sample identifiers found. Please check the data ",
-                "for errors.", call. = FALSE)
+                "for errors.\n", paste0("'", paste0(unique(res[["assay"]][["file_name"]]), collapse = "', '"), "'"),, call. = FALSE)
     }
     # Sometimes feature IDs are missing. Replace them with random number
     if( any(sample_names %in% c(NA, "", " ") ) ){
         warning("Some samples do not have IDs. Please check the data for ",
-                "errors.", call. = FALSE)
+                "errors.\n", paste0("'", paste0(unique(res[["assay"]][["file_name"]]), collapse = "', '"), "'"), call. = FALSE)
         sample_names[ sample_names %in% c(NA, "", " ") ] <- "sample"
     }
     # Add rownames to sample metadata
