@@ -354,21 +354,16 @@ getMetaboLightsFile <- function(study.id, file, ...){
     # Check assay.type
     temp <- .check_input(assay.type, list("character scalar"))
 
-    # Get tables from result list
-    assay <- res[["assay"]]
-    assay_meta <- res[["assay_meta"]]
-    study_meta <- res[["study_meta"]]
-
     # Check that we have all the data. Only metabolite assignment file is
     # required but give also warning on other missing files.
     missing <- c()
-    if( is.null(assay) ){
+    if( is.null(res[["assay"]]) ){
         missing <- c(missing, "metabolite assignment ('m_' prefix)")
     }
-    if( is.null(assay_meta) ){
+    if( is.null(res[["assay_meta"]]) ){
         missing <- c(missing, "assay metadata ('a_' prefix)")
     }
-    if( is.null(study_meta) ){
+    if( is.null(res[["study_meta"]]) ){
         missing <- c(missing, "study metadata ('s_' prefix)")
     }
     if( length(missing) > 0L ){
@@ -377,37 +372,23 @@ getMetaboLightsFile <- function(study.id, file, ...){
             ifelse(length(missing) > 1L, "s", ""), ": ",
             paste0(missing, collapse = ", ")
         )
-        FUN <- if(is.null(assay)) stop else warning
-        FUN(msg, call. = FALSE)
+        stop(msg, call. = FALSE)
     }
 
+    # Match sample names
+    res <- .match_sample_names(res)
+    # Get tables from result list
+    assay <- res[["assay"]]
+    assay_meta <- res[["assay_meta"]]
+    study_meta <- res[["study_meta"]]
+
     # Split assay to abundance table and feature metadata
-    assay_cols <- colnames(assay) %in% assay_meta[["Sample Name"]]
+    assay_cols <- colnames(assay) %in% rownames(assay_meta)
     feat_meta <- assay[ , !assay_cols, drop = FALSE]
     assay <- assay[ , assay_cols, drop = FALSE]
 
-    # Some datasets do not have abundance table so we cannot create SE object.
-    if( any(dim(assay) == 0L) ){
-        stop("It seems that the files are missing columns containing ",
-            "metabolite abundance data for individual samples. Each sample ",
-            "should have its own column, labeled with the sample name. ",
-            "Please check for errors.", call. = FALSE)
-    }
-
-    # Check which column has feature identifier
-    cols <- c(
-        "feat_ID",
-        "metabolite_identification",
-        "metabolite identification"
-    )
-    feature_id <- vapply(cols, function(name){
-        any(grepl(name, colnames(feat_meta), ignore.case = TRUE))
-    }, logical(1L))
-    if( !any(feature_id) ){
-        stop("No feature ID column found.", call. = FALSE)
-    }
     # Assign feature IDs to assay
-    feature_id <- names(feature_id[feature_id])[[1L]]
+    feature_id <- .get_feature_ids(feat_meta)
     feat_meta[[feature_id]] <- feat_meta[[feature_id]] |> as.character()
     assay[[feature_id]] <- feat_meta[[feature_id]]
 
@@ -422,40 +403,8 @@ getMetaboLightsFile <- function(study.id, file, ...){
     rownames(feat_meta) <- rownames(assay) <- feat_names |> make.unique()
     assay[[feature_id]] <- NULL
 
-    # Combine assay and study metadata to metadata on samples
-    common_cols <- intersect(colnames(study_meta), colnames(assay_meta))
-    # Coerce first to same format
-    class1 <- vapply(study_meta[common_cols], class, character(1L))
-    class2 <- vapply(assay_meta[common_cols], class, character(1L))
-    mod_cols <- common_cols[class1 != class2]
-    study_meta[mod_cols] <- lapply(study_meta[mod_cols], as.character)
-    assay_meta[mod_cols] <- lapply(assay_meta[mod_cols], as.character)
-    # And then merge
-    sample_meta <- left_join(study_meta, assay_meta, by = common_cols)
-
-    # Determine which column in sample metadata includes sample names
-    cols <- c("Sample Name", "sample_name", "sample id", "sample_id")
-    sample_id <- vapply(cols, function(name){
-        any(grepl(name, colnames(sample_meta), ignore.case = TRUE))
-    }, logical(1L))
-    if( !any(sample_id) ){
-        stop("No sample ID column found.", call. = FALSE)
-    }
-    sample_id <- names(sample_id[sample_id])[[1L]]
-    sample_names <- sample_meta[[sample_id]] |> as.character()
-    # Give warning if there are duplicated sample identifiers
-    if( anyDuplicated(sample_names) ){
-        warning("Non-unique sample identifiers found. Please check the data ",
-                "for errors.", call. = FALSE)
-    }
-    # Sometimes feature IDs are missing. Replace them with random number
-    if( any(sample_names %in% c(NA, "", " ") ) ){
-        warning("Some samples do not have IDs. Please check the data for ",
-                "errors.", call. = FALSE)
-        sample_names[ sample_names %in% c(NA, "", " ") ] <- "sample"
-    }
-    # Add rownames to sample metadata
-    rownames(sample_meta) <- sample_names |> make.unique()
+    # Combine study and assay metadata to be added to colData
+    sample_meta <- .merge_metadata(study_meta, assay_meta)
 
     # Order metadatas based on assay
     feat_meta <- feat_meta[
@@ -484,4 +433,116 @@ getMetaboLightsFile <- function(study.id, file, ...){
         TreeSummarizedExperiment
     se <- FUN(assays = assays, rowData = feat_meta, colData = sample_meta)
     return(se)
+}
+
+# This function matches sample names between tables. If they do not match,
+# the function gives error.
+.match_sample_names <- function(res){
+    # Get all column names from assay
+    assay_names <- res[["assay"]] |> colnames()
+    # Get all possible sample names from assay metadata
+    cols <- c(
+        "Extract Name",
+        "Derived Spectral Data File",
+        "Derived Spectral Data File",
+        "Sample Name"
+    )
+    meta_names <- res[["assay_meta"]][
+        , colnames(res[["assay_meta"]]) %in% cols, drop = FALSE]
+    # Polis sample names
+    meta_names <- lapply(meta_names, function(col){
+        col <- col |>
+            as.character() |>
+            basename() |>
+            gsub(pattern = "\\.mzML$", replacement = "")
+        return(col)
+    })
+    meta_names <- do.call(cbind.data.frame, meta_names)
+    assay_names <- assay_names |>
+        basename() |>
+        gsub(pattern = "\\.mzML$", replacement = "")
+
+    # Check which column from assay metadata has the highest number of mathches.
+    num_matches <- vapply(meta_names, function(col){
+        sum(col %in% assay_names)
+    }, numeric(1L))
+    # If sample anmes do not match, give error
+    if( all(num_matches == 0L) ){
+        stop("It seems that the files are missing columns containing ",
+            "metabolite abundance data for individual samples. Each sample ",
+            "should have its own column, labeled with the sample name. ",
+            "Please check for errors.", call. = FALSE)
+    }
+    # The column with highest number of macthes includes the correct sample
+    # names.
+    sample_names <- meta_names[[which.max(num_matches)]]
+
+    # Add sample names to assay and assay metadata
+    res[["assay_meta"]] <- res[["assay_meta"]][
+        !is.na(sample_names), , drop = FALSE]
+    sample_names <- sample_names |> na.omit()
+    matching <- match(assay_names, sample_names)
+    cols_found <- assay_names %in% sample_names
+    sample_names <- sample_names |> make.unique()
+    #
+    assay_names[ cols_found ] <- sample_names[ matching ] |> na.omit()
+    colnames(res[["assay"]]) <- assay_names
+    rownames(res[["assay_meta"]]) <- sample_names
+
+    # Match sample names between study metadata and assay. To study metadata
+    # assign names from assay.
+    cols <- c("Sample Name", "sample_name", "sample id", "sample_id")
+    col1 <- colnames(res[["study_meta"]]) %in% cols
+    if( all(!col1) ){
+        stop("Study metadata does not include sample names.", call. = FALSE)
+    }
+    col1 <- which(col1)[[1L]]
+    col2 <- colnames(res[["assay_meta"]]) %in% cols
+    if( all(!col2) ){
+        stop("Assay metadata does not include sample names.", call. = FALSE)
+    }
+    col2 <- which(col2)[[1L]]
+    res[["study_meta"]] <- res[["study_meta"]][
+        match(res[["assay_meta"]][[col2]], res[["study_meta"]][[col1]]), ]
+    rownames(res[["study_meta"]]) <- rownames(res[["assay_meta"]])
+
+    return(res)
+}
+
+# This function returns a name of column from assay metadata that includes
+# feature IDs
+.get_feature_ids <- function(feat_meta){
+    # Check which column has feature identifier
+    cols <- c(
+        "feat_ID",
+        "metabolite_identification",
+        "metabolite identification"
+    )
+    feature_id <- vapply(cols, function(name){
+        any(grepl(name, colnames(feat_meta), ignore.case = TRUE))
+    }, logical(1L))
+    if( !any(feature_id) ){
+        stop("No feature ID column found.", call. = FALSE)
+    }
+    feature_id <- names(feature_id[feature_id])[[1L]]
+    return(feature_id)
+}
+
+# This function adds assay metadata to study metadata
+.merge_metadata <- function(study_meta, assay_meta){
+    # Store sample names
+    sample_names <- study_meta |> rownames()
+    # Combine assay and study metadata to metadata on samples
+    common_cols <- intersect(colnames(study_meta), colnames(assay_meta))
+    # Coerce first to same format
+    class1 <- vapply(study_meta[common_cols], class, character(1L))
+    class2 <- vapply(assay_meta[common_cols], class, character(1L))
+    mod_cols <- common_cols[class1 != class2]
+    study_meta[mod_cols] <- lapply(study_meta[mod_cols], as.character)
+    assay_meta[mod_cols] <- lapply(assay_meta[mod_cols], as.character)
+    # And then merge
+    sample_meta <- left_join(study_meta, assay_meta, by = common_cols)
+    # Add sample names back
+    rownames(sample_meta) <- sample_names
+    return(sample_meta)
 }
