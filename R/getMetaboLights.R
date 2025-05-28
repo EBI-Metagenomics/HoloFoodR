@@ -8,7 +8,7 @@
 #' \code{getMetaboLights} function returns
 #' a structured list encompassing processed data in \code{data.frame} format
 #' for study metadata, assay metadata, and assay.
-#' 
+#'
 #' The metadata includes the file names of spectra data. Those files can be
 #' loaded with \code{getMetaboLightsFile}. Alternatively, once you've identified
 #' the study and files to fetch, you can refer to this
@@ -18,20 +18,20 @@
 #'
 #' @param study.id \code{character vector} specifying the study identifier of
 #' data that is going to be fetched from the MetaboLights database.
-#' 
+#'
 #' @param output \code{character scalar} specifying output format. Must be
 #' \code{"list"}, \code{"TreeSE"} (\code{TreeSummarizedExperiment}) or
 #' \code{"SE"} (\code{SummarizedExperiment}). (Default: \code{"list"})
-#' 
+#'
 #' @param file \code{character vector} specifying the files that are being
 #' fetched.
 #'
 #' @param ... optional arguments:
 #' \itemize{
-#'   
+#'
 #'   \item \strong{cache.dir} \code{Character scalar} specifying directory
 #'   where downloaded file is stored. (Default: \code{tempdir()})
-#'   
+#'
 #'   \item \strong{timeout} \code{Integer scalar} specifying timeout
 #'   in seconds for loading a file. (Default: \code{5*60})
 #'
@@ -40,14 +40,14 @@
 #'   fetched. Similarly \code{"negative"} means that negative ions are fetched
 #'   if such data exists. By selecting \code{"both"}, one can fetch both
 #'   positive and negative ions. (Default: \code{"both"})
-#'   
+#'
 #' }
 #'
 #' @return \code{list}, \code{SummarizedExperiment} or
 #' \code{TreeSummarizedExperiment}
 #'
 #' @examples
-#' 
+#'
 #' # This example is not run, because the server fails to respond sometimes.
 #' if( FALSE ){
 #'     res <- getMetaboLights("MTBLS4381")
@@ -58,7 +58,7 @@
 #'     # Get data as SummarizedExperiment
 #'     se <- getMetaboLights("MTBLS3540", output = "SE")
 #' }
-#' 
+#'
 #' @seealso
 #' \code{\link[HoloFoodR:getResult]{getResult}}
 #' \code{\link[HoloFoodR:getData]{getData}}
@@ -66,7 +66,7 @@
 #' @name getMetaboLights
 NULL
 
-#' 
+#'
 #' @rdname getMetaboLights
 #' @export
 getMetaboLights <- function(study.id, output = "list", ...){
@@ -267,32 +267,74 @@ getMetaboLightsFile <- function(study.id, file, ...){
         # Set timeout as user-desired time
         def_opt <- getOption("timeout")
         options(timeout = timeout)
-        # Load the data
-        download.file(url, file_path, quiet = FALSE, timeout = timeout)
+        # Load the data with try catch. If the file is not found, give warning
+        # instead of error.
+        tryCatch({
+            download.file(url, file_path, quiet = FALSE, timeout = timeout)
+        }, error = function(e) {
+            warning(conditionMessage(e), call. = FALSE)
+        })
         # Set the timeout back to default
         options(timeout = def_opt)
     }
     # By default, the loaded table is returned. However, for spectra files, we
     # do not want to return them.
-    if( return.table ){
-        # Read the local file
-        df <- read.delim(file_path, check.name = FALSE, row.names = NULL)
-        # Make column names unique if specified
-        if( anyDuplicated(colnames(df)) && unique.cols ){
-            colnames(df) <- make.unique(colnames(df))
+    if( file.exists(file_path) && return.table ){
+        # Get the encoding of a file
+        encodings <- .detect_encoding(file_path)
+        encodings <- c("UTF-8", "latin1", "windows-1252", encodings) |> unique()
+        # Read the local file. Try different encodings. Sometimes UTF-8 fails.
+        df <- NULL
+        i <- 1L
+        while( (is.null(df) || nrow(df) == 0L) && i <= length(encodings) ){
+            df <- tryCatch({
+                read.delim(
+                    file_path, check.name = FALSE, row.names = NULL,
+                    fileEncoding = encodings[[i]])
+                },
+                error = function(e){
+                    return(NULL)
+                },
+                warning = function(w){
+                    return(NULL)
+                }
+            )
+            # Increment to next encoding
+            i <- i + 1
         }
-        # Add info from which file the data comes from
-        df[["metabolights_url"]] <- url
-        df[["file_name"]] <- basename(url)
-        # If the file is metabolite assignment file, add information whether the
-        # metabolite is positive or negative ion.
-        if( grepl("^m_.*maf.*\\.tsv$", file.name) ){
-            df[["ion_mode"]] <- .get_ion_mode(file.name)
+        # If we were able to read the table
+        if( !is.null(df) ){
+            # Make column names unique if specified
+            if( anyDuplicated(colnames(df)) && unique.cols ){
+                colnames(df) <- make.unique(colnames(df))
+            }
+            # Add info from which file the data comes from
+            df[["metabolights_url"]] <- url
+            df[["file_name"]] <- basename(url)
+            # If the file is metabolite assignment file, add information whether
+            # the metabolite is positive or negative ion.
+            if( grepl("^m_.*maf.*\\.tsv$", file.name) ){
+                df[["ion_mode"]] <- .get_ion_mode(file.name)
+            }
         }
-    } else{
+    } else if( file.exists(file_path) ){
         df <- file_path
+    } else{
+        df <- NULL
     }
     return(df)
+}
+
+# This function detects encoding of the file
+#' @importFrom stringi stri_enc_detect
+.detect_encoding <- function(file_path){
+    # Read characters
+    characters <- rawToChar(readBin(file_path, "raw", 10000))
+    # Detect the most possible encodings
+    encoding <- stri_enc_detect(characters)[[1L]]
+    # Return the most probable encoding
+    encoding <- encoding[["Encoding"]]
+    return(encoding)
 }
 
 # Identify ion mode based on filename
@@ -311,22 +353,47 @@ getMetaboLightsFile <- function(study.id, file, ...){
 .construct_metabolomic_SE <- function(res, output, assay.type = "conc", ...){
     # Check assay.type
     temp <- .check_input(assay.type, list("character scalar"))
-    
+
     # Get tables from result list
     assay <- res[["assay"]]
     assay_meta <- res[["assay_meta"]]
     study_meta <- res[["study_meta"]]
-    
+
+    # Check that we have all the data. Only metabolite assignment file is
+    # required but give also warning on other missing files.
+    missing <- c()
+    if( is.null(assay) ){
+        missing <- c(missing, "metabolite assignment ('m_' prefix)")
+    }
+    if( is.null(assay_meta) ){
+        missing <- c(missing, "assay metadata ('a_' prefix)")
+    }
+    if( is.null(study_meta) ){
+        missing <- c(missing, "study metadata ('s_' prefix)")
+    }
+    if( length(missing) > 0L ){
+        msg <- paste0(
+            "The experiment is missing the following file",
+            ifelse(length(missing) > 1L, "s", ""), ": ",
+            paste0(missing, collapse = ", ")
+        )
+        FUN <- if(is.null(assay)) stop else warning
+        FUN(msg, call. = FALSE)
+    }
+
     # Split assay to abundance table and feature metadata
     assay_cols <- colnames(assay) %in% assay_meta[["Sample Name"]]
     feat_meta <- assay[ , !assay_cols, drop = FALSE]
     assay <- assay[ , assay_cols, drop = FALSE]
-    
+
     # Some datasets do not have abundance table so we cannot create SE object.
-    if( is.null(assay) || nrow(assay) == 0L || ncol(assay) == 0L ){
-        stop("No abundance table found.", call. = FALSE)
+    if( any(dim(assay) == 0L) ){
+        stop("It seems that the files are missing columns containing ",
+            "metabolite abundance data for individual samples. Each sample ",
+            "should have its own column, labeled with the sample name. ",
+            "Please check for errors.", call. = FALSE)
     }
-    
+
     # Check which column has feature identifier
     cols <- c(
         "feat_ID",
@@ -341,24 +408,31 @@ getMetaboLightsFile <- function(study.id, file, ...){
     }
     # Assign feature IDs to assay
     feature_id <- names(feature_id[feature_id])[[1L]]
-    feat_meta[[feature_id]] <- as.character(feat_meta[[feature_id]])
+    feat_meta[[feature_id]] <- feat_meta[[feature_id]] |> as.character()
     assay[[feature_id]] <- feat_meta[[feature_id]]
-    
+
     # Add feature names to rownames of rowData and assay
     feat_names <- assay[[feature_id]]
     # Sometimes feature IDs are missing. Replace them with random number
     if( any(feat_names %in% c(NA, "", " ")) ){
         warning("Some features do not have IDs. Please check the data for ",
-                "errors.\n", paste0("'", paste0(unique(res[["assay"]][["file_name"]]), collapse = "', '"), "'"), call. = FALSE)
+                "errors.", call. = FALSE)
         feat_names[ feat_names %in% c(NA, "", " ") ] <- "feature"
     }
     rownames(feat_meta) <- rownames(assay) <- feat_names |> make.unique()
     assay[[feature_id]] <- NULL
-    
+
     # Combine assay and study metadata to metadata on samples
     common_cols <- intersect(colnames(study_meta), colnames(assay_meta))
+    # Coerce first to same format
+    class1 <- vapply(study_meta[common_cols], class, character(1L))
+    class2 <- vapply(assay_meta[common_cols], class, character(1L))
+    mod_cols <- common_cols[class1 != class2]
+    study_meta[mod_cols] <- lapply(study_meta[mod_cols], as.character)
+    assay_meta[mod_cols] <- lapply(assay_meta[mod_cols], as.character)
+    # And then merge
     sample_meta <- left_join(study_meta, assay_meta, by = common_cols)
-    
+
     # Determine which column in sample metadata includes sample names
     cols <- c("Sample Name", "sample_name", "sample id", "sample_id")
     sample_id <- vapply(cols, function(name){
@@ -368,27 +442,27 @@ getMetaboLightsFile <- function(study.id, file, ...){
         stop("No sample ID column found.", call. = FALSE)
     }
     sample_id <- names(sample_id[sample_id])[[1L]]
-    sample_names <- sample_meta[[sample_id]]
+    sample_names <- sample_meta[[sample_id]] |> as.character()
     # Give warning if there are duplicated sample identifiers
     if( anyDuplicated(sample_names) ){
         warning("Non-unique sample identifiers found. Please check the data ",
-                "for errors.\n", paste0("'", paste0(unique(res[["assay"]][["file_name"]]), collapse = "', '"), "'"),, call. = FALSE)
+                "for errors.", call. = FALSE)
     }
     # Sometimes feature IDs are missing. Replace them with random number
     if( any(sample_names %in% c(NA, "", " ") ) ){
         warning("Some samples do not have IDs. Please check the data for ",
-                "errors.\n", paste0("'", paste0(unique(res[["assay"]][["file_name"]]), collapse = "', '"), "'"), call. = FALSE)
+                "errors.", call. = FALSE)
         sample_names[ sample_names %in% c(NA, "", " ") ] <- "sample"
     }
     # Add rownames to sample metadata
     rownames(sample_meta) <- sample_names |> make.unique()
-    
+
     # Order metadatas based on assay
     feat_meta <- feat_meta[
         match(rownames(assay), rownames(feat_meta)), , drop = FALSE]
     sample_meta <- sample_meta[
         match(colnames(assay), rownames(sample_meta)), , drop = FALSE]
-    
+
     # Abundance values might be in character format, and there might be trailing
     # spaces etc. Trim the values and convert to numeric.
     assay <- lapply(assay, function(x){

@@ -36,6 +36,7 @@ Imports:
     httr2,
     jsonlite,
     S4Vectors,
+    stringi,
     stats,
     SummarizedExperiment,
     utils
