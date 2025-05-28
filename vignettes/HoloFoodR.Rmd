@@ -27,7 +27,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Introduction
+# Introduction
 
 `HoloFoodR` is a package designed to ease access to the EBI's
 [HoloFoodR](https://www.holofooddata.org/) resource, allowing searching and
@@ -40,7 +40,7 @@ integration of data and enhancing accessibility.
 
 `r BiocStyle::Biocpkg("TreeSummarizedExperiment")`
 
-## Installation
+# Installation
 
 `HoloFoodR` is hosted on Bioconductor, and can be installed using via
 `BiocManager`.
@@ -52,7 +52,7 @@ integration of data and enhancing accessibility.
 BiocManager::install("HoloFoodR")
 ```
 
-## Load the package
+# Load the package
 
 Once installed, `HoloFoodR` is made available in the usual way.
 
@@ -62,7 +62,7 @@ Once installed, `HoloFoodR` is made available in the usual way.
 library(HoloFoodR)
 ```
 
-## Functionalities
+# Functionalities
 
 `HoloFoodR` offers three functions `doQuery()`, `getResult()` and `getData()`
 which can be utilized to search and fetch data from HoloFood database.
@@ -76,7 +76,7 @@ tutorial is for demonstrating the functionality of the package.
 Additionally, the package includes `getMetaboLights()` function which can be
 utilized to retrieve metabolomic data from MetaboLights database.
 
-### Search data
+## Search data
 
 To search animals, genome catalogues, samples or viral catalogues, you can use
 `doQuery()` function. You can also use `getData()` but `doQuery()` is optimized
@@ -100,7 +100,7 @@ colnames(animals) |> head()
 `doQuery()` returns a `data.frame` including information on type of data being
 searched.
 
-### Get data
+## Get data
 
 Now we have information on which animal has histological samples. Let's get
 data on those animals to know the sample IDs to fetch.
@@ -135,7 +135,7 @@ Now we can collect sample IDs.
 sample_ids <- unique(samples[["accession"]])
 ```
 
-### Get data on samples
+## Get data on samples
 
 To get data on samples, we can utilize `getResult()` function. It returns the
 data in `r BiocStyle::Biocpkg("MultiAssayExperiment")` (`MAE`) format.
@@ -158,7 +158,7 @@ mae[[1]]
 
 In `TreeSE`, each column represents a sample and rows represent features.
 
-### Incorporate with MGnify data
+## Incorporate with MGnify data
 
 `MGnifyR` is a package that can be utilized to fetch metagenomics data from
 MGnify database. From the `MGnifyR` package, we can use
@@ -251,7 +251,7 @@ cutting-edge downstream analytics tools like
 [miaverse framework](https://microbiome.github.io/) that support these data
 containers seamlessly.
 
-### Extra: Get data from MetaboLights database
+## Extra: Get data from MetaboLights database
 
 The HoloFood database exclusively contains targeted metabolomic data. However,
 it provides URL addresses linking to the MetaboLights database, where untargeted
@@ -286,7 +286,7 @@ or follow this
 for guidance on loading data directly into an \code{MsExperiment} object,
 which is tailored for metabolomics spectra data.
 
-## Session info
+# Session info
 
 ```{r}
 #| label: session_info
