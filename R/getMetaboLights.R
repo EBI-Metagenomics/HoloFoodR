@@ -449,7 +449,7 @@ getMetaboLightsFile <- function(study.id, file, ...){
     )
     meta_names <- res[["assay_meta"]][
         , colnames(res[["assay_meta"]]) %in% cols, drop = FALSE]
-    # Polis sample names
+    # Polish sample names
     meta_names <- lapply(meta_names, function(col){
         col <- col |>
             as.character() |>
@@ -466,15 +466,15 @@ getMetaboLightsFile <- function(study.id, file, ...){
     num_matches <- vapply(meta_names, function(col){
         sum(col %in% assay_names)
     }, numeric(1L))
-    # If sample anmes do not match, give error
+    # If sample names do not match, give error
     if( all(num_matches == 0L) ){
         stop("It seems that the files are missing columns containing ",
             "metabolite abundance data for individual samples. Each sample ",
             "should have its own column, labeled with the sample name. ",
             "Please check for errors.", call. = FALSE)
     }
-    # The column with highest number of macthes includes the correct sample
-    # names.
+    # The column with highest number of matches includes the correct sample
+    # names. That is the expectation.
     sample_names <- meta_names[[which.max(num_matches)]]
 
     # Add sample names to assay and assay metadata
