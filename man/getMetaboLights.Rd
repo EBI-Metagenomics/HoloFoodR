@@ -19,13 +19,19 @@ data that is going to be fetched from the MetaboLights database.}
 
 \item{...}{optional arguments:
 \itemize{
-  
+
   \item \strong{cache.dir} \code{Character scalar} specifying directory
   where downloaded file is stored. (Default: \code{tempdir()})
-  
+
   \item \strong{timeout} \code{Integer scalar} specifying timeout
   in seconds for loading a file. (Default: \code{5*60})
-  
+
+  \item \strong{ion.mode} \code{Character scalar} specifying metabolite
+  assignment files to fetch. If \code{"positive"} only positive ions are
+  fetched. Similarly \code{"negative"} means that negative ions are fetched
+  if such data exists. By selecting \code{"both"}, one can fetch both
+  positive and negative ions. (Default: \code{"both"})
+
 }}
 
 \item{file}{\code{character vector} specifying the files that are being

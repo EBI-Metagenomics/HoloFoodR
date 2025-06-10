@@ -1,6 +1,6 @@
 Package: HoloFoodR
 Type: Package
-Version: 1.3.0
+Version: 1.3.1
 Authors@R:
     c(
     person(
@@ -36,6 +36,7 @@ Imports:
     httr2,
     jsonlite,
     S4Vectors,
+    stringi,
     stats,
     SummarizedExperiment,
     utils

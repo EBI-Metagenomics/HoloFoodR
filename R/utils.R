@@ -241,6 +241,7 @@
 #' @importFrom httr2 request req_url_query req_error req_perform
 #' @importFrom httr2 resp_body_string
 #' @importFrom jsonlite fromJSON
+#' @importFrom utils URLencode
 .perform_single_query <- function(
         path, use.cache = FALSE, cache.dir = tempdir(), clear.cache = FALSE,
         base.url = "https://www.holofooddata.org/api", full.url = NULL, ...){
@@ -261,6 +262,7 @@
     } else{
         url <- full.url
     }
+    url <- URLencode(url)
     # Get query options
     query_params <- list(...)
     query_params <- lapply(query_params, function(x) paste(x, collapse = ","))
