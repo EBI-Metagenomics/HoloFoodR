@@ -5,7 +5,7 @@ package: HoloFoodR
 bibliography: ../HoloFoodR.bib
 output:
    BiocStyle::html_document:
-       fig_height: 7
+       fig_height
        fig_width: 10
        toc: yes
        toc_depth: 2
@@ -489,14 +489,16 @@ mae[[2]] <- transformAssay(
     mae[[2]],
     assay.type = "counts",
     method = "relabundance",
-    MARGIN = "cols"
+    MARGIN = "cols",
+    altexp = altExpNames(mae[[2]])
 )
 mae[[2]] <- transformAssay(
     mae[[2]],
     assay.type = "counts",
     method = "clr",
     pseudocount = TRUE,
-    MARGIN = "cols"
+    MARGIN = "cols",
+    altexp = altExpNames(mae[[2]])
 )
 ```
 
