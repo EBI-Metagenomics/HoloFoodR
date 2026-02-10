@@ -52,17 +52,17 @@
 
 
 
-<link href="case_study_files/htmltools-fill-0.5.8.1/fill.css" rel="stylesheet">
+<link href="case_study_files/htmltools-fill-0.5.9/fill.css" rel="stylesheet">
 <script src="case_study_files/htmlwidgets-1.6.4/htmlwidgets.js"></script><link href="case_study_files/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet">
-<script src="case_study_files/datatables-binding-0.33/datatables.js"></script><link href="case_study_files/dt-core-1.13.6/css/jquery.dataTables.min.css" rel="stylesheet">
+<script src="case_study_files/datatables-binding-0.34.0/datatables.js"></script><link href="case_study_files/dt-core-1.13.6/css/jquery.dataTables.min.css" rel="stylesheet">
 <link href="case_study_files/dt-core-1.13.6/css/jquery.dataTables.extra.css" rel="stylesheet">
-<script src="case_study_files/dt-core-1.13.6/js/jquery.dataTables.min.js"></script><link href="case_study_files/crosstalk-1.2.1/css/crosstalk.min.css" rel="stylesheet">
-<script src="case_study_files/crosstalk-1.2.1/js/crosstalk.min.js"></script><div class="row">
+<script src="case_study_files/dt-core-1.13.6/js/jquery.dataTables.min.js"></script><link href="case_study_files/crosstalk-1.2.2/css/crosstalk.min.css" rel="stylesheet">
+<script src="case_study_files/crosstalk-1.2.2/js/crosstalk.min.js"></script><div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>HoloFoodR: a statistical programming framework for holo-omics data integration workflows</h1>
             
-            <h4 data-toc-skip class="date">2025-06-10</h4>
+            <h4 data-toc-skip class="date">2026-02-10</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/EBI-Metagenomics/HoloFoodR/blob/devel/vignettes/articles/case_study.Rmd" class="external-link"><code>vignettes/articles/case_study.Rmd</code></a></small>
       <div class="d-none name"><code>case_study.Rmd</code></div>
@@ -238,9 +238,31 @@ transform data assays, and agglomerate the data.</p>
 how samples overlap between them.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">upset_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://github.com/waldronlab/MultiAssayExperiment/reference/upsetSamples.html" class="external-link">upsetSamples</a></span><span class="op">(</span><span class="va">mae</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `aes_string()` was deprecated in ggplot2 3.0.0.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Please use tidy evaluation idioms with `aes()`.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> See also `vignette("ggplot2-in-packages")` for more information.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> The deprecated feature was likely used in the <span style="color: #0000BB;">UpSetR</span> package.</span></span>
+<span><span class="co">#&gt;   Please report the issue to the authors.</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">This warning is displayed once per session.</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">Call `lifecycle::last_lifecycle_warnings()` to see where this warning was</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">generated.</span></span></span>
+<span><span class="co">#&gt; Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Please use `linewidth` instead.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> The deprecated feature was likely used in the <span style="color: #0000BB;">UpSetR</span> package.</span></span>
+<span><span class="co">#&gt;   Please report the issue to the authors.</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">This warning is displayed once per session.</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">Call `lifecycle::last_lifecycle_warnings()` to see where this warning was</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">generated.</span></span></span>
+<span><span class="co">#&gt; Warning: The `size` argument of `element_line()` is deprecated as of ggplot2 3.4.0.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Please use the `linewidth` argument instead.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> The deprecated feature was likely used in the <span style="color: #0000BB;">UpSetR</span> package.</span></span>
+<span><span class="co">#&gt;   Please report the issue to the authors.</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">This warning is displayed once per session.</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">Call `lifecycle::last_lifecycle_warnings()` to see where this warning was</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">generated.</span></span></span>
 <span><span class="va">upset_plot</span></span></code></pre></div>
 <div class="figure">
-<img src="case_study_files/figure-html/upsetplot-1.png" alt="The distribution of experiments in the dataset, along with the number of samples in each experiment." width="700"><p class="caption">
+<img src="case_study_files/figure-html/upsetplot-1.png" class="r-plt" alt="The distribution of experiments in the dataset, along with the number of samples in each experiment." width="700"><p class="caption">
 The distribution of experiments in the dataset, along with the number of
 samples in each experiment.
 </p>
@@ -336,7 +358,7 @@ to filter out extremely low-abundant genera.</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span><span class="va">prevalence</span>, main <span class="op">=</span> <span class="st">""</span>, xlab <span class="op">=</span> <span class="st">"Prevalence"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="case_study_files/figure-html/prevalence_histgoram-1.png" alt="The prevalence of microbial genera across samples." width="700"><p class="caption">
+<img src="case_study_files/figure-html/prevalence_histgoram-1.png" class="r-plt" alt="The prevalence of microbial genera across samples." width="700"><p class="caption">
 The prevalence of microbial genera across samples.
 </p>
 </div>
@@ -382,7 +404,7 @@ abundances.</p>
 <span><span class="va">x_labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span>from <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fu">assay</span><span class="op">(</span><span class="va">mae</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>, to <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu">assay</span><span class="op">(</span><span class="va">mae</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>, by <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/axis.html" class="external-link">axis</a></span><span class="op">(</span>side <span class="op">=</span> <span class="fl">1</span>, at <span class="op">=</span> <span class="va">x_labels</span>, labels <span class="op">=</span> <span class="va">x_labels</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="case_study_files/figure-html/filter_fatty1-1.png" alt="The distribution of standard deviations of fatty acid abundances." width="700"><p class="caption">
+<img src="case_study_files/figure-html/filter_fatty1-1.png" class="r-plt" alt="The distribution of standard deviations of fatty acid abundances." width="700"><p class="caption">
 The distribution of standard deviations of fatty acid abundances.
 </p>
 </div>
@@ -435,15 +457,18 @@ centered log-ratio method to tackle the compositional data (see <span class="cit
 <span>    <span class="va">mae</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>    assay.type <span class="op">=</span> <span class="st">"counts"</span>,</span>
 <span>    method <span class="op">=</span> <span class="st">"relabundance"</span>,</span>
-<span>    MARGIN <span class="op">=</span> <span class="st">"cols"</span></span>
+<span>    MARGIN <span class="op">=</span> <span class="st">"cols"</span>,</span>
+<span>    altexp <span class="op">=</span> <span class="fu">altExpNames</span><span class="op">(</span><span class="va">mae</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">mae</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu">transformAssay</span><span class="op">(</span></span>
 <span>    <span class="va">mae</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>    assay.type <span class="op">=</span> <span class="st">"counts"</span>,</span>
 <span>    method <span class="op">=</span> <span class="st">"clr"</span>,</span>
 <span>    pseudocount <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>    MARGIN <span class="op">=</span> <span class="st">"cols"</span></span>
+<span>    MARGIN <span class="op">=</span> <span class="st">"cols"</span>,</span>
+<span>    altexp <span class="op">=</span> <span class="fu">altExpNames</span><span class="op">(</span><span class="va">mae</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; A pseudocount of 0.5 was applied.</span></span>
 <span><span class="co">#&gt; A pseudocount of 0.5 was applied.</span></span></code></pre></div>
 <p>Fatty acid data is already compositional as it is measured as
 concentration (mg/g). We apply a log10 transformation to address
@@ -456,7 +481,6 @@ features are on a comparable scale.</p>
 <span>    method <span class="op">=</span> <span class="st">"log10"</span>,</span>
 <span>    MARGIN <span class="op">=</span> <span class="st">"cols"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; The assay contains already only strictly positive values. Pseudocount is not added.</span></span>
 <span><span class="va">mae</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu">transformAssay</span><span class="op">(</span></span>
 <span>    <span class="va">mae</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>    assay.type <span class="op">=</span> <span class="st">"log10"</span>,</span>
@@ -508,7 +532,7 @@ further visualized as follows.</p>
 <span>    colour_by <span class="op">=</span> <span class="st">"study_group"</span>, scales <span class="op">=</span> <span class="st">"free"</span><span class="op">)</span></span>
 <span><span class="va">p</span></span></code></pre></div>
 <div class="figure">
-<img src="case_study_files/figure-html/fatty_and_treatment_vis-1.png" alt="Concentrations of selected fatty acids at the start and end of the trial, with an indication of whether animals received treatment." width="700"><p class="caption">
+<img src="case_study_files/figure-html/fatty_and_treatment_vis-1.png" class="r-plt" alt="Concentrations of selected fatty acids at the start and end of the trial, with an indication of whether animals received treatment." width="700"><p class="caption">
 Concentrations of selected fatty acids at the start and end of the
 trial, with an indication of whether animals received treatment.
 </p>
@@ -534,7 +558,7 @@ microbial composition with relative abundance barplot.</p>
 <span><span class="co">#&gt; Warning: Removed 44 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_bar()`).</span></span></code></pre></div>
 <div class="figure">
-<img src="case_study_files/figure-html/abundance_plot-1.png" alt="Relative abundance of core microbial genera across samples." width="700"><p class="caption">
+<img src="case_study_files/figure-html/abundance_plot-1.png" class="r-plt" alt="Relative abundance of core microbial genera across samples." width="700"><p class="caption">
 Relative abundance of core microbial genera across samples.
 </p>
 </div>
@@ -591,7 +615,7 @@ of treatment on microbial diversity.</p>
 <span>    colour_by <span class="op">=</span> <span class="st">"study_group"</span><span class="op">)</span></span>
 <span><span class="va">p</span></span></code></pre></div>
 <div class="figure">
-<img src="case_study_files/figure-html/alpha3-1.png" alt="Shannon diversity of microbial communities in salmon at the start and end of the trial, with information on treatment status." width="700"><p class="caption">
+<img src="case_study_files/figure-html/alpha3-1.png" class="r-plt" alt="Shannon diversity of microbial communities in salmon at the start and end of the trial, with information on treatment status." width="700"><p class="caption">
 Shannon diversity of microbial communities in salmon at the start and
 end of the trial, with information on treatment status.
 </p>
@@ -616,7 +640,7 @@ dissimilarity.</p>
 <span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu">plotReducedDim</span><span class="op">(</span><span class="va">mae</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>, <span class="st">"MDS"</span>, colour_by <span class="op">=</span> <span class="st">"timepoint"</span><span class="op">)</span></span>
 <span><span class="va">p</span></span></code></pre></div>
 <div class="figure">
-<img src="case_study_files/figure-html/pcoa_beta_diversity-1.png" alt="PCoA (Bray-Curtis) of microbial data." width="700"><p class="caption">
+<img src="case_study_files/figure-html/pcoa_beta_diversity-1.png" class="r-plt" alt="PCoA (Bray-Curtis) of microbial data." width="700"><p class="caption">
 PCoA (Bray-Curtis) of microbial data.
 </p>
 </div>
@@ -679,12 +703,12 @@ composition.</p>
 <span></span>
 <span><span class="co"># Train model</span></span>
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">run_mofa</span><span class="op">(</span><span class="va">model</span>, use_basilisk <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in run_mofa(model, use_basilisk = TRUE): No output filename provided. Using /tmp/RtmpomE0YK/mofa_20250610-124359.hdf5 to store the trained model.</span></span>
+<span><span class="co">#&gt; Warning in run_mofa(model, use_basilisk = TRUE): No output filename provided. Using /tmp/RtmpnACnUH/mofa_20260210-094313.hdf5 to store the trained model.</span></span>
 <span><span class="co">#&gt; Connecting to the mofapy2 package using basilisk. </span></span>
 <span><span class="co">#&gt;     Set 'use_basilisk' to FALSE if you prefer to manually set the python binary using 'reticulate'.</span></span>
-<span><span class="co">#&gt; + /github/home/.pyenv/versions/3.10.5/bin/python3.10 -m venv /github/home/.cache/R/basilisk/1.21.5/MOFA2/1.19.0/mofa_env</span></span>
-<span><span class="co">#&gt; + /github/home/.cache/R/basilisk/1.21.5/MOFA2/1.19.0/mofa_env/bin/python -m pip install --upgrade pip wheel setuptools</span></span>
-<span><span class="co">#&gt; + /github/home/.cache/R/basilisk/1.21.5/MOFA2/1.19.0/mofa_env/bin/python -m pip install --upgrade --no-user 'numpy==1.23.1' 'scipy==1.8.1' 'pandas==1.4.3' 'h5py==3.6.0' 'scikit-learn==1.1.1' 'dtw-python==1.2.2' 'mofapy2==0.7.0'</span></span></code></pre></div>
+<span><span class="co">#&gt; + /github/home/.pyenv/versions/3.12.12/bin/python3.12 -m venv /github/home/.cache/R/basilisk/1.23.0/MOFA2/1.21.3/mofa_env</span></span>
+<span><span class="co">#&gt; + /github/home/.cache/R/basilisk/1.23.0/MOFA2/1.21.3/mofa_env/bin/python -m pip install --upgrade pip wheel setuptools</span></span>
+<span><span class="co">#&gt; + /github/home/.cache/R/basilisk/1.23.0/MOFA2/1.21.3/mofa_env/bin/python -m pip install --upgrade --no-user 'numpy==1.26.4' 'scipy==1.12.0' 'pandas==2.2.1' 'h5py==3.10.0' 'scikit-learn==1.4.0' 'dtw-python==1.3.1' 'mofapy2==0.7.3'</span></span></code></pre></div>
 <p>Next, we will plot the variances explained by each factor.</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Plot explained variances</span></span>
@@ -696,7 +720,7 @@ composition.</p>
 <span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu">geom_shadowtext</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>label <span class="op">=</span> <span class="va">df</span><span class="op">[[</span><span class="st">"percentage"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">p</span></span></code></pre></div>
 <div class="figure">
-<img src="case_study_files/figure-html/var_factor1-1.png" alt="Explained variance by the model for microbial and fatty acid data." width="700"><p class="caption">
+<img src="case_study_files/figure-html/var_factor1-1.png" class="r-plt" alt="Explained variance by the model for microbial and fatty acid data." width="700"><p class="caption">
 Explained variance by the model for microbial and fatty acid data.
 </p>
 </div>
@@ -715,7 +739,7 @@ acids is 0% as seen in the previous plot.</p>
 <span></span>
 <span><span class="va">p2</span></span></code></pre></div>
 <div class="figure">
-<img src="case_study_files/figure-html/plot_factor1-1.png" alt="Features with the highest loadings for Factor 1." width="700"><p class="caption">
+<img src="case_study_files/figure-html/plot_factor1-1.png" class="r-plt" alt="Features with the highest loadings for Factor 1." width="700"><p class="caption">
 Features with the highest loadings for Factor 1.
 </p>
 </div>
@@ -730,7 +754,7 @@ the variability in <em>Mycoplasma</em>.</p>
 <span></span>
 <span><span class="va">p1</span> <span class="op">+</span> <span class="va">p2</span></span></code></pre></div>
 <div class="figure">
-<img src="case_study_files/figure-html/plot_factor2-1.png" alt="Features with the highest loadings for Factor 2." width="960"><p class="caption">
+<img src="case_study_files/figure-html/plot_factor2-1.png" class="r-plt" alt="Features with the highest loadings for Factor 2." width="960"><p class="caption">
 Features with the highest loadings for Factor 2.
 </p>
 </div>
@@ -751,7 +775,7 @@ between microbes and fatty acids.</p>
 <span></span>
 <span><span class="va">p1</span> <span class="op">+</span> <span class="va">p2</span></span></code></pre></div>
 <div class="figure">
-<img src="case_study_files/figure-html/plot_factor3-1.png" alt="Features with the highest loadings for Factors 3." width="960"><p class="caption">
+<img src="case_study_files/figure-html/plot_factor3-1.png" class="r-plt" alt="Features with the highest loadings for Factors 3." width="960"><p class="caption">
 Features with the highest loadings for Factors 3.
 </p>
 </div>
@@ -801,12 +825,12 @@ and visualize the multi-omics data.</p>
 <span><span class="va">p1</span> <span class="op">+</span> <span class="va">p2</span>  <span class="op">+</span> <span class="fu">plot_layout</span><span class="op">(</span>widths <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: Removed 44 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_bar()`).</span></span></code></pre></div>
-<p><img src="case_study_files/figure-html/create_summary_plot-1.png" width="1152"></p>
+<p><img src="case_study_files/figure-html/create_summary_plot-1.png" class="r-plt" alt="" width="1152"></p>
 <div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; R version 4.5.0 (2025-04-11)</span></span>
+<span><span class="co">#&gt; R Under development (unstable) (2026-02-08 r89382)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
-<span><span class="co">#&gt; Running under: Ubuntu 24.04.2 LTS</span></span>
+<span><span class="co">#&gt; Running under: Ubuntu 24.04.3 LTS</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Matrix products: default</span></span>
 <span><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
@@ -828,105 +852,99 @@ and visualize the multi-omics data.</p>
 <span><span class="co">#&gt; [8] base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt;  [1] shadowtext_0.1.4                scater_1.37.0                  </span></span>
-<span><span class="co">#&gt;  [3] scuttle_1.19.0                  reticulate_1.42.0              </span></span>
-<span><span class="co">#&gt;  [5] patchwork_1.3.0                 MOFA2_1.19.0                   </span></span>
-<span><span class="co">#&gt;  [7] miaViz_1.17.0                   ggraph_2.2.1                   </span></span>
-<span><span class="co">#&gt;  [9] ggplot2_3.5.2                   mia_1.17.0                     </span></span>
-<span><span class="co">#&gt; [11] MGnifyR_1.5.0                   HoloFoodR_1.3.1                </span></span>
-<span><span class="co">#&gt; [13] TreeSummarizedExperiment_2.17.0 Biostrings_2.77.1              </span></span>
-<span><span class="co">#&gt; [15] XVector_0.49.0                  SingleCellExperiment_1.31.0    </span></span>
-<span><span class="co">#&gt; [17] MultiAssayExperiment_1.35.3     SummarizedExperiment_1.39.0    </span></span>
-<span><span class="co">#&gt; [19] Biobase_2.69.0                  GenomicRanges_1.61.0           </span></span>
-<span><span class="co">#&gt; [21] GenomeInfoDb_1.45.4             IRanges_2.43.0                 </span></span>
-<span><span class="co">#&gt; [23] S4Vectors_0.47.0                BiocGenerics_0.55.0            </span></span>
-<span><span class="co">#&gt; [25] generics_0.1.4                  MatrixGenerics_1.21.0          </span></span>
+<span><span class="co">#&gt;  [1] shadowtext_0.1.6                scater_1.39.2                  </span></span>
+<span><span class="co">#&gt;  [3] scuttle_1.21.0                  reticulate_1.44.1              </span></span>
+<span><span class="co">#&gt;  [5] patchwork_1.3.2                 MOFA2_1.21.3                   </span></span>
+<span><span class="co">#&gt;  [7] miaViz_1.19.1                   ggraph_2.2.2                   </span></span>
+<span><span class="co">#&gt;  [9] ggplot2_4.0.2                   mia_1.19.2                     </span></span>
+<span><span class="co">#&gt; [11] MGnifyR_1.7.1                   HoloFoodR_1.3.1                </span></span>
+<span><span class="co">#&gt; [13] TreeSummarizedExperiment_2.19.0 Biostrings_2.79.4              </span></span>
+<span><span class="co">#&gt; [15] XVector_0.51.0                  SingleCellExperiment_1.33.0    </span></span>
+<span><span class="co">#&gt; [17] MultiAssayExperiment_1.37.2     SummarizedExperiment_1.41.1    </span></span>
+<span><span class="co">#&gt; [19] Biobase_2.71.0                  GenomicRanges_1.63.1           </span></span>
+<span><span class="co">#&gt; [21] Seqinfo_1.1.0                   IRanges_2.45.0                 </span></span>
+<span><span class="co">#&gt; [23] S4Vectors_0.49.0                BiocGenerics_0.57.0            </span></span>
+<span><span class="co">#&gt; [25] generics_0.1.4                  MatrixGenerics_1.23.0          </span></span>
 <span><span class="co">#&gt; [27] matrixStats_1.5.0               ggsignif_0.6.4                 </span></span>
-<span><span class="co">#&gt; [29] DT_0.33                         dplyr_1.1.4                    </span></span>
-<span><span class="co">#&gt; [31] knitr_1.50                      BiocStyle_2.37.0               </span></span>
+<span><span class="co">#&gt; [29] DT_0.34.0                       dplyr_1.2.0                    </span></span>
+<span><span class="co">#&gt; [31] knitr_1.51                      BiocStyle_2.39.0               </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#&gt;   [1] splines_4.5.0               filelock_1.0.3             </span></span>
-<span><span class="co">#&gt;   [3] ggplotify_0.1.2             urltools_1.7.3             </span></span>
-<span><span class="co">#&gt;   [5] tibble_3.3.0                cellranger_1.1.0           </span></span>
-<span><span class="co">#&gt;   [7] triebeard_0.4.1             polyclip_1.10-7            </span></span>
-<span><span class="co">#&gt;   [9] DirichletMultinomial_1.51.0 lifecycle_1.0.4            </span></span>
-<span><span class="co">#&gt;  [11] httr2_1.1.2                 lattice_0.22-7             </span></span>
-<span><span class="co">#&gt;  [13] MASS_7.3-65                 crosstalk_1.2.1            </span></span>
-<span><span class="co">#&gt;  [15] SnowballC_0.7.1             magrittr_2.0.3             </span></span>
-<span><span class="co">#&gt;  [17] sass_0.4.10                 rmarkdown_2.29             </span></span>
-<span><span class="co">#&gt;  [19] jquerylib_0.1.4             yaml_2.3.10                </span></span>
-<span><span class="co">#&gt;  [21] cowplot_1.1.3               DBI_1.2.3                  </span></span>
+<span><span class="co">#&gt;   [1] splines_4.6.0               ggplotify_0.1.3            </span></span>
+<span><span class="co">#&gt;   [3] urltools_1.7.3.1            filelock_1.0.3             </span></span>
+<span><span class="co">#&gt;   [5] tibble_3.3.1                triebeard_0.4.1            </span></span>
+<span><span class="co">#&gt;   [7] polyclip_1.10-7             DirichletMultinomial_1.53.0</span></span>
+<span><span class="co">#&gt;   [9] lifecycle_1.0.5             httr2_1.2.2                </span></span>
+<span><span class="co">#&gt;  [11] lattice_0.22-9              MASS_7.3-65                </span></span>
+<span><span class="co">#&gt;  [13] crosstalk_1.2.2             SnowballC_0.7.1            </span></span>
+<span><span class="co">#&gt;  [15] magrittr_2.0.4              sass_0.4.10                </span></span>
+<span><span class="co">#&gt;  [17] rmarkdown_2.30              jquerylib_0.1.4            </span></span>
+<span><span class="co">#&gt;  [19] yaml_2.3.12                 otel_0.2.0                 </span></span>
+<span><span class="co">#&gt;  [21] cowplot_1.2.0               DBI_1.2.3                  </span></span>
 <span><span class="co">#&gt;  [23] RColorBrewer_1.1-3          abind_1.4-8                </span></span>
-<span><span class="co">#&gt;  [25] Rtsne_0.17                  purrr_1.0.4                </span></span>
-<span><span class="co">#&gt;  [27] fillpattern_1.0.2           yulab.utils_0.2.0          </span></span>
-<span><span class="co">#&gt;  [29] tweenr_2.0.3                rappdirs_0.3.3             </span></span>
-<span><span class="co">#&gt;  [31] ggrepel_0.9.6               irlba_2.3.5.1              </span></span>
-<span><span class="co">#&gt;  [33] tokenizers_0.3.0            tidytree_0.4.6             </span></span>
-<span><span class="co">#&gt;  [35] pheatmap_1.0.13             vegan_2.7-1                </span></span>
-<span><span class="co">#&gt;  [37] rbiom_2.2.0                 parallelly_1.45.0          </span></span>
-<span><span class="co">#&gt;  [39] tidyjson_0.3.2              pkgdown_2.1.3              </span></span>
-<span><span class="co">#&gt;  [41] permute_0.9-7               DelayedMatrixStats_1.31.0  </span></span>
-<span><span class="co">#&gt;  [43] codetools_0.2-20            DelayedArray_0.35.1        </span></span>
-<span><span class="co">#&gt;  [45] ggtext_0.1.2                xml2_1.3.8                 </span></span>
-<span><span class="co">#&gt;  [47] ggforce_0.4.2               tidyselect_1.2.1           </span></span>
-<span><span class="co">#&gt;  [49] aplot_0.2.5                 UCSC.utils_1.5.0           </span></span>
-<span><span class="co">#&gt;  [51] farver_2.1.2                ScaledMatrix_1.17.0        </span></span>
-<span><span class="co">#&gt;  [53] viridis_0.6.5               jsonlite_2.0.0             </span></span>
-<span><span class="co">#&gt;  [55] BiocNeighbors_2.3.1         decontam_1.29.0            </span></span>
-<span><span class="co">#&gt;  [57] tidygraph_1.3.1             emmeans_1.11.1             </span></span>
-<span><span class="co">#&gt;  [59] systemfonts_1.2.3           tools_4.5.0                </span></span>
-<span><span class="co">#&gt;  [61] ggnewscale_0.5.1            treeio_1.33.0              </span></span>
-<span><span class="co">#&gt;  [63] ragg_1.4.0                  Rcpp_1.0.14                </span></span>
-<span><span class="co">#&gt;  [65] glue_1.8.0                  gridExtra_2.3              </span></span>
-<span><span class="co">#&gt;  [67] SparseArray_1.9.0           BiocBaseUtils_1.11.0       </span></span>
-<span><span class="co">#&gt;  [69] xfun_0.52                   mgcv_1.9-3                 </span></span>
-<span><span class="co">#&gt;  [71] HDF5Array_1.37.0            withr_3.0.2                </span></span>
-<span><span class="co">#&gt;  [73] BiocManager_1.30.26         fastmap_1.2.0              </span></span>
-<span><span class="co">#&gt;  [75] ggh4x_0.3.1                 basilisk_1.21.5            </span></span>
-<span><span class="co">#&gt;  [77] rhdf5filters_1.21.0         bluster_1.19.0             </span></span>
-<span><span class="co">#&gt;  [79] digest_0.6.37               rsvd_1.0.5                 </span></span>
-<span><span class="co">#&gt;  [81] R6_2.6.1                    gridGraphics_0.5-1         </span></span>
-<span><span class="co">#&gt;  [83] estimability_1.5.1          textshaping_1.0.1          </span></span>
-<span><span class="co">#&gt;  [85] h5mread_1.1.1               UpSetR_1.4.0               </span></span>
-<span><span class="co">#&gt;  [87] tidyr_1.3.1                 DECIPHER_3.5.0             </span></span>
-<span><span class="co">#&gt;  [89] graphlayouts_1.2.2          httr_1.4.7                 </span></span>
-<span><span class="co">#&gt;  [91] htmlwidgets_1.6.4           S4Arrays_1.9.1             </span></span>
-<span><span class="co">#&gt;  [93] uwot_0.2.3                  pkgconfig_2.0.3            </span></span>
-<span><span class="co">#&gt;  [95] gtable_0.3.6                janeaustenr_1.0.0          </span></span>
-<span><span class="co">#&gt;  [97] htmltools_0.5.8.1           bookdown_0.43              </span></span>
-<span><span class="co">#&gt;  [99] scales_1.4.0                png_0.1-8                  </span></span>
-<span><span class="co">#&gt; [101] corrplot_0.95               ggfun_0.1.8                </span></span>
-<span><span class="co">#&gt; [103] tzdb_0.5.0                  reshape2_1.4.4             </span></span>
-<span><span class="co">#&gt; [105] nlme_3.1-168                rhdf5_2.53.1               </span></span>
-<span><span class="co">#&gt; [107] cachem_1.1.0                stringr_1.5.1              </span></span>
-<span><span class="co">#&gt; [109] parallel_4.5.0              vipor_0.4.7                </span></span>
-<span><span class="co">#&gt; [111] desc_1.4.3                  pillar_1.10.2              </span></span>
-<span><span class="co">#&gt; [113] grid_4.5.0                  vctrs_0.6.5                </span></span>
-<span><span class="co">#&gt; [115] slam_0.1-55                 BiocSingular_1.25.0        </span></span>
-<span><span class="co">#&gt; [117] beachmat_2.25.1             xtable_1.8-4               </span></span>
-<span><span class="co">#&gt; [119] cluster_2.1.8.1             beeswarm_0.4.0             </span></span>
-<span><span class="co">#&gt; [121] evaluate_1.0.3              readr_2.1.5                </span></span>
-<span><span class="co">#&gt; [123] mvtnorm_1.3-3               cli_3.6.5                  </span></span>
-<span><span class="co">#&gt; [125] compiler_4.5.0              rlang_1.1.6                </span></span>
-<span><span class="co">#&gt; [127] crayon_1.5.3                tidytext_0.4.2             </span></span>
-<span><span class="co">#&gt; [129] labeling_0.4.3              forcats_1.0.0              </span></span>
-<span><span class="co">#&gt; [131] plyr_1.8.9                  fs_1.6.6                   </span></span>
-<span><span class="co">#&gt; [133] ggbeeswarm_0.7.2            stringi_1.8.7              </span></span>
-<span><span class="co">#&gt; [135] viridisLite_0.4.2           BiocParallel_1.43.3        </span></span>
-<span><span class="co">#&gt; [137] assertthat_0.2.1            lazyeval_0.2.2             </span></span>
-<span><span class="co">#&gt; [139] Matrix_1.7-3                dir.expiry_1.17.0          </span></span>
-<span><span class="co">#&gt; [141] hms_1.1.3                   sparseMatrixStats_1.21.0   </span></span>
-<span><span class="co">#&gt; [143] Rhdf5lib_1.31.0             gridtext_0.1.5             </span></span>
-<span><span class="co">#&gt; [145] igraph_2.1.4                memoise_2.0.1              </span></span>
-<span><span class="co">#&gt; [147] bslib_0.9.0                 ggtree_3.17.0              </span></span>
-<span><span class="co">#&gt; [149] readxl_1.4.5                ape_5.8-1</span></span></code></pre></div>
-<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<span><span class="co">#&gt;  [25] Rtsne_0.17                  purrr_1.2.1                </span></span>
+<span><span class="co">#&gt;  [27] yulab.utils_0.2.4           tweenr_2.0.3               </span></span>
+<span><span class="co">#&gt;  [29] rappdirs_0.3.4              gdtools_0.5.0              </span></span>
+<span><span class="co">#&gt;  [31] ggrepel_0.9.6               irlba_2.3.7                </span></span>
+<span><span class="co">#&gt;  [33] tokenizers_0.3.0            tidytree_0.4.7             </span></span>
+<span><span class="co">#&gt;  [35] pheatmap_1.0.13             vegan_2.7-2                </span></span>
+<span><span class="co">#&gt;  [37] pkgdown_2.2.0               permute_0.9-10             </span></span>
+<span><span class="co">#&gt;  [39] DelayedMatrixStats_1.33.0   codetools_0.2-20           </span></span>
+<span><span class="co">#&gt;  [41] DelayedArray_0.37.0         ggforce_0.5.0              </span></span>
+<span><span class="co">#&gt;  [43] tidyselect_1.2.1            aplot_0.2.9                </span></span>
+<span><span class="co">#&gt;  [45] farver_2.1.2                ScaledMatrix_1.19.0        </span></span>
+<span><span class="co">#&gt;  [47] viridis_0.6.5               jsonlite_2.0.0             </span></span>
+<span><span class="co">#&gt;  [49] BiocNeighbors_2.5.3         decontam_1.31.0            </span></span>
+<span><span class="co">#&gt;  [51] tidygraph_1.3.1             systemfonts_1.3.1          </span></span>
+<span><span class="co">#&gt;  [53] tools_4.6.0                 ggnewscale_0.5.2           </span></span>
+<span><span class="co">#&gt;  [55] treeio_1.35.0               ragg_1.5.0                 </span></span>
+<span><span class="co">#&gt;  [57] Rcpp_1.1.1                  glue_1.8.0                 </span></span>
+<span><span class="co">#&gt;  [59] BiocBaseUtils_1.13.0        gridExtra_2.3              </span></span>
+<span><span class="co">#&gt;  [61] SparseArray_1.11.10         xfun_0.56                  </span></span>
+<span><span class="co">#&gt;  [63] mgcv_1.9-4                  HDF5Array_1.39.0           </span></span>
+<span><span class="co">#&gt;  [65] withr_3.0.2                 BiocManager_1.30.27        </span></span>
+<span><span class="co">#&gt;  [67] fastmap_1.2.0               ggh4x_0.3.1                </span></span>
+<span><span class="co">#&gt;  [69] basilisk_1.23.0             rhdf5filters_1.23.3        </span></span>
+<span><span class="co">#&gt;  [71] bluster_1.21.0              digest_0.6.39              </span></span>
+<span><span class="co">#&gt;  [73] rsvd_1.0.5                  R6_2.6.1                   </span></span>
+<span><span class="co">#&gt;  [75] gridGraphics_0.5-1          textshaping_1.0.4          </span></span>
+<span><span class="co">#&gt;  [77] h5mread_1.3.1               ecodive_2.2.2              </span></span>
+<span><span class="co">#&gt;  [79] UpSetR_1.4.0                tidyr_1.3.2                </span></span>
+<span><span class="co">#&gt;  [81] fontLiberation_0.1.0        DECIPHER_3.7.0             </span></span>
+<span><span class="co">#&gt;  [83] graphlayouts_1.2.2          httr_1.4.7                 </span></span>
+<span><span class="co">#&gt;  [85] htmlwidgets_1.6.4           S4Arrays_1.11.1            </span></span>
+<span><span class="co">#&gt;  [87] uwot_0.2.4                  pkgconfig_2.0.3            </span></span>
+<span><span class="co">#&gt;  [89] gtable_0.3.6                S7_0.2.1                   </span></span>
+<span><span class="co">#&gt;  [91] janeaustenr_1.0.0           htmltools_0.5.9            </span></span>
+<span><span class="co">#&gt;  [93] fontBitstreamVera_0.1.1     bookdown_0.46              </span></span>
+<span><span class="co">#&gt;  [95] scales_1.4.0                png_0.1-8                  </span></span>
+<span><span class="co">#&gt;  [97] corrplot_0.95               ggfun_0.2.0                </span></span>
+<span><span class="co">#&gt;  [99] reshape2_1.4.5              nlme_3.1-168               </span></span>
+<span><span class="co">#&gt; [101] cachem_1.1.0                rhdf5_2.55.13              </span></span>
+<span><span class="co">#&gt; [103] stringr_1.6.0               parallel_4.6.0             </span></span>
+<span><span class="co">#&gt; [105] vipor_0.4.7                 desc_1.4.3                 </span></span>
+<span><span class="co">#&gt; [107] pillar_1.11.1               grid_4.6.0                 </span></span>
+<span><span class="co">#&gt; [109] vctrs_0.7.1                 BiocSingular_1.27.1        </span></span>
+<span><span class="co">#&gt; [111] beachmat_2.27.2             cluster_2.1.8.2            </span></span>
+<span><span class="co">#&gt; [113] beeswarm_0.4.0              evaluate_1.0.5             </span></span>
+<span><span class="co">#&gt; [115] cli_3.6.5                   compiler_4.6.0             </span></span>
+<span><span class="co">#&gt; [117] rlang_1.1.7                 crayon_1.5.3               </span></span>
+<span><span class="co">#&gt; [119] tidytext_0.4.3              labeling_0.4.3             </span></span>
+<span><span class="co">#&gt; [121] forcats_1.0.1               plyr_1.8.9                 </span></span>
+<span><span class="co">#&gt; [123] fs_1.6.6                    ggbeeswarm_0.7.3           </span></span>
+<span><span class="co">#&gt; [125] ggiraph_0.9.4               stringi_1.8.7              </span></span>
+<span><span class="co">#&gt; [127] viridisLite_0.4.3           BiocParallel_1.45.0        </span></span>
+<span><span class="co">#&gt; [129] lazyeval_0.2.2              fontquiver_0.2.1           </span></span>
+<span><span class="co">#&gt; [131] Matrix_1.7-4                dir.expiry_1.19.0          </span></span>
+<span><span class="co">#&gt; [133] sparseMatrixStats_1.23.0    Rhdf5lib_1.33.0            </span></span>
+<span><span class="co">#&gt; [135] igraph_2.2.1                memoise_2.0.1              </span></span>
+<span><span class="co">#&gt; [137] bslib_0.10.0                ggtree_4.1.1               </span></span>
+<span><span class="co">#&gt; [139] ape_5.8-1</span></span></code></pre></div>
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-Argelaguet2020" class="csl-entry">
-Argelaguet, Ricard, Damien Arnol, Danila Bredikhin, Yonatan Deloro,
-Britta Velten, John C. Marioni, and Oliver Stegle. 2020. <span>“MOFA+: A
-Statistical Framework for Comprehensive Integration of Multi-Modal
-Single-Cell Data.”</span> <em>Genome Biology</em> 21 (1). <a href="https://doi.org/10.1186/s13059-020-02015-1" class="external-link">https://doi.org/10.1186/s13059-020-02015-1</a>.
+Argelaguet, Ricard, Damien Arnol, Danila Bredikhin, et al. 2020.
+<span>“MOFA+: A Statistical Framework for Comprehensive Integration of
+Multi-Modal Single-Cell Data.”</span> <em>Genome Biology</em> 21 (1). <a href="https://doi.org/10.1186/s13059-020-02015-1" class="external-link">https://doi.org/10.1186/s13059-020-02015-1</a>.
 </div>
 <div id="ref-quinnFieldGuideCompositional2019" class="csl-entry">
 Quinn, Thomas P., Ionas Erb, Greg Gloor, Cedric Notredame, Mark F.
@@ -935,12 +953,11 @@ Compositional Analysis of Any-Omics Data.”</span> <em>GigaScience</em> 8
 (9): giz107. <a href="https://doi.org/10.1093/gigascience/giz107" class="external-link">https://doi.org/10.1093/gigascience/giz107</a>.
 </div>
 <div id="ref-zarkasiPyrosequencingbasedCharacterizationGastrointestinal2014" class="csl-entry">
-Zarkasi, K. Z., G. C. J. Abell, R. S. Taylor, C. Neuman, E. Hatje, M. L.
-Tamplin, M. Katouli, and J. P. Bowman. 2014. <span>“Pyrosequencing-Based
-Characterization of Gastrointestinal Bacteria of <span>Atlantic</span>
-Salmon (<span>Salmo</span> Salar <span>L</span>.) Within a Commercial
-Mariculture System.”</span> <em>Journal of Applied Microbiology</em> 117
-(1): 18–27. <a href="https://doi.org/10.1111/jam.12514" class="external-link">https://doi.org/10.1111/jam.12514</a>.
+Zarkasi, K. Z., G. C. J. Abell, R. S. Taylor, et al. 2014.
+<span>“Pyrosequencing-Based Characterization of Gastrointestinal
+Bacteria of <span>Atlantic</span> Salmon (<span>Salmo</span> Salar
+<span>L</span>.) Within a Commercial Mariculture System.”</span>
+<em>Journal of Applied Microbiology</em> 117 (1): 18–27. <a href="https://doi.org/10.1111/jam.12514" class="external-link">https://doi.org/10.1111/jam.12514</a>.
 </div>
 </div>
 </div>
@@ -955,7 +972,7 @@ Mariculture System.”</span> <em>Journal of Applied Microbiology</em> 117
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>
