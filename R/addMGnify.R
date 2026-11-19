@@ -9,34 +9,43 @@
 #' not available in MGnify. Moreover, integrating data into a
 #' \code{MultiAssayExperiment} while maintaining accurate sample and system
 #' matches can be challenging.
-#' 
+#'
 #' This function is designed to simplify these
 #' tasks, enabling seamless integration of MGnify data with HoloFood data after
 #' retrieval from the database. You need only to input the returned data from
-#' \code{MGnifyR::getResult()} and \code{HoloFoodR::getResult()} functions.
-#' 
+#' \code{MGnifyR::fetchAnalyses()} (or \code{MGnifyR::fetchStudies()}) and
+#' \code{HoloFoodR::getResult()} functions.
+#'
+#' In MGnify, columns of the data are analyses, and the BioSample accession of
+#' each analysis (\code{"sample_accession"}) is the same identifier that is
+#' used in HoloFood. A sample can have multiple analyses, e.g., when it was
+#' processed with multiple pipeline versions. Select a single analysis per
+#' sample before adding the data, e.g., by subsetting the result of
+#' \code{MGnifyR::searchAnalyses()} by \code{"pipeline_version"}.
+#'
 #' @param x \code{SummarizedExperiment}. Results from
-#' \code{MGnifyR::getResult()}.
-#' 
+#' \code{MGnifyR::fetchAnalyses()} or \code{MGnifyR::fetchStudies()}.
+#'
 #' @param y \code{MultiAssayExperiment} or \code{SummarizedExperiment} or
 #' \code{data.frame}-like table. Results from \code{HoloFoodR::getResult()} or
 #' sample metadata from it.
-#' 
+#'
 #' @param exp.name1 \code{Character scalar}. Specifies the name of experiment
 #' that will be added to \code{y}. (Default: \code{"metagenomic"})
-#' 
+#'
 #' @param exp.name2 \code{Character scalar}. Specifies the name of experiment
 #' from HoloFoodR results. This experiment is used to match IDs with MGnify
 #' data. (Default: \code{"metagenomic_amplicon"})
-#' 
-#' @param id.col1 \code{Character scalar}. Specifies the name of column from
-#' \code{colData(x)} that includes HoloFood identifiers.
-#' (Default: \code{"sample_biosample"})
-#' 
+#'
+#' @param id.col1 \code{NULL} or \code{character scalar}. Specifies the name
+#' of column from \code{colData(x)} that includes HoloFood identifiers. If
+#' \code{NULL}, \code{"sample_biosample"} is used if it is found, and
+#' \code{"sample_accession"} otherwise. (Default: \code{NULL})
+#'
 #' @param id.col2 \code{Character scalar}. Specifies the name of column
 #' from \code{colData(y[[exp.name2]])} that includes HoloFood identifiers.
 #' (Default: \code{"accession"})
-#' 
+#'
 #' @param replace \code{Logical scalar}. Whether to replace the template
 #' experiment. (Default: \code{TRUE})
 #'
@@ -45,25 +54,22 @@
 #' @return \code{MultiAssayExperiment}
 #'
 #' @examples
-#' 
+#'
 #' \dontrun{
 #' # Get data from HoloFood database
 #' mae <- HoloFoodR::getResult(
 #'     salmon_sample_ids,
 #'     use.cache = TRUE
 #' )
-#' 
+#'
+#' # Find HoloFood studies and their analyses from MGnify database
+#' studies <- MGnifyR::searchStudies(search = "HoloFood")
+#' analyses <- MGnifyR::searchAnalyses(studies)
+#' # Select analyses of the samples
+#' analyses <- analyses[analyses[["sample_accession"]] %in% salmon_sample_ids, ]
 #' # Get data from MGnify database
-#' mg <- MgnifyClient(
-#'     useCache = TRUE,
-#'     cacheDir = ".MGnifyR_cache"
-#' )
-#' tse <- MGnifyR::getResult(
-#'     mg,
-#'     accession = mgnify_analyses_ids,
-#'     get.func = FALSE
-#' )
-#' 
+#' tse <- MGnifyR::fetchAnalyses(analyses)
+#'
 #' # Add MGnify data to HoloFood data
 #' mae <- addMGnify(tse, mae)
 #' }
@@ -121,9 +127,18 @@ setMethod(
     "addMGnify",
     signature = c(x = "SummarizedExperiment", y = "ANY"),
     function(
-        x, y, id.col1 = "sample_biosample", id.col2 = "accession", ...){
+        x, y, id.col1 = NULL, id.col2 = "accession", ...){
         ############################## Input check #############################
         .check_input(y, list("data.frame", "DFrame"))
+        # Earlier versions of MGnifyR stored the BioSample accession in
+        # "sample_biosample". From MGnifyR 1.99.0 (MGnify API v2), it is in
+        # "sample_accession".
+        if( is.null(id.col1) ){
+            id.col1 <- "sample_accession"
+            if( "sample_biosample" %in% colnames(colData(x)) ){
+                id.col1 <- "sample_biosample"
+            }
+        }
         if( is.null(rownames(y)) ){
             stop("'rownames(y)' must be populated.", call. = FALSE)
         }
@@ -139,6 +154,13 @@ setMethod(
         }
         if( !( is.character(y[[id.col2]]) || is.factor(y[[id.col2]]) ) ){
             stop("'id.col2' must specify IDs from 'y'.", call. = FALSE)
+        }
+        if( anyNA(colData(x)[[id.col1]]) ||
+                anyDuplicated(colData(x)[[id.col1]]) ){
+            stop(
+                "'id.col1' must specify unique IDs without missing values. ",
+                "Select one analysis per sample, e.g., by pipeline version.",
+                call. = FALSE)
         }
         ############################ Input check end ###########################
         # Ensure that sample matadata is data.frame

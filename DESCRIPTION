@@ -1,6 +1,6 @@
 Package: HoloFoodR
 Type: Package
-Version: 1.7.0
+Version: 1.7.1
 Authors@R:
     c(
     person(
@@ -46,7 +46,7 @@ Suggests:
     ggh4x,
     ggsignif,
     knitr,
-    MGnifyR,
+    MGnifyR (>= 1.99.0),
     mia,
     miaViz,
     MOFA2,
@@ -60,4 +60,4 @@ Suggests:
 URL: https://github.com/EBI-Metagenomics/HoloFoodR
 BugReports: https://github.com/EBI-Metagenomics/HoloFoodR/issues
 VignetteBuilder: knitr
-RoxygenNote: 7.3.2
+Config/roxygen2/version: 8.1.0

@@ -22,6 +22,7 @@ details on the JSONAPI implementation.
 
 Authors:
 \itemize{
+  \item Tuomas Borman \email{tuomas.v.borman@utu.fi} (\href{https://orcid.org/0000-0002-8563-8884}{ORCID})
   \item Artur Sannikov \email{arsann@utu.fi} (\href{https://orcid.org/0000-0001-7765-123X}{ORCID})
   \item Leo Lahti \email{leo.lahti@iki.fi} (\href{https://orcid.org/0000-0001-5537-637X}{ORCID})
 }

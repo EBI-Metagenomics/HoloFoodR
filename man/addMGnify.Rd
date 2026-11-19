@@ -20,11 +20,11 @@ addMGnify(x, y, ...)
 
 \S4method{addMGnify}{SummarizedExperiment,SummarizedExperiment}(x, y, ...)
 
-\S4method{addMGnify}{SummarizedExperiment,ANY}(x, y, id.col1 = "sample_biosample", id.col2 = "accession", ...)
+\S4method{addMGnify}{SummarizedExperiment,ANY}(x, y, id.col1 = NULL, id.col2 = "accession", ...)
 }
 \arguments{
 \item{x}{\code{SummarizedExperiment}. Results from
-\code{MGnifyR::getResult()}.}
+\code{MGnifyR::fetchAnalyses()} or \code{MGnifyR::fetchStudies()}.}
 
 \item{y}{\code{MultiAssayExperiment} or \code{SummarizedExperiment} or
 \code{data.frame}-like table. Results from \code{HoloFoodR::getResult()} or
@@ -42,9 +42,10 @@ data. (Default: \code{"metagenomic_amplicon"})}
 \item{replace}{\code{Logical scalar}. Whether to replace the template
 experiment. (Default: \code{TRUE})}
 
-\item{id.col1}{\code{Character scalar}. Specifies the name of column from
-\code{colData(x)} that includes HoloFood identifiers.
-(Default: \code{"sample_biosample"})}
+\item{id.col1}{\code{NULL} or \code{character scalar}. Specifies the name
+of column from \code{colData(x)} that includes HoloFood identifiers. If
+\code{NULL}, \code{"sample_biosample"} is used if it is found, and
+\code{"sample_accession"} otherwise. (Default: \code{NULL})}
 
 \item{id.col2}{\code{Character scalar}. Specifies the name of column
 from \code{colData(y[[exp.name2]])} that includes HoloFood identifiers.
@@ -69,7 +70,15 @@ matches can be challenging.
 This function is designed to simplify these
 tasks, enabling seamless integration of MGnify data with HoloFood data after
 retrieval from the database. You need only to input the returned data from
-\code{MGnifyR::getResult()} and \code{HoloFoodR::getResult()} functions.
+\code{MGnifyR::fetchAnalyses()} (or \code{MGnifyR::fetchStudies()}) and
+\code{HoloFoodR::getResult()} functions.
+
+In MGnify, columns of the data are analyses, and the BioSample accession of
+each analysis (\code{"sample_accession"}) is the same identifier that is
+used in HoloFood. A sample can have multiple analyses, e.g., when it was
+processed with multiple pipeline versions. Select a single analysis per
+sample before adding the data, e.g., by subsetting the result of
+\code{MGnifyR::searchAnalyses()} by \code{"pipeline_version"}.
 }
 \examples{
 
@@ -80,16 +89,13 @@ mae <- HoloFoodR::getResult(
     use.cache = TRUE
 )
 
+# Find HoloFood studies and their analyses from MGnify database
+studies <- MGnifyR::searchStudies(search = "HoloFood")
+analyses <- MGnifyR::searchAnalyses(studies)
+# Select analyses of the samples
+analyses <- analyses[analyses[["sample_accession"]] \%in\% salmon_sample_ids, ]
 # Get data from MGnify database
-mg <- MgnifyClient(
-    useCache = TRUE,
-    cacheDir = ".MGnifyR_cache"
-)
-tse <- MGnifyR::getResult(
-    mg,
-    accession = mgnify_analyses_ids,
-    get.func = FALSE
-)
+tse <- MGnifyR::fetchAnalyses(analyses)
 
 # Add MGnify data to HoloFood data
 mae <- addMGnify(tse, mae)

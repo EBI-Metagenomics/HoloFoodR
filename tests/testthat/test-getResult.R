@@ -8,7 +8,7 @@ test_that("getResult", {
     expect_error( getResult(NULL) )
 
     # Require internet access
-    skip_if_offline(host = "holofooddata.org")
+    skip_if_holofood_unavailable()
 
     # Get some data
     samples <- c("SAMEA112950905", "SAMEA112952305", "SAMEA112949948")

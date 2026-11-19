@@ -1,3 +1,11 @@
+Version: 1.7.1
+Date: 2026-11-19
++ Support MGnifyR 1.99.0 (MGnify API v2): addMGnify matches samples by
+"sample_accession" by default, and documentation uses MGnifyR::fetchAnalyses
++ Add isHoloFoodAvailable() to check whether the HoloFood server responds.
+Examples, tests and the vignette are skipped if the server is down, and
+transient server errors are retried.
+
 Version: 1.3.1
 + getMetaboLights: Improve data import.
 
