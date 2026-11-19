@@ -19,9 +19,9 @@
 #' Furthermore, while the HoloFoodR database does not include metagenomic
 #' assembly data, users can access such data from the MGnify database. The
 #' MGnifyR package provides a convenient interface for accessing this database.
-#' By employing \code{MGnifyR::getResult()}, users can obtain data formatted as
-#' a \code{MultiAssayExperiment} object, containing multiple
-#' \code{TreeSummarizedExperiment} objects. Consequently, data from both
+#' By employing \code{MGnifyR::fetchAnalyses()}, users can obtain data
+#' formatted as a \code{TreeSummarizedExperiment} or, for multiple types of
+#' profiles, a \code{MultiAssayExperiment} object. Consequently, data from both
 #' HoloFood and MGnify databases are inherently compatible for subsequent
 #' downstream analysis.
 #'
@@ -59,18 +59,21 @@
 #'
 #' @examples
 #'
-#' # Find samples on certain animal
-#' samples <- doQuery("samples", animal_accession = "SAMEA112904746")
+#' # The example is run only if the database is responding.
+#' if( isHoloFoodAvailable() ){
+#'     # Find samples on certain animal
+#'     samples <- doQuery("samples", animal_accession = "SAMEA112904746")
 #'
-#' # Get the data
-#' mae <- getResult(samples[["accession"]])
-#' mae
+#'     # Get the data
+#'     mae <- getResult(samples[["accession"]])
+#'     mae
+#' }
 #'
 #' @seealso
 #' \code{\link[HoloFoodR:getData]{getData}}
 #' \code{\link[TreeSummarizedExperiment:TreeSummarizedExperiment-class]{TreeSummarizedExperiment}}
 #' \code{\link[MultiAssayExperiment:MultiAssayExperiment-class]{MultiAssayExperiment}}
-#' \code{\link[MGnifyR:getResult]{MGnifyR:getResult}}
+#' \code{\link[MGnifyR:fetchStudies]{MGnifyR::fetchAnalyses}}
 #'
 #' @name getResult
 NULL

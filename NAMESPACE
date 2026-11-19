@@ -6,22 +6,32 @@ export(getData)
 export(getMetaboLights)
 export(getMetaboLightsFile)
 export(getResult)
+export(isHoloFoodAvailable)
 exportMethods(addMGnify)
 import(MultiAssayExperiment)
 import(TreeSummarizedExperiment)
 importFrom(S4Vectors,SimpleList)
 importFrom(SummarizedExperiment,SummarizedExperiment)
-importFrom(dplyr,bind_rows)
-importFrom(dplyr,full_join)
-importFrom(dplyr,left_join)
-importFrom(httr2,req_error)
-importFrom(httr2,req_perform)
-importFrom(httr2,req_url_query)
-importFrom(httr2,request)
-importFrom(httr2,resp_body_string)
+importFrom(dplyr,
+  bind_rows,
+  full_join,
+  left_join
+)
+importFrom(httr2,
+  req_error,
+  req_perform,
+  req_retry,
+  req_timeout,
+  req_url_query,
+  request,
+  resp_body_string,
+  resp_status
+)
 importFrom(jsonlite,fromJSON)
 importFrom(stats,reshape)
 importFrom(stringi,stri_enc_detect)
-importFrom(utils,URLencode)
-importFrom(utils,download.file)
-importFrom(utils,read.delim)
+importFrom(utils,
+  URLencode,
+  download.file,
+  read.delim
+)

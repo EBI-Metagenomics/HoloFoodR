@@ -59,7 +59,10 @@ for information on filters. You can find help on customizing queries from
 
 # Find animals results. The maximum amount of results is 100. Use filter
 # so that only chicken is searched. (See details on customizing queries)
-res <- doQuery("animals", max.hits = 100, system = "chicken")
-head(res)
+# The example is run only if the database is responding.
+if( isHoloFoodAvailable() ){
+    res <- doQuery("animals", max.hits = 100, system = "chicken")
+    head(res)
+}
 
 }

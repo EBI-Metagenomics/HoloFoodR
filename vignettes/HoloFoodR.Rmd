@@ -25,6 +25,21 @@ knitr::opts_chunk$set(
     comment = "#>",
     cache = TRUE
 )
+# The HoloFood server is occasionally unresponsive. If it is not available,
+# code chunks are not evaluated so that building the vignette does not fail.
+holofood_available <- HoloFoodR::isHoloFoodAvailable()
+knitr::opts_chunk$set(eval = holofood_available)
+```
+
+```{r}
+#| label: server_note
+#| echo: false
+#| eval: !expr '!holofood_available'
+#| results: asis
+
+cat(
+    "> **Note:** The HoloFood database was not responding when this",
+    "vignette was built, so the code below was not evaluated.\n")
 ```
 
 # Introduction
@@ -161,9 +176,10 @@ In `TreeSE`, each column represents a sample and rows represent features.
 ## Incorporate with MGnify data
 
 `MGnifyR` is a package that can be utilized to fetch metagenomics data from
-MGnify database. From the `MGnifyR` package, we can use
-`MGnifyR::searchAnalysis()` function to search analyses based on sample IDs
-that we have.
+MGnify database. MGnify uses the same BioSample accessions as HoloFood, so
+we can find the analyses of our samples from the HoloFood studies in MGnify.
+From the `MGnifyR` package, we can use `MGnifyR::searchStudies()` to find the
+studies and `MGnifyR::searchAnalyses()` to list their analyses.
 
 ```{r}
 #| label: search_analyses1
@@ -171,15 +187,20 @@ that we have.
 
 library(MGnifyR)
 
-mg <- MgnifyClient(useCache = TRUE)
-
 # Get those samples that are metagenomic samples
 metagenomic_samples <- samples[
     samples[["sample_type"]] == "metagenomic_assembly", ]
 
-# Get analysis IDs based on sample IDs
-analysis_ids <- searchAnalysis(
-    mg, type = "samples", metagenomic_samples[["accession"]])
+# Find HoloFood studies and list their analyses
+studies <- searchStudies(search = "HoloFood")
+analyses <- searchAnalyses(studies)
+
+# Select analyses of our samples
+analyses <- analyses[
+    analyses[["sample_accession"]] %in% metagenomic_samples[["accession"]], ]
+# Get analysis IDs named by sample IDs
+analysis_ids <- setNames(
+    analyses[["analysis_accession"]], analyses[["sample_accession"]])
 ```
 
 ```{r}
@@ -196,13 +217,16 @@ analysis_ids <- readRDS(path)
 head(analysis_ids)
 ```
 
-Then we can fetch data based on accession IDs.
+Then we can fetch taxonomic and functional profiles of the analyses. A sample
+can have multiple analyses, e.g., from different pipeline versions, so you
+might want to subset `analyses` by `pipeline_version` first.
 
 ```{r}
 #| label: get_metageomic_data1
 #| eval: false
 
-mae_metagenomic <- MGnifyR::getResult(mg, analysis_ids)
+mae_metagenomic <- MGnifyR::fetchAnalyses(
+    analyses, type = c("mOTUs", "GO-slim"))
 ```
 
 ```{r}
@@ -219,10 +243,10 @@ mae_metagenomic <- readRDS(path)
 mae_metagenomic
 ```
 
-`MGnifyR::getResult()` returns `MAE` object just like `HoloFoodR`. However,
-metagenomic data points to individual analyses instead of samples. We can
-harmonize the data by replacing analysis IDs with sample IDs, and then we can
-combine the data to single `MAE`.
+`MGnifyR::fetchAnalyses()` returns `MAE` object just like `HoloFoodR` when
+multiple profiles are fetched. However, metagenomic data points to individual
+analyses instead of samples. We can harmonize the data by replacing analysis
+IDs with sample IDs, and then we can combine the data to single `MAE`.
 
 ```{r}
 #| label: combine_data
@@ -243,6 +267,9 @@ exps <- lapply(exps, function(x){
 mae <- c(experiments(mae), exps)
 mae
 ```
+
+For a single `TreeSummarizedExperiment`, `addMGnify()` does this and also
+adds HoloFood sample metadata to the MGnify data.
 
 Now, with the `MAE` object linking samples from various omics together,
 compatibility is ensured as the single omics datasets are in

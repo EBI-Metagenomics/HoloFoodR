@@ -14,7 +14,7 @@
 }
 
 .is_a_numeric <- function(x){
-    is.numeric(x) %% length(x) == 1L
+    is.numeric(x) && length(x) == 1L
 }
 
 .is_integer <- function(x){
@@ -239,7 +239,7 @@
 # This function performs a single query to database (or gets the data from
 # cache) and returns a data.frame
 #' @importFrom httr2 request req_url_query req_error req_perform
-#' @importFrom httr2 resp_body_string
+#' @importFrom httr2 resp_body_string req_retry req_timeout resp_status
 #' @importFrom jsonlite fromJSON
 #' @importFrom utils URLencode
 .perform_single_query <- function(
@@ -300,9 +300,24 @@
         # Get data from database
         req <- request(url)
         req <- req_url_query(req, !!!query_params)
+        # Retry transient failures (server busy/unavailable, timeouts) a few
+        # times with exponential backoff before giving up.
+        req <- req_retry(
+            req, max_tries = 3L,
+            is_transient = \(resp) resp_status(resp) %in% c(
+                408L, 429L, 500L, 502L, 503L, 504L),
+            retry_on_failure = TRUE)
+        req <- req_timeout(req, 120)
         # Suppress error
         req <- req_error(req, is_error = \(resp) FALSE)
-        res <- req_perform(req)
+        res <- tryCatch(req_perform(req), error = function(e){
+            # Connection could not be established at all. Give an informative
+            # error instead of low-level curl error.
+            stop(
+                "Could not connect to '", url, "'. The server might be ",
+                "temporarily unavailable; please try again later. ",
+                "Original error: ", conditionMessage(e), call. = FALSE)
+        })
         # If data was fetched successfully
         if( res$status_code == "200" ){
             # Get the data as JSON text

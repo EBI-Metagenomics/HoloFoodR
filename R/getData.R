@@ -54,24 +54,27 @@
 #'
 #' @examples
 #'
-#' # Find genome catalogues
-#' catalogues <- getData(type = "genome-catalogues")
-#' head(catalogues)
+#' # The example is run only if the database is responding.
+#' if( isHoloFoodAvailable() ){
+#'     # Find genome catalogues
+#'     catalogues <- getData(type = "genome-catalogues")
+#'     head(catalogues)
 #'
-#' # Find genomes based on certain genome catalogue iD
-#' res <- getData(
-#'     type = "genomes", accession.type = "genome-catalogues",
-#'     accession = catalogues[1, "id"], max.hits = 100)
-#' # See the data.
-#' head(res)
-#' # It includes for instance summary of the CAZy
-#' # (Carbohydrate-Active enZymes) annotations as a counts per category
-#' cazy <- res[ , grepl("annotations.cazy", colnames(res)), drop = FALSE]
-#' head(cazy)
-#' # Moreover, it includes a sample list. This sample list represents a 
-#' # collection of samples where the MAG was identified. Thr data has also the
-#' # completeness of MAG in a sample.
-#' head(res[ c("metadata.Sample_accession", "metadata.Completeness")])
+#'     # Find genomes based on certain genome catalogue iD
+#'     res <- getData(
+#'         type = "genomes", accession.type = "genome-catalogues",
+#'         accession = catalogues[1, "id"], max.hits = 100)
+#'     # See the data.
+#'     head(res)
+#'     # It includes for instance summary of the CAZy
+#'     # (Carbohydrate-Active enZymes) annotations as a counts per category
+#'     cazy <- res[ , grepl("annotations.cazy", colnames(res)), drop = FALSE]
+#'     head(cazy)
+#'     # Moreover, it includes a sample list. This sample list represents a 
+#'     # collection of samples where the MAG was identified. Thr data has also the
+#'     # completeness of MAG in a sample.
+#'     head(res[ c("metadata.Sample_accession", "metadata.Completeness")])
+#' }
 #' 
 #' @seealso
 #' \code{\link[HoloFoodR:getResult]{getResult}}

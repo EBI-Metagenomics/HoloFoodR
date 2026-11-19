@@ -12,7 +12,7 @@ test_that("getData", {
         flatten = "test") )
 
     # Require internet access
-    skip_if_offline(host = "holofooddata.org")
+    skip_if_holofood_unavailable()
 
     # Get result and check that it is correct
     res <- getData(accession = "SAMEA10104950", accession.type = "samples")

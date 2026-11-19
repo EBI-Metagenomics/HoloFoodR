@@ -182,38 +182,29 @@ API.
 #| label: get_metagenomic_samples
 #| eval: false
 
-# Create MGnify object
-mg <- MgnifyClient(
-    useCache = TRUE,
-    cacheDir = ".MGnifyR_cache"
-)
-
 # Select only metagenomic_amplicon sample type
 metagenomic_salmon_samples <- salmon_samples |>
     filter(sample_type == "metagenomic_amplicon")
 
-# Search for sample IDs in MGnify database
-salmon_analysis_ids <- searchAnalysis(
-    mg,
-    type = "samples",
-    metagenomic_salmon_samples[["accession"]]
-)
+# Find HoloFood studies from MGnify database and list their analyses
+studies <- searchStudies(search = "HoloFood")
+analyses <- searchAnalyses(studies)
+
+# Select analyses of the salmon samples
+salmon_analyses <- analyses |>
+    filter(sample_accession %in% metagenomic_salmon_samples[["accession"]])
 ```
 
-`salmon_analysis_ids` character vector holds associations of HoloFood
-metagenomic amplicon accession numbers (SAMEAxxxxxx) to their counterparts in
-MGnify database (MGYAxxxxxx).
+`salmon_analyses` table holds associations of HoloFood metagenomic amplicon
+accession numbers (SAMEAxxxxxx) to their counterparts in MGnify database
+(MGYAxxxxxx).
 
 ```{r}
 #| label: get_metagenomic
 #| eval: false
 
 # Get metagenomic taxonomic data for salmon from MGnify
-tse <- MGnifyR::getResult(
-    mg,
-    accession = salmon_analysis_ids,
-    get.func = FALSE
-)
+tse <- MGnifyR::fetchAnalyses(salmon_analyses, type = "SSU")
 ```
 
 ```{r}
