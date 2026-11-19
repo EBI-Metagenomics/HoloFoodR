@@ -402,13 +402,16 @@ taxa, while not excluding the rest of data points. We use thresholds 20% and
 #| label: agglomerate_prevalence
 
 # Agglomerate by prevalence by genus
-altExp(mae[[2]], "prev_genus") <- agglomerateByPrevalence(
+prevalence <- 20 / 100
+detection <- 0.2 / 100
+altExp(mae[[2]], "prev_genus") <- agglomerateByRank(
     mae[[2]],
-    assay.type = "relabundance",
-    rank = "Genus",
-    prevalence = 20 / 100,
-    detection = 0.2 / 100
-)
+    rank = "Genus"
+) |>
+    subsetBy(
+        rows = rowMeans(relabundance > detection) > prevalence,
+        collapse = TRUE
+    )
 ```
 
 Due to the limited number of samples, we also filter the fatty acid data to
